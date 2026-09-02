@@ -1,16 +1,13 @@
 # 架构
 
-- Status: Skeleton
+- Status: Initial engineering skeleton（Issue #1）
 - Owner: **Codex**
 - Reviewer for scope: Grok
 - Related: `docs/requirements.md`、`docs/contracts.md`、`docs/decisions/`
 
 ## 文档用途
 
-记录 TabularStudio 的实现结构。编码前由 Codex 填写，并保证结构服务已确认 MVP，而不是预先设计未确认能力。
-
-**Grok 不在本文设计模块或工程拆分。**  
-**Antigravity 不在本文决定 Core 内部结构。**
+记录 TabularStudio 的实现结构，并保证结构只服务已确认 MVP。本次仅建立可编译、可测试的工程骨架，不实现格式统一、数据匹配、Excel 业务逻辑或最终 UI。
 
 ## 已确认技术方向
 
@@ -20,44 +17,60 @@
 - UI：WPF
 - Excel：ClosedXML
 - 网络：完全离线
-- 文件：主要处理 `.xlsx`
+- 文件：MVP 只处理 `.xlsx`
 
-## 待 Owner 回填
+## 工程结构
 
-Codex 在进入工程脚手架之前填写。未确认项保持 `TBD`。
+```text
+TabularStudio.sln
+├─ src/
+│  ├─ TabularStudio.App/       WPF 桌面应用入口
+│  └─ TabularStudio.Core/      Excel 处理与业务规则的 Core 边界
+└─ tests/
+   └─ TabularStudio.Tests/     Core 自动化测试
+```
 
-### 1. 逻辑分层
+| 项目 | Target Framework | 职责 | 项目引用 |
+| --- | --- | --- | --- |
+| `TabularStudio.App` | `net10.0-windows` | WPF 应用入口；后续承载 UI 与应用编排 | `TabularStudio.Core` |
+| `TabularStudio.Core` | `net10.0` | 后续承载处理规则与 Excel 访问；不依赖 WPF | 无 |
+| `TabularStudio.Tests` | `net10.0` | Core 的 xUnit 自动化测试 | `TabularStudio.Core` |
 
-- UI、应用编排、处理规则、Excel 访问如何分开
-- 哪些边界对应 `docs/contracts.md`
+依赖方向固定为：
 
-### 2. 工程结构
+```text
+TabularStudio.App ──────> TabularStudio.Core
+TabularStudio.Tests ────> TabularStudio.Core
+```
 
-- 解决方案与项目如何拆分
-- 哪些项目属于 UI，哪些属于 Core
-- 测试放在哪里
+Core 不反向引用 App。UI 与 Core 的具体调用契约在后续对应 Issue 中维护到 `docs/contracts.md`，Issue #1 不预先定义业务接口。
 
-当前阶段 **不创建** `.sln`、`.csproj`、`src/`、`tests/`。
+## 技术依赖
 
-### 3. 依赖
+| 依赖 | 所属项目 | 用途 |
+| --- | --- | --- |
+| WPF | `TabularStudio.App` | Windows 桌面应用框架 |
+| CommunityToolkit.Mvvm | `TabularStudio.App` | 后续支持 MVVM；Issue #1 仅配置依赖 |
+| ClosedXML | `TabularStudio.Core` | 后续处理 `.xlsx`；Issue #1 不实现 Excel 逻辑 |
+| xUnit | `TabularStudio.Tests` | 自动化测试框架 |
 
-- 允许：.NET 10、WPF、ClosedXML
-- 新增依赖必须先写 ADR
-- 默认禁止：Web 框架、数据库、在线 SDK
+`global.json` 将 SDK 基线设为 .NET SDK `10.0.100`，并允许在 .NET 10 的更新 feature band 上构建。仓库不引入 Web 框架、数据库或在线 SDK。
 
-### 4. 运行与数据
+## 运行与数据边界
 
-- 无服务端
-- 无数据库
-- 输入输出均为本地文件
+- 应用在 Windows 本地运行。
+- 无服务端、无数据库、无远程 API。
+- 输入输出均为本地文件。
+- App 负责桌面交互与调用编排；Core 负责处理行为，避免把处理规则写入 UI。
 
-### 5. 非目标架构
+## Issue #1 明确不实现
 
-- 浏览器应用
-- 客户端 + API
-- 多用户服务
-- 插件市场 / 扩展系统（未确认）
+- 格式统一与数据匹配算法
+- Excel 读写业务逻辑
+- 最终页面、交互和 ViewModel
+- UI/Core 业务契约
+- `.xlsx` 之外的文件格式
 
-### 6. 决策记录
+## 决策记录
 
-架构中的重要取舍写入 `docs/decisions/`，本文只引用，不重复展开。
+Issue #1 仅落实需求和 Issue 已确认的技术栈及最小项目拆分，没有产生需要长期单独记录的重要技术取舍，因此不新增 ADR。后续若出现影响范围、依赖方向或可替换性的重大决策，再记录到 `docs/decisions/`。

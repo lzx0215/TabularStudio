@@ -22,13 +22,14 @@
 5. **匹配统计耗时对称性**：在 `DataMatchingSummary` 中补齐 `TimeSpan Elapsed` 属性，使格式统一与数据匹配在耗时呈现上保持对称。
 6. **记录 Review 建议**：在第 13 节详细记录了 UI Developer 对 REVIEW-001 与 REVIEW-002 的分析与给 Project Owner 的明确建议。
 
-## 待 Project Owner 确认项
+## Project Owner 决策与落实
 
-1. **REVIEW-001**：建议采纳【方案 B】，将“保留前导 0 编号”与“保留长数字文本”由可操作开关调整为常驻安全底线说明（或备选【方案 C】UI 锁定勾选且置灰），避免“取消导致数据失真”或“取消无效果的虚设开关”。
-2. **REVIEW-002**：建议采纳【方案 A】，在 UI 成功统计卡片中显式呈现「匹配键为空：X 行」，使总数恒等式（`总计 = 成功 + 未匹配 + 重复 + 匹配键为空`）自洽闭环，不擅自合并进未匹配。
+1. **REVIEW-001（采用方案 C）**：“保留前导 0 编号”与“保留长数字文本”在 UI 列表中默认勾选并置灰锁定（不可取消）；`FormatStandardizationOptions` 移除这两个布尔参数，Core 始终按 Processing Baseline 强制执行底线保护。
+2. **REVIEW-002（采用方案 A）**：数据匹配 Success 统计固定展示【总计 / 匹配成功 / 未匹配 / 重复 / 匹配键为空】5 项，即使为空也显示 0 行，严禁合并进未匹配。
+
+`docs/contracts.md` 与 `docs/ui-spec.md` 均已完成同步更新，契约状态进入 `UI Reviewed - Pending Core Final Review`。
 
 ## Codex 下一步需要复核什么
 
-1. 复核 `docs/contracts.md` 中微调的字段（如 `DataMatchingSummary.Elapsed`、集合非空保证、`PreviewRow.Cells` 保证对齐）在 Core 端实现是否存在障碍。
-2. 关注 Project Owner 对 REVIEW-001 与 REVIEW-002 的裁决；若 Owner 确认方案，后续同步调整契约及实现。
-3. 待 Issue #7 双方与 Scope Review 完毕并合并后，按工作流推进后续阶段。
+1. 复核 `docs/contracts.md` 中最新确定的请求与结果模型（`FormatStandardizationOptions` 移除 2 个非开关参数、`DataMatchingSummary.EmptyKeyCount` 与 `Elapsed`、集合非空保证、`PreviewRow.Cells` 保证对齐）在 Core 端实现是否存在障碍。
+2. 进行 Core Final Review，确认契约无误后流转至 Grok 进行范围 Review 并推进 PR #8 合并。

@@ -1,6 +1,6 @@
 # UI / Core 契约
 
-- Status: UI Reviewed - Pending Owner Decision
+- Status: UI Reviewed - Pending Core Final Review
 - Owner: **Codex + Antigravity**
 - Draft author: Codex（Core Developer）
 - UI Reviewer: Antigravity（UI Developer）- Review completed (2026-09-03)
@@ -48,8 +48,8 @@ ClosedXML / Excel Processing
 | --- | --- | --- | --- |
 | 文件、Sheet、表头行选择 | 收集并维护用户选择 | 表达路径、Sheet、表头行 | 校验文件、Sheet、表头行并读取工作簿 |
 | 数据预览 | 请求并展示只读预览 | 表达普通 .NET 预览数据 | 读取表头、字段与前 20 行数据 |
-| 格式统一选项 | 展示并提交已批准的 8 项开关 | 表达 8 个布尔值 | 按 Processing Baseline 执行规则 |
-| 格式统一安全底线 | 展示已批准说明 | 不提供关闭安全底线的参数 | 始终保护公式、业务格式和输入文件 |
+| 格式统一选项 | 展示 8 项规则（提交已批准的 6 项可操作开关，前导 0 / 长数字保护 UI 置灰锁定） | 表达 6 个布尔值 | 按 Processing Baseline 执行规则（强制执行前导 0 与长数字保护） |
+| 格式统一安全底线 | 展示已批准说明与锁定项 | 不提供关闭安全底线的参数 | 始终保护公式、业务格式、前导 0、长数字和输入文件 |
 | 匹配条件 | 配置 1～N 条字段映射 | 表达条件列表，不表达 AND / OR 操作符 | 固定按 AND 精确匹配 |
 | 返回字段 | 选择一个或多个对照表字段 | 表达字段列表 | 生成实际唯一输出列名并返回映射 |
 | 比较标准化 | 提交是否启用 | 表达一个总开关 | 使用批准算法，不接受 UI 自定义算法 |
@@ -236,8 +236,6 @@ public sealed record FormatStandardizationOptions
     public bool NormalizeUnicode { get; init; } = true;
     public bool NormalizeSafeNumbers { get; init; } = true;
     public bool NormalizeUnambiguousDates { get; init; } = true;
-    public bool PreserveLeadingZeroIdentifiers { get; init; } = true;
-    public bool PreserveLongNumericText { get; init; } = true;
 }
 
 public sealed record FormatStandardizationRequest(
@@ -250,7 +248,8 @@ public sealed record FormatStandardizationRequest(
 请求约定：
 
 - `Source` 表达输入文件、选定 Sheet 和表头行。
-- `Options` 只表达 Approved UI Baseline 的 8 项用户可见开关，不允许 UI 传入具体 Unicode、数字或日期算法。
+- `Options` 只表达 Approved UI Baseline 的 6 项用户可操作开关，不允许 UI 传入具体 Unicode、数字或日期算法。
+- 前导 0 编号保护与长数字文本保护属于不可关闭的底线安全保护（UI 列表默认勾选且置灰锁定，用户不可取消），不作为请求布尔参数暴露；Core 始终按 Approved Processing Baseline 强制执行该两项保护。
 - `OverwriteExistingOutput` 只表达本次调用是否已获得用户对既有结果文件的明确覆盖意图。
 - Contract 不提供 `PreserveFormula`、`PreserveStyle`、`AllowOverwriteInput`；公式、业务格式和输入保护是 Core 必须始终执行的安全底线。
 - 表头及之前的行不处理，处理范围由 Processing Baseline 决定，不作为 UI 参数。
@@ -352,7 +351,7 @@ public sealed record DataMatchingResult(
 
 - `ReturnedFields` 按请求字段顺序返回 `RequestedField` → `ActualOutputColumnName` 映射；实际列名由 Core 按 Processing Baseline 确定性生成；`Success = false` 时保证为空集合 `[]`（不为 `null`）。
 - 状态列启用时，`ActualStatusColumnName` 返回 Core 生成的最终唯一列名；关闭时或处理失败时为 `null`。
-- `Summary` 返回主表总数据行、匹配成功、未匹配、重复、匹配键为空数量及耗时 `Elapsed`；`Success = false` 时为 `null`。
+- `Summary` 返回主表总数据行、匹配成功、未匹配、重复、匹配键为空数量及耗时 `Elapsed`；UI 固定展示这 5 项指标（即使 `EmptyKeyCount = 0` 也正常显示 `0 行`），严禁将“匹配键为空”合并进“未匹配”；`Success = false` 时为 `null`。
 - 四种行级结果数量之和必须等于 `TotalMasterDataRowCount`。
 - 状态文本固定为「匹配成功」「未匹配」「重复」「匹配键为空」，不由 UI 自定义。
 - Core 保留主表字段和行顺序，不把内存比较值写回任一输入。
@@ -415,7 +414,7 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 
 ### 12.1 格式统一
 
-- UI 可以通过检查、预览、8 项开关、输出路径、进度和结果完成 Approved UI Baseline 的交互。
+- UI 可以通过检查、预览、6 项可操作开关（及 2 项置灰锁定保护说明）、输出路径、进度和结果完成 Approved UI Baseline 的交互。
 - 公式保持、业务格式保护和输入文件保护不可关闭。
 - 文本、数字和日期算法不暴露为 UI 可定制策略。
 
@@ -432,39 +431,17 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 - 没有 Repository、数据库、网络 API、MediatR、CQRS、Event Bus、Plugin、Domain Event 或序列化协议。
 - 没有用户取消按钮、模糊匹配、公式计算、非 `.xlsx` 文件或第三个产品功能。
 
-## 13. 待 Project Owner / UI Review 确认
+## 13. Project Owner 决策记录 (Decision Log)
 
-### REVIEW-001 两个保护开关关闭时的语义
+### REVIEW-001 两个保护开关关闭时的语义（已决：采用方案 C）
 
-Approved UI Baseline 把 `PreserveLeadingZeroIdentifiers`、`PreserveLongNumericText` 列为默认勾选且可由用户操作的标准化开关；Approved Processing Baseline 同时规定前导 0 和长数字保护不得被数字 / 日期转换绕过。
+- **Project Owner 决策**：采用方案 C。“保留前导 0 编号”与“保留长数字文本”继续保留在格式统一的 8 项规则列表中，但在 UI 上默认勾选并置灰锁定（用户不可取消），明确标识为始终开启的数据安全保护。这两项不是可关闭的处理策略。
+- **契约落实**：`FormatStandardizationOptions` 移除 `PreserveLeadingZeroIdentifiers` 与 `PreserveLongNumericText` 两个布尔字段，不再向 UI 暴露关闭参数。Core 始终按照 Approved Processing Baseline 强制执行这两项保护；其余 6 项格式统一规则仍然作为用户可操作开关。
 
-本草案为完整表达 UI 配置而保留两个布尔字段，但在双方 Review 前不固化 `false` 为「允许丢弃前导 0 / 允许长数字精度失真」。需要 Antigravity 确认 UI 语义，并由 Grok / Project Owner 判断是否需要调整 UI 表达或进一步澄清产品行为。无论 Review 结果如何，不得通过 Contract 允许数据失真。
+### REVIEW-002 匹配键为空数量的 UI 展示（已决：采用方案 A）
 
-**UI Review（Antigravity）意见与建议**：
-1. **语义冲突与用户体验分析**：
-   - 在 `docs/processing-rules.md` 中，`SAFE-001`（明确安全才转换）、`FMT-NUM-003`（前导 0 保护）与 `FMT-NUM-004`（长数字保护）属于不可破坏的数据安全底线。
-   - 若在 UI 上向用户提供可取消勾选的复选框：
-     - 若取消勾选（`false`）允许将 `"00123"` 转换为 `123`，或将 18 位身份证文本转换为数值导致后 3 位精度丢失（变 0），将造成不可逆的数据破坏，违反离线处理工具的基本安全底线；
-     - 若取消勾选（`false`）后 Core 仍因底层安全规则拒绝转换，则该复选框在交互上沦为“无任何实际效果的虚设开关”，会极大困扰用户并引发缺陷投诉。
-2. **对 Project Owner 的明确建议**：
-   - **推荐方案 B**：将“保留前导 0 编号”与“保留长数字文本”由“可操作复选框”变更为“常驻底线安全保护说明”（与“公式保持不变”、“尽量保留原有业务格式”并列作为固定说明展示）。用户使用表格工具的明确预期是清洗脏数据而非破坏身份证或工号，不提供关闭开关最符合真实业务与安全诉求。
-   - **备选方案 C**：若产品形式上要求严格保留 8 项清单，则在 UI 上表现为“默认勾选且置灰锁定（Locked Checked）”，并在下方标注“系统底线安全保护始终开启”。
-   - **契约当前处理**：在 Project Owner 做出最终决策前，契约请求 DTO 暂时保留该两项属性（默认 `true`），但 Core 绝不把 `false` 假定为允许数据失真。
-
-### REVIEW-002 匹配键为空数量的 UI 展示
-
-Approved Processing Baseline 已有「匹配键为空」状态，本 Contract 按 Issue #7 要求返回 `EmptyKeyCount`。Approved UI Baseline 的成功统计面板当前明确列出总数、成功、未匹配和重复四项，未单独写出空键数量。
-
-该差异不阻止 Core 返回完整结构化统计；请 Antigravity Review UI 是否需要显示空键数量，或只保留在 Result 中供后续诊断。不得由 Contract 擅自修改已批准页面布局。
-
-**UI Review（Antigravity）意见与建议**：
-1. **自洽性与信息透明度分析**：
-   - 业务状态自洽：`requirements.md` 6.2.1 及 `processing-rules.md` MATCH-STATUS-002 明确规定状态列包含 4 种独立状态（匹配成功、未匹配、重复、匹配键为空），且 `MATCH-EMPTY-001` 明确空键行“不归入未匹配或重复”。
-   - 数学恒等式完整：契约严格保证 `TotalMasterDataRowCount = MatchedCount + UnmatchedCount + DuplicateCount + EmptyKeyCount`。若成功统计面板仅展示 4 项（总数、成功、未匹配、重复），当主表存在空键行时，各子项之和将小于总数（`成功 + 未匹配 + 重复 < 总计`），用户会直观困惑“中间差额的行去哪了、是否处理丢失”，且生成文件中的「匹配键为空」状态列在 UI 统计中无处呼应。
-2. **对 Project Owner 的明确建议**：
-   - **推荐方案 A**：在 UI 成功统计卡片中增加「匹配键为空：X 行」（或当 `EmptyKeyCount > 0` 时显式展现），使统计面板与 Core 返回的 4 项行级统计及数学恒等式完全透明自洽。
-   - **备选方案 B**：Result 保持 `EmptyKeyCount`，UI 主卡片维持原 4 项展示，但当 `EmptyKeyCount > 0` 时以次级标签或附注形式显示 `(另有 X 行匹配键为空)`，消除用户对行数总和不平的困惑。
-   - **禁止行为**：严禁把「匹配键为空」隐式合并进「未匹配」，必须保持独立结构化数据。
+- **Project Owner 决策**：采用方案 A。数据匹配 Success 统计固定展示【总计 / 匹配成功 / 未匹配 / 重复 / 匹配键为空】5 项指标，即使 `EmptyKeyCount = 0` 也正常显示 `0 行`。不得把“匹配键为空”合并进“未匹配”。
+- **契约落实**：`DataMatchingSummary` 保留 `EmptyKeyCount`，UI 成功统计卡片与契约的 5 项指标完全对应；Core 与 UI 均严禁将“匹配键为空”合并进“未匹配”。
 
 ## 14. 非目标与变更规则
 

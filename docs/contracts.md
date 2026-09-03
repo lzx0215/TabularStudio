@@ -1,9 +1,9 @@
 # UI / Core 契约
 
-- Status: Draft for UI Review
+- Status: UI Reviewed - Pending Owner Decision
 - Owner: **Codex + Antigravity**
 - Draft author: Codex（Core Developer）
-- Required reviewer: Antigravity（UI Contract Review）
+- UI Reviewer: Antigravity（UI Developer）- Review completed (2026-09-03)
 - Reviewer for scope: Grok（Product Manager）
 - Related: `docs/requirements.md`、`docs/ui-spec.md`、`docs/processing-rules.md`、`docs/architecture.md`、GitHub Issue #7
 
@@ -81,7 +81,7 @@ public sealed record WorksheetSource(
     int HeaderRowNumber);
 ```
 
-`WorksheetSource` 同时用于格式统一、主表和对照表。主表与对照表来自同一个工作簿时，两个 `FilePath` 直接相同；Contract 不接收「与主表使用同一个文件」CheckBox 状态，也不增加额外业务模式。
+`WorksheetSource` 同时用于格式统一、主表和对照表。`HeaderRowNumber` 为 1 起始的物理行号（与 Excel 行号及 UI 显示一致）。主表与对照表来自同一个工作簿时，两个 `FilePath` 直接相同；Contract 不接收「与主表使用同一个文件」CheckBox 状态，也不增加额外业务模式。
 
 ### 4.3 通用错误
 
@@ -202,8 +202,11 @@ public sealed record WorksheetPreviewResult(
 
 预览约定：
 
-- `Columns` 来自指定表头行，供 UI 显示列头、配置匹配条件和选择返回字段。
+- `WorkbookInspectionResult` 在 `Success = false` 时，`Worksheets` 保证为空集合 `[]`（不为 `null`），`Error` 必须存在。
+- `HeaderRowNumber` 与 `WorksheetRowNumber` 均为 1 起始的物理行号（与 Excel 行号一致）。
+- `Columns` 来自指定表头行，供 UI 显示列头、配置匹配条件和选择返回字段。若指定表头行中某列为空，Core 保证填充占位列名（如「第 A 列」），避免向 UI 暴露空列名。
 - `Rows` 从表头之后的数据行开始，最多 20 行；预览上限不是请求参数，UI 不能通过 Contract 扩大。
+- `PreviewRow.Cells` 与 `PreviewTable.Columns` 在列数和顺序上完全对齐。若某单元格在 Excel 中为空白，`DisplayValue` 为 `null`，便于 UI 直接绑定 DataGrid 或转为 `DataTable`，无需在 UI 层做稀疏列索引对齐。
 - `WorksheetRowNumber` 保留原工作表行号，便于 UI 说明样本位置。
 - `DisplayValue` 是普通可显示字符串，不是 Excel 对象，也不授权 UI 根据显示字符串推断处理类型。
 - 表头行非法时返回 `InvalidHeaderRow`；Sheet 不存在时返回 `WorksheetNotFound`。
@@ -333,7 +336,8 @@ public sealed record DataMatchingSummary(
     int MatchedCount,
     int UnmatchedCount,
     int DuplicateCount,
-    int EmptyKeyCount);
+    int EmptyKeyCount,
+    TimeSpan Elapsed);
 
 public sealed record DataMatchingResult(
     bool Success,
@@ -346,9 +350,9 @@ public sealed record DataMatchingResult(
 
 成功结果约定：
 
-- `ReturnedFields` 按请求字段顺序返回 `RequestedField` → `ActualOutputColumnName` 映射；实际列名由 Core 按 Processing Baseline 确定性生成。
-- 状态列启用时，`ActualStatusColumnName` 返回 Core 生成的最终唯一列名；关闭时为 `null`。
-- `Summary` 返回主表总数据行、匹配成功、未匹配、重复和匹配键为空数量。
+- `ReturnedFields` 按请求字段顺序返回 `RequestedField` → `ActualOutputColumnName` 映射；实际列名由 Core 按 Processing Baseline 确定性生成；`Success = false` 时保证为空集合 `[]`（不为 `null`）。
+- 状态列启用时，`ActualStatusColumnName` 返回 Core 生成的最终唯一列名；关闭时或处理失败时为 `null`。
+- `Summary` 返回主表总数据行、匹配成功、未匹配、重复、匹配键为空数量及耗时 `Elapsed`；`Success = false` 时为 `null`。
 - 四种行级结果数量之和必须等于 `TotalMasterDataRowCount`。
 - 状态文本固定为「匹配成功」「未匹配」「重复」「匹配键为空」，不由 UI 自定义。
 - Core 保留主表字段和行顺序，不把内存比较值写回任一输入。
@@ -436,11 +440,31 @@ Approved UI Baseline 把 `PreserveLeadingZeroIdentifiers`、`PreserveLongNumeric
 
 本草案为完整表达 UI 配置而保留两个布尔字段，但在双方 Review 前不固化 `false` 为「允许丢弃前导 0 / 允许长数字精度失真」。需要 Antigravity 确认 UI 语义，并由 Grok / Project Owner 判断是否需要调整 UI 表达或进一步澄清产品行为。无论 Review 结果如何，不得通过 Contract 允许数据失真。
 
+**UI Review（Antigravity）意见与建议**：
+1. **语义冲突与用户体验分析**：
+   - 在 `docs/processing-rules.md` 中，`SAFE-001`（明确安全才转换）、`FMT-NUM-003`（前导 0 保护）与 `FMT-NUM-004`（长数字保护）属于不可破坏的数据安全底线。
+   - 若在 UI 上向用户提供可取消勾选的复选框：
+     - 若取消勾选（`false`）允许将 `"00123"` 转换为 `123`，或将 18 位身份证文本转换为数值导致后 3 位精度丢失（变 0），将造成不可逆的数据破坏，违反离线处理工具的基本安全底线；
+     - 若取消勾选（`false`）后 Core 仍因底层安全规则拒绝转换，则该复选框在交互上沦为“无任何实际效果的虚设开关”，会极大困扰用户并引发缺陷投诉。
+2. **对 Project Owner 的明确建议**：
+   - **推荐方案 B**：将“保留前导 0 编号”与“保留长数字文本”由“可操作复选框”变更为“常驻底线安全保护说明”（与“公式保持不变”、“尽量保留原有业务格式”并列作为固定说明展示）。用户使用表格工具的明确预期是清洗脏数据而非破坏身份证或工号，不提供关闭开关最符合真实业务与安全诉求。
+   - **备选方案 C**：若产品形式上要求严格保留 8 项清单，则在 UI 上表现为“默认勾选且置灰锁定（Locked Checked）”，并在下方标注“系统底线安全保护始终开启”。
+   - **契约当前处理**：在 Project Owner 做出最终决策前，契约请求 DTO 暂时保留该两项属性（默认 `true`），但 Core 绝不把 `false` 假定为允许数据失真。
+
 ### REVIEW-002 匹配键为空数量的 UI 展示
 
 Approved Processing Baseline 已有「匹配键为空」状态，本 Contract 按 Issue #7 要求返回 `EmptyKeyCount`。Approved UI Baseline 的成功统计面板当前明确列出总数、成功、未匹配和重复四项，未单独写出空键数量。
 
 该差异不阻止 Core 返回完整结构化统计；请 Antigravity Review UI 是否需要显示空键数量，或只保留在 Result 中供后续诊断。不得由 Contract 擅自修改已批准页面布局。
+
+**UI Review（Antigravity）意见与建议**：
+1. **自洽性与信息透明度分析**：
+   - 业务状态自洽：`requirements.md` 6.2.1 及 `processing-rules.md` MATCH-STATUS-002 明确规定状态列包含 4 种独立状态（匹配成功、未匹配、重复、匹配键为空），且 `MATCH-EMPTY-001` 明确空键行“不归入未匹配或重复”。
+   - 数学恒等式完整：契约严格保证 `TotalMasterDataRowCount = MatchedCount + UnmatchedCount + DuplicateCount + EmptyKeyCount`。若成功统计面板仅展示 4 项（总数、成功、未匹配、重复），当主表存在空键行时，各子项之和将小于总数（`成功 + 未匹配 + 重复 < 总计`），用户会直观困惑“中间差额的行去哪了、是否处理丢失”，且生成文件中的「匹配键为空」状态列在 UI 统计中无处呼应。
+2. **对 Project Owner 的明确建议**：
+   - **推荐方案 A**：在 UI 成功统计卡片中增加「匹配键为空：X 行」（或当 `EmptyKeyCount > 0` 时显式展现），使统计面板与 Core 返回的 4 项行级统计及数学恒等式完全透明自洽。
+   - **备选方案 B**：Result 保持 `EmptyKeyCount`，UI 主卡片维持原 4 项展示，但当 `EmptyKeyCount > 0` 时以次级标签或附注形式显示 `(另有 X 行匹配键为空)`，消除用户对行数总和不平的困惑。
+   - **禁止行为**：严禁把「匹配键为空」隐式合并进「未匹配」，必须保持独立结构化数据。
 
 ## 14. 非目标与变更规则
 

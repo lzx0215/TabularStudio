@@ -1,17 +1,18 @@
 # UI / Core 契约
 
-- Status: UI Reviewed - Pending Core Final Review
+- Status: Approved Contract Baseline
 - Owner: **Codex + Antigravity**
-- Draft author: Codex（Core Developer）
+- Initial draft author: Codex（Core Developer）
 - UI Reviewer: Antigravity（UI Developer）- Review completed (2026-09-03)
+- Core Reviewer: Codex（Core Developer）- Final Review completed (2026-09-03)
 - Reviewer for scope: Grok（Product Manager）
 - Related: `docs/requirements.md`、`docs/ui-spec.md`、`docs/processing-rules.md`、`docs/architecture.md`、GitHub Issue #7
 
 ## 1. 文档目的与状态
 
-本文定义 WPF UI / ViewModel 与本地 Core 之间的第一版调用契约草案，使双方能独立实现已批准的工作簿检查、格式统一和数据匹配能力。
+本文定义 WPF UI / ViewModel 与本地 Core 之间的第一版正式调用契约，使双方能独立实现已批准的工作簿检查、格式统一和数据匹配能力。
 
-本文只定义接口、请求、结果、错误和进度的数据形状，不包含 ClosedXML 业务实现、WPF 页面实现或处理算法。当前状态不是批准基线；必须经 Antigravity 从 UI 角度 Review，并按 Issue #7 的双方 Review 流程确认后，才能进入业务实现。
+本文只定义接口、请求、结果、错误和进度的数据形状，不包含 ClosedXML 业务实现、WPF 页面实现或处理算法。Antigravity 的 UI Contract Review 与 Codex 的 Core Final Review 均已完成，Project Owner 对 REVIEW-001 / REVIEW-002 的决定也已落实，本文现为 `Approved Contract Baseline`。
 
 事实来源与冲突优先级：
 
@@ -50,8 +51,8 @@ ClosedXML / Excel Processing
 | 数据预览 | 请求并展示只读预览 | 表达普通 .NET 预览数据 | 读取表头、字段与前 20 行数据 |
 | 格式统一选项 | 展示 8 项规则（提交已批准的 6 项可操作开关，前导 0 / 长数字保护 UI 置灰锁定） | 表达 6 个布尔值 | 按 Processing Baseline 执行规则（强制执行前导 0 与长数字保护） |
 | 格式统一安全底线 | 展示已批准说明与锁定项 | 不提供关闭安全底线的参数 | 始终保护公式、业务格式、前导 0、长数字和输入文件 |
-| 匹配条件 | 配置 1～N 条字段映射 | 表达条件列表，不表达 AND / OR 操作符 | 固定按 AND 精确匹配 |
-| 返回字段 | 选择一个或多个对照表字段 | 表达字段列表 | 生成实际唯一输出列名并返回映射 |
+| 匹配条件 | 配置 1～N 条字段映射 | 用稳定物理列身份表达条件列表，不表达 AND / OR 操作符 | 按物理列定位字段并固定执行 AND 精确匹配 |
+| 返回字段 | 选择一个或多个对照表字段 | 用稳定物理列身份表达字段列表 | 按物理列取值，生成实际唯一输出列名并返回映射 |
 | 比较标准化 | 提交是否启用 | 表达一个总开关 | 使用批准算法，不接受 UI 自定义算法 |
 | 匹配状态列 | 配置启用状态与期望列名 | 表达启用状态与列名 | 写固定状态值并生成实际唯一列名 |
 | 输出路径 | 选择路径 | 表达路径与一次执行的覆盖意图 | 写输出并始终拒绝覆盖输入 |
@@ -67,8 +68,19 @@ ClosedXML / Excel Processing
 
 - `Success = true` 时，`Error` 必须为 `null`，对应成功数据必须存在。
 - `Success = false` 时，`Error` 必须存在，不得返回可当作成功结果使用的输出路径或统计。
+- 契约中的所有 `IReadOnlyList<T>` 集合均不得为 `null`；没有元素时使用空集合 `[]`。
+- Request 中要求至少一项的集合若为 `null` 或空集合，Core 返回 `InvalidConfiguration`；Result 中的集合按本节及具体结果约定返回空集合。
 - Core 返回结构化数据；UI 决定中文文案、视觉状态和 Dialog 形式。
 - 文件路径均为本机路径；Core 必须再次校验，不信任 UI 已做过的拦截。
+
+各 Result 的不变量：
+
+| Result | `Success = true` | `Success = false` |
+| --- | --- | --- |
+| `WorkbookInspectionResult` | `Worksheets` 非 `null`，`Error = null` | `Worksheets = []`，`Error` 存在 |
+| `WorksheetPreviewResult` | `Preview` 存在，`Error = null` | `Preview = null`，`Error` 存在 |
+| `FormatStandardizationResult` | `OutputFilePath` 非空、`Summary` 存在、`Error = null` | `OutputFilePath = null`、`Summary = null`、`Error` 存在 |
+| `DataMatchingResult` | `OutputFilePath` 非空、`Summary` 存在、`ReturnedFields` 与请求顺序对应、`Error = null` | `OutputFilePath = null`、`Summary = null`、`ReturnedFields = []`、`ActualStatusColumnName = null`、`Error` 存在 |
 
 ### 4.2 工作表来源
 
@@ -79,9 +91,21 @@ public sealed record WorksheetSource(
     string FilePath,
     string WorksheetName,
     int HeaderRowNumber);
+
+public sealed record ColumnReference(
+    int ColumnNumber,
+    string? HeaderText);
 ```
 
 `WorksheetSource` 同时用于格式统一、主表和对照表。`HeaderRowNumber` 为 1 起始的物理行号（与 Excel 行号及 UI 显示一致）。主表与对照表来自同一个工作簿时，两个 `FilePath` 直接相同；Contract 不接收「与主表使用同一个文件」CheckBox 状态，也不增加额外业务模式。
+
+`ColumnReference` 是预览、匹配条件和返回字段共用的唯一列引用模型：
+
+- `ColumnNumber` 是 1 起始的 Excel 物理列号，也是 UI 选中列与 Core 定位列的稳定身份；Core 不得仅凭 `HeaderText` 查找列。
+- `HeaderText` 是预览时从所选表头行实际读取到的原始表头文本快照，仅用于展示和结果说明，不作为唯一身份；空表头明确返回 `null`，重复表头允许返回相同文本。
+- UI 必须原样保留 `ColumnReference`；执行时 Core 仍按 `ColumnNumber` 重新读取对应物理列及实际表头，并以工作簿中的实际表头作为返回字段命名依据，不信任 UI 回传的 `HeaderText` 改写业务输出。
+- 两个同名表头通过不同的 `ColumnNumber` 区分，不引入 GUID、数据库 ID 或 Schema Registry。
+- Contract 能表示空表头列不等于新增「空表头可参与匹配或返回」产品行为；可选字段范围继续由 Approved UI Baseline 与 Core 配置校验约束。
 
 ### 4.3 通用错误
 
@@ -176,10 +200,6 @@ public sealed record WorkbookInspectionResult(
 
 public sealed record WorksheetPreviewRequest(WorksheetSource Source);
 
-public sealed record PreviewColumn(
-    int ColumnNumber,
-    string Name);
-
 public sealed record PreviewCell(
     int ColumnNumber,
     string? DisplayValue);
@@ -191,7 +211,7 @@ public sealed record PreviewRow(
 public sealed record PreviewTable(
     string WorksheetName,
     int HeaderRowNumber,
-    IReadOnlyList<PreviewColumn> Columns,
+    IReadOnlyList<ColumnReference> Columns,
     IReadOnlyList<PreviewRow> Rows);
 
 public sealed record WorksheetPreviewResult(
@@ -202,11 +222,13 @@ public sealed record WorksheetPreviewResult(
 
 预览约定：
 
-- `WorkbookInspectionResult` 在 `Success = false` 时，`Worksheets` 保证为空集合 `[]`（不为 `null`），`Error` 必须存在。
-- `HeaderRowNumber` 与 `WorksheetRowNumber` 均为 1 起始的物理行号（与 Excel 行号一致）。
-- `Columns` 来自指定表头行，供 UI 显示列头、配置匹配条件和选择返回字段。若指定表头行中某列为空，Core 保证填充占位列名（如「第 A 列」），避免向 UI 暴露空列名。
+- `WorkbookInspectionResult`、`WorksheetPreviewResult` 遵守 4.1 节的成功 / 失败不变量。
+- `HeaderRowNumber`、`ColumnReference.ColumnNumber`、`PreviewCell.ColumnNumber` 与 `WorksheetRowNumber` 均为大于等于 1 的物理行列号，与 Excel 行列位置一致。
+- `Columns` 来自指定表头行，供 UI 显示列头、配置匹配条件和选择返回字段；即使表头文本重复或为空，每一列仍由 `ColumnNumber` 唯一定位。
+- Core 返回实际 `HeaderText`，空表头为 `null`，不生成「第 A 列」等占位文案。UI 可按 Approved UI Baseline 的实现建议选择占位显示文本，但必须保留并回传原 `ColumnReference`，不得把占位文案当作物理列身份或原始表头名。
 - `Rows` 从表头之后的数据行开始，最多 20 行；预览上限不是请求参数，UI 不能通过 Contract 扩大。
-- `PreviewRow.Cells` 与 `PreviewTable.Columns` 在列数和顺序上完全对齐。若某单元格在 Excel 中为空白，`DisplayValue` 为 `null`，便于 UI 直接绑定 DataGrid 或转为 `DataTable`，无需在 UI 层做稀疏列索引对齐。
+- `Columns`、`Rows` 与 `PreviewRow.Cells` 始终为非 `null` 集合；成功预览没有数据行时 `Rows = []`。
+- `PreviewRow.Cells` 与 `PreviewTable.Columns` 在列数和顺序上完全对齐，且对应位置的 `ColumnNumber` 相同。若某单元格在 Excel 中为空白，`DisplayValue` 为 `null`，便于 UI 直接绑定 DataGrid 或转为 `DataTable`，无需在 UI 层做稀疏列索引对齐。
 - `WorksheetRowNumber` 保留原工作表行号，便于 UI 说明样本位置。
 - `DisplayValue` 是普通可显示字符串，不是 Excel 对象，也不授权 UI 根据显示字符串推断处理类型。
 - 表头行非法时返回 `InvalidHeaderRow`；Sheet 不存在时返回 `WorksheetNotFound`。
@@ -294,8 +316,8 @@ public interface IDataMatchingService
 
 ```csharp
 public sealed record MatchingCondition(
-    string MasterColumn,
-    string ReferenceColumn);
+    ColumnReference MasterColumn,
+    ColumnReference ReferenceColumn);
 
 public sealed record MatchingStatusColumnOptions
 {
@@ -307,7 +329,7 @@ public sealed record DataMatchingRequest(
     WorksheetSource Master,
     WorksheetSource Reference,
     IReadOnlyList<MatchingCondition> Conditions,
-    IReadOnlyList<string> ReturnFields,
+    IReadOnlyList<ColumnReference> ReturnFields,
     bool NormalizeComparisonKeys,
     MatchingStatusColumnOptions StatusColumn,
     string OutputFilePath,
@@ -316,18 +338,18 @@ public sealed record DataMatchingRequest(
 
 请求约定：
 
-- `Conditions` 至少 1 条，全部固定为 AND；Contract 不提供 AND / OR、模糊、包含或相似度操作符。
-- `ReturnFields` 至少 1 个，只表达用户选择的对照表字段；UI 不计算最终输出列名。
+- `Conditions` 至少 1 条，全部固定为 AND；每一侧都通过 `ColumnReference.ColumnNumber` 定位用户实际选择的物理列。Contract 不提供 AND / OR、模糊、包含或相似度操作符。
+- `ReturnFields` 至少 1 个，按用户选择顺序使用 `ColumnReference` 表达对照表物理列；UI 不计算最终输出列名。
 - `NormalizeComparisonKeys` 只控制是否启用 Approved Processing Baseline 的整组比较标准化；不开放前导 0、日期白名单、Unicode、大小写、相似度等算法参数。
 - `StatusColumn.Enabled` 默认 `true`，`ColumnName` 默认「匹配状态」；状态值集合不是请求参数。
 - 主表与对照表同文件不同 Sheet 时，只需让 `Master.FilePath == Reference.FilePath`。
-- Core 必须校验所有字段存在、配置完整、匹配键与返回字段不包含公式数据。
+- Core 必须校验所有 `ColumnNumber` 均为大于等于 1 且存在于对应工作表的物理列、配置完整、匹配键与返回字段不包含公式数据；字段定位不得退化为按 `HeaderText` 搜索。
 
 ### 7.3 返回字段与状态列结果
 
 ```csharp
 public sealed record ReturnedFieldMapping(
-    string RequestedField,
+    ColumnReference RequestedColumn,
     string ActualOutputColumnName);
 
 public sealed record DataMatchingSummary(
@@ -349,7 +371,8 @@ public sealed record DataMatchingResult(
 
 成功结果约定：
 
-- `ReturnedFields` 按请求字段顺序返回 `RequestedField` → `ActualOutputColumnName` 映射；实际列名由 Core 按 Processing Baseline 确定性生成；`Success = false` 时保证为空集合 `[]`（不为 `null`）。
+- `ReturnedFields` 按请求字段顺序返回 `RequestedColumn` → `ActualOutputColumnName` 映射；`RequestedColumn.ColumnNumber` 标识请求的对照表物理列，`RequestedColumn.HeaderText` 返回 Core 执行时重新读取并确认的原始表头文本，实际列名由 Core 按 Processing Baseline 确定性生成。
+- 成功时 `ReturnedFields.Count == request.ReturnFields.Count`，每一项按相同索引对应；失败时保证为空集合 `[]`。
 - 状态列启用时，`ActualStatusColumnName` 返回 Core 生成的最终唯一列名；关闭时或处理失败时为 `null`。
 - `Summary` 返回主表总数据行、匹配成功、未匹配、重复、匹配键为空数量及耗时 `Elapsed`；UI 固定展示这 5 项指标（即使 `EmptyKeyCount = 0` 也正常显示 `0 行`），严禁将“匹配键为空”合并进“未匹配”；`Success = false` 时为 `null`。
 - 四种行级结果数量之和必须等于 `TotalMasterDataRowCount`。
@@ -401,7 +424,7 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 | `WorkbookUnreadable` | 工作簿损坏或无法安全读取 | 展示错误并允许重新选文件 |
 | `WorksheetNotFound` | 指定 Sheet 不存在 | 刷新选择并重新预览 |
 | `InvalidHeaderRow` | 表头行小于 1、越界或无法作为已选 Sheet 表头 | 修正表头行 |
-| `ColumnNotFound` | 请求字段不存在 | 刷新字段配置 |
+| `ColumnNotFound` | 请求的 1 起始物理列号在对应工作表中不存在 | 刷新预览与字段配置 |
 | `InvalidConfiguration` | 条件为空、返回字段为空或其它契约必填项无效 | 修正配置，不开始处理 |
 | `OutputConflictsWithInput` | 输出与任一输入文件相同 | 强制更换输出路径 |
 | `OutputAlreadyExists` | 输出已存在且未授权覆盖 | 询问覆盖 / 另存为 / 取消 |
@@ -421,9 +444,10 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 ### 12.2 数据匹配
 
 - UI 可以独立选择主表 / 对照表的文件、Sheet、表头行并预览。
-- Request 可以表达 1～N 条固定 AND 条件、一个或多个返回字段、比较标准化、状态列和输出路径。
-- Result 可以表达全部行级统计、实际返回列名和实际状态列名。
+- Request 可以通过无歧义的 `ColumnReference` 表达 1～N 条固定 AND 条件、一个或多个返回字段，以及比较标准化、状态列和输出路径。
+- Result 可以表达全部行级统计、请求物理列到实际返回列名的映射和实际状态列名。
 - 公式检测、重复判断、状态判定、唯一列名和输入保护由 Core 完成。
+- 文本 / 数字安全等价、前导 0、长数字、日期、空键、重复键、公式字段、表头之前不处理等规则均由 Core 根据 `WorksheetSource`、稳定列引用和 Processing Baseline 执行，不泄漏为 UI 算法参数。
 
 ### 12.3 依赖与范围
 
@@ -443,9 +467,17 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 - **Project Owner 决策**：采用方案 A。数据匹配 Success 统计固定展示【总计 / 匹配成功 / 未匹配 / 重复 / 匹配键为空】5 项指标，即使 `EmptyKeyCount = 0` 也正常显示 `0 行`。不得把“匹配键为空”合并进“未匹配”。
 - **契约落实**：`DataMatchingSummary` 保留 `EmptyKeyCount`，UI 成功统计卡片与契约的 5 项指标完全对应；Core 与 UI 均严禁将“匹配键为空”合并进“未匹配”。
 
-## 14. 非目标与变更规则
+## 14. Core Final Review 结论
 
-本草案不包含：
+- **Review 结论**：通过。Antigravity 的 UI Contract Review 与 Codex 的 Core Final Review 均已完成。
+- **字段身份修正**：预览、匹配条件与返回字段统一使用 `ColumnReference`；1 起始 `ColumnNumber` 是物理列身份，`HeaderText` 仅保存原始表头上下文。
+- **空表头职责**：Core 返回 `HeaderText = null`，UI 可自行显示实现建议中的占位文案；Contract 不把占位文案升级为业务字段名。
+- **Owner 决策闭环**：REVIEW-001 / REVIEW-002 已落实，无待 Project Owner 确认的产品规则。
+- **技术一致性**：三个 Service 边界、集合空值语义、Result 不变量、async / `CancellationToken`、Progress、输入保护和输出列命名责任均可直接实现，未发现其它阻断问题。
+
+## 15. 非目标与变更规则
+
+本文不包含：
 
 - 任何 `.cs` 接口或业务实现文件；
 - ClosedXML 处理代码、格式统一算法或数据匹配算法；

@@ -1245,6 +1245,9 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 if (result.Error?.Code == OperationErrorCode.OutputAlreadyExists)
                 {
                     IsProcessing = false;
+                    State = DataMatchingPageState.FileLoaded;
+                    UpdateReadyState();
+
                     var choice = _confirmExistingOutput != null
                         ? _confirmExistingOutput(OutputFilePath)
                         : DefaultConfirmExistingOutput(OutputFilePath);

@@ -98,7 +98,7 @@
    - Tests：203 个现有 Core 测试持续全部通过。
 
 2. **Synthetic Smoke Test**：
-   - 运行针对 Issue #21 与 #15 的全量 Smoke Test，覆盖全部 41 项业务与边界场景（含 7 项 UI 状态一致性回归验证）：
+   - 运行针对 Issue #21 与 #15 的全量 Smoke Test，覆盖全部 45 项业务与边界场景（含 Existing Output / SaveAs 自动重执行与状态一致性验证）：
      - App 启动与 Composition Root
      - 数据匹配页面导航
      - 格式统一成功后送入主表交接（不自动开始匹配）
@@ -121,6 +121,9 @@
      - 另存为选择输入文件冲突时立即拦截并阻断 Core 执行
      - 切换不同 Master 文件重置自定义输出路径标记并重新推导
      - 匹配条件行间 AND 标识首项隐藏/次项及后续项展示
+     - Existing Output → SaveAs 合法新路径自动由 UI 触发再次执行 Core 生成结果（无需用户二次点击）
+     - Existing Output → SaveAs 选择 Master 或 Reference 路径被拦截阻断 Core 执行且 State 不残留 Processing
+     - Existing Output → SaveAs 对话框取消后安全恢复 Ready 状态
      - 原 Master / Reference 输入文件完整未被篡改
 
 3. **架构边界自检**：

@@ -28,6 +28,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     private int _referenceFileLoadGeneration;
     private int _referencePreviewGeneration;
 
+    private string? _errorSource;
+
     // 跨功能页面流转 (Pending Master Handoff)
     [ObservableProperty]
     private string? _pendingMasterFilePath;
@@ -312,7 +314,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 return;
             }
 
-            SetError("主表文件路径无效", "所选主表文件路径格式不正确。", ex.Message);
+            SetError("主表文件路径无效", "所选主表文件路径格式不正确。", ex.Message, "Master");
             State = DataMatchingPageState.Error;
             return;
         }
@@ -325,14 +327,23 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 return;
             }
 
-            SetError("不支持的主表文件格式", "TabularStudio 第一版仅支持 .xlsx 格式文件。", fullPath);
+            SetError("不支持的主表文件格式", "TabularStudio 第一版仅支持 .xlsx 格式文件。", fullPath, "Master");
             State = DataMatchingPageState.Error;
             return;
         }
 
         // 立即提交新主表加载状态，清除旧主表状态
-        ClearError();
+        if (_errorSource == "Master" || _errorSource == "Execute")
+        {
+            ClearError();
+        }
         ResetSuccess();
+
+        // 切换不同主表时重置用户自定义输出路径标记，以确保自动推导新主表的默认输出路径
+        if (!string.Equals(MasterFilePath, fullPath, StringComparison.OrdinalIgnoreCase))
+        {
+            IsUserSpecifiedOutputPath = false;
+        }
 
         MasterFilePath = fullPath;
         MasterWorksheets.Clear();
@@ -360,7 +371,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
         if (!inspectionResult.Success)
         {
-            MapOperationError(inspectionResult.Error);
+            MapOperationError(inspectionResult.Error, "Master");
             State = DataMatchingPageState.Error;
             return;
         }
@@ -438,9 +449,16 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     {
         int currentGeneration = ++_masterPreviewGeneration;
 
-        if (string.IsNullOrWhiteSpace(MasterFilePath) || SelectedMasterWorksheet is null || MasterHeaderRowNumber < 1)
+        if (string.IsNullOrWhiteSpace(MasterFilePath) || SelectedMasterWorksheet is null)
         {
             InvalidateMasterPreview();
+            return;
+        }
+
+        if (MasterHeaderRowNumber < 1)
+        {
+            SetError("表头行号无效", "主表表头所在行必须是大于等于 1 的整数。", source: "Master");
+            State = DataMatchingPageState.Error;
             return;
         }
 
@@ -465,7 +483,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 HasMasterPreviewData = false;
                 MasterPreviewRowCount = 0;
                 MasterPreviewEmptyMessage = "加载主表预览失败";
-                MapOperationError(result.Error);
+                MapOperationError(result.Error, "Master");
                 State = DataMatchingPageState.Error;
                 return;
             }
@@ -508,6 +526,10 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             MasterPreviewEmptyMessage = table.Rows.Count == 0 ? "工作表中没有数据行" : string.Empty;
 
             UpdateConditionMasterSelections();
+            if (_errorSource == "Master")
+            {
+                ClearError();
+            }
             UpdateReadyState();
         }
         catch (Exception ex)
@@ -521,7 +543,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             HasMasterPreviewData = false;
             MasterPreviewRowCount = 0;
             MasterPreviewEmptyMessage = "加载主表预览时发生异常";
-            SetError("主表预览加载异常", "读取主表预览数据时出错。", ex.Message);
+            SetError("主表预览加载异常", "读取主表预览数据时出错。", ex.Message, "Master");
             State = DataMatchingPageState.Error;
         }
         finally
@@ -539,6 +561,17 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     partial void OnUseSameFileAsMasterChanged(bool value)
     {
+        ++_referenceFileLoadGeneration;
+        ++_referencePreviewGeneration;
+        InvalidateReferencePreview();
+        ReferenceWorksheets.Clear();
+        SelectedReferenceWorksheet = null;
+        ReferenceHeaderRowNumber = 1;
+        if (_errorSource == "Reference")
+        {
+            ClearError();
+        }
+
         ResetSuccess();
         OnPropertyChanged(nameof(CanBrowseReference));
 
@@ -552,10 +585,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             else
             {
                 ReferenceFilePath = null;
-                InvalidateReferencePreview();
-                ReferenceWorksheets.Clear();
-                SelectedReferenceWorksheet = null;
-                ReferenceHeaderRowNumber = 1;
+                ValidateOutputPathConflict();
                 UpdateReadyState();
             }
         }
@@ -563,10 +593,6 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         {
             // 取消勾选同文件模式：清空对照表路径并恢复独立选择
             ReferenceFilePath = null;
-            InvalidateReferencePreview();
-            ReferenceWorksheets.Clear();
-            SelectedReferenceWorksheet = null;
-            ReferenceHeaderRowNumber = 1;
             ValidateOutputPathConflict();
             UpdateReadyState();
         }
@@ -613,7 +639,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 return;
             }
 
-            SetError("对照表文件路径无效", "所选对照表文件路径格式不正确。", ex.Message);
+            SetError("对照表文件路径无效", "所选对照表文件路径格式不正确。", ex.Message, "Reference");
             State = DataMatchingPageState.Error;
             return;
         }
@@ -626,13 +652,16 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 return;
             }
 
-            SetError("不支持的对照表文件格式", "TabularStudio 第一版仅支持 .xlsx 格式文件。", fullPath);
+            SetError("不支持的对照表文件格式", "TabularStudio 第一版仅支持 .xlsx 格式文件。", fullPath, "Reference");
             State = DataMatchingPageState.Error;
             return;
         }
 
         // 立即提交新对照表加载状态，清除旧对照表状态
-        ClearError();
+        if (_errorSource == "Reference" || _errorSource == "Execute")
+        {
+            ClearError();
+        }
         ResetSuccess();
 
         ReferenceFilePath = fullPath;
@@ -655,7 +684,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
         if (!inspectionResult.Success)
         {
-            MapOperationError(inspectionResult.Error);
+            MapOperationError(inspectionResult.Error, "Reference");
             State = DataMatchingPageState.Error;
             return;
         }
@@ -736,9 +765,16 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     {
         int currentGeneration = ++_referencePreviewGeneration;
 
-        if (string.IsNullOrWhiteSpace(ReferenceFilePath) || SelectedReferenceWorksheet is null || ReferenceHeaderRowNumber < 1)
+        if (string.IsNullOrWhiteSpace(ReferenceFilePath) || SelectedReferenceWorksheet is null)
         {
             InvalidateReferencePreview();
+            return;
+        }
+
+        if (ReferenceHeaderRowNumber < 1)
+        {
+            SetError("表头行号无效", "对照表表头所在行必须是大于等于 1 的整数。", source: "Reference");
+            State = DataMatchingPageState.Error;
             return;
         }
 
@@ -763,7 +799,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 HasReferencePreviewData = false;
                 ReferencePreviewRowCount = 0;
                 ReferencePreviewEmptyMessage = "加载对照表预览失败";
-                MapOperationError(result.Error);
+                MapOperationError(result.Error, "Reference");
                 State = DataMatchingPageState.Error;
                 return;
             }
@@ -813,6 +849,10 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             UpdateConditionReferenceSelections();
             OnPropertyChanged(nameof(SelectedReturnFieldsCount));
             OnPropertyChanged(nameof(TotalReturnFieldsCount));
+            if (_errorSource == "Reference")
+            {
+                ClearError();
+            }
             UpdateReadyState();
         }
         catch (Exception ex)
@@ -826,7 +866,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             HasReferencePreviewData = false;
             ReferencePreviewRowCount = 0;
             ReferencePreviewEmptyMessage = "加载对照表预览时发生异常";
-            SetError("对照表预览加载异常", "读取对照表预览数据时出错。", ex.Message);
+            SetError("对照表预览加载异常", "读取对照表预览数据时出错。", ex.Message, "Reference");
             State = DataMatchingPageState.Error;
         }
         finally
@@ -874,6 +914,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         {
             Conditions[i].Index = i + 1;
             Conditions[i].CanDelete = canDelete;
+            Conditions[i].ShowAndSeparator = i > 0;
         }
     }
 
@@ -993,6 +1034,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
         if (!string.IsNullOrWhiteSpace(chosenPath))
         {
+            ResetSuccess();
             OutputFilePath = chosenPath;
             IsUserSpecifiedOutputPath = true;
             ValidateOutputPathConflict();
@@ -1072,6 +1114,13 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         }
 
         ValidateOutputPathConflict();
+
+        if (HasError)
+        {
+            State = DataMatchingPageState.Error;
+            OnPropertyChanged(nameof(CanStart));
+            return;
+        }
 
         bool hasValidConditions = Conditions.Count >= 1 &&
                                   Conditions.All(c => c.SelectedMasterColumn != null && c.SelectedReferenceColumn != null);
@@ -1208,32 +1257,40 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                     else if (choice == ExistingOutputChoice.SaveAs)
                     {
                         bool saved = TryPromptSaveAs();
-                        if (saved && !string.IsNullOrWhiteSpace(OutputFilePath))
+                        if (saved && !string.IsNullOrWhiteSpace(OutputFilePath) && !HasOutputConflictWithInput && State == DataMatchingPageState.Ready)
                         {
                             await ExecuteMatchingAsync(overwrite: false);
                         }
                         else
                         {
-                            State = DataMatchingPageState.Ready;
+                            IsProcessing = false;
+                            if (!HasOutputConflictWithInput && State != DataMatchingPageState.Error)
+                            {
+                                State = DataMatchingPageState.Ready;
+                            }
                         }
                         return;
                     }
                     else
                     {
-                        State = DataMatchingPageState.Ready;
+                        IsProcessing = false;
+                        if (!HasOutputConflictWithInput && State != DataMatchingPageState.Error)
+                        {
+                            State = DataMatchingPageState.Ready;
+                        }
                         return;
                     }
                 }
 
                 State = DataMatchingPageState.Error;
-                MapOperationError(result.Error);
+                MapOperationError(result.Error, "Execute");
                 ProgressStageText = "处理失败";
             }
         }
         catch (Exception ex)
         {
             State = DataMatchingPageState.Error;
-            SetError("匹配异常", "数据匹配过程中发生未预期的错误。", ex.Message);
+            SetError("匹配异常", "数据匹配过程中发生未预期的错误。", ex.Message, "Execute");
             ProgressStageText = "处理失败";
         }
         finally
@@ -1316,21 +1373,23 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         ErrorTitle = null;
         ErrorMessage = null;
         ErrorDetail = null;
+        _errorSource = null;
     }
 
-    private void SetError(string title, string message, string? detail = null)
+    private void SetError(string title, string message, string? detail = null, string? source = null)
     {
         HasError = true;
         ErrorTitle = title;
         ErrorMessage = message;
         ErrorDetail = detail;
+        _errorSource = source;
     }
 
-    private void MapOperationError(OperationError? error)
+    private void MapOperationError(OperationError? error, string? source = null)
     {
         if (error is null)
         {
-            SetError("操作失败", "未知错误。");
+            SetError("操作失败", "未知错误。", source: source);
             return;
         }
 
@@ -1370,7 +1429,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             _ => error.Message
         };
 
-        SetError(title, message, error.Detail);
+        SetError(title, message, error.Detail, source);
     }
 
     private static string MapStageText(OperationStage stage) => stage switch

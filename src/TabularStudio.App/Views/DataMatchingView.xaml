@@ -353,7 +353,7 @@
                         </StackPanel>
 
                         <!-- 条件列表 -->
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="220">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="220" IsEnabled="{Binding CanConfigure}">
                             <ItemsControl ItemsSource="{Binding Conditions}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:MatchingConditionRowViewModel}">
@@ -364,7 +364,7 @@
                                                        FontWeight="Bold"
                                                        Foreground="{StaticResource PrimaryBrush}"
                                                        Margin="8,0,0,4"
-                                                       Visibility="{Binding Index, Converter={x:Null}}" />
+                                                       Visibility="{Binding ShowAndSeparator, Converter={StaticResource BoolToVisibilityConverter}}" />
 
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
@@ -450,6 +450,7 @@
                             </Grid.ColumnDefinitions>
 
                             <TextBox Text="{Binding SearchReturnFieldText, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding CanConfigure}"
                                      FontSize="12"
                                      Padding="6,4"
                                      Margin="0,0,6,0" />
@@ -481,7 +482,7 @@
                                    Margin="0,8,0,0" />
 
                         <!-- 字段多选列表 -->
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="160">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="160" IsEnabled="{Binding CanConfigure}">
                             <ItemsControl ItemsSource="{Binding ReturnFields}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:ReturnFieldItemViewModel}">
@@ -509,10 +510,9 @@
                               FontSize="12"
                               Margin="0,0,0,8" />
 
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8" IsEnabled="{Binding CanConfigure}">
                         <CheckBox Content="生成匹配状态列"
                                   IsChecked="{Binding IsStatusColumnEnabled}"
-                                  IsEnabled="{Binding CanConfigure}"
                                   FontSize="12"
                                   VerticalAlignment="Center" />
 

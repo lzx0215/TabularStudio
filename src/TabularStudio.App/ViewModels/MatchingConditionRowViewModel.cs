@@ -29,6 +29,9 @@ public sealed partial class MatchingConditionRowViewModel : ObservableObject
     [ObservableProperty]
     private int _index = 1;
 
+    [ObservableProperty]
+    private bool _showAndSeparator;
+
     public MatchingConditionRowViewModel(
         ObservableCollection<AvailableColumnItem> masterColumns,
         ObservableCollection<AvailableColumnItem> referenceColumns,

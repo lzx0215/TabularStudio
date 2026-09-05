@@ -1,0 +1,62 @@
+<UserControl x:Class="TabularStudio.App.Views.DataMatchingPlaceholderView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:TabularStudio.App.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vm:DataMatchingPlaceholderViewModel}"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Border Style="{StaticResource CardBorderStyle}"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                MaxWidth="650"
+                Padding="32">
+            <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="数据匹配 (Data Matching)"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,16" />
+
+                <TextBlock Text="数据匹配功能（双表比对、多条件 AND 联合匹配与字段带回）将在后续 Issue 中正式实现与接入。"
+                           FontSize="14"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Margin="0,0,0,24" />
+
+                <!-- 接收到主表的提示 -->
+                <Border Background="#ECFDF5"
+                        BorderBrush="#A7F3D0"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="16"
+                        Margin="0,0,0,16"
+                        Visibility="{Binding HasPendingMaster, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="已接收格式统一结果作为待用主表："
+                                   FontWeight="SemiBold"
+                                   Foreground="#065F46"
+                                   Margin="0,0,0,6" />
+                        <TextBlock Text="{Binding PendingMasterFilePath}"
+                                   FontSize="12"
+                                   Foreground="#047857"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Text="当前 TabularStudio 处于 MVP v0.1 阶段，第一阶段专注于「格式统一」功能闭环。"
+                           FontSize="12"
+                           Foreground="{StaticResource TextMutedBrush}"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

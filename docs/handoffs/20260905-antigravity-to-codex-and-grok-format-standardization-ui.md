@@ -19,10 +19,10 @@
 
 2. **格式统一页面核心链路**：
    - **数据源选择**：通过 Windows 原生 `OpenFileDialog` 限制仅选择 `.xlsx` 文件，支持文件拖拽载入；调用 `InspectAsync` 解析并填充工作表列表，默认选中首个 Sheet；支持表头所在行（>= 1）数字微调。
-   - **数据预览**：调用 `GetPreviewAsync` 获取最多 20 行只读数据；动态生成 DataGrid 列，表头显示实际原始快照（空表头显示“第 A 列”等占位标签，不污染字段身份）；仅用于核对概貌，不限制实际处理行数。
+   - **数据预览与状态一致性保证**：调用 `GetPreviewAsync` 获取最多 20 行只读数据；动态生成 DataGrid 列，表头显示实际原始快照（空表头显示“第 A 列”等占位标签，不污染字段身份）；仅用于核对概貌，不限制实际处理行数。配置修改时立即失效旧 Preview 并退出 Ready 状态，防止以未验证状态执行；引入 `_previewGeneration` 版本控制，杜绝快速切换时的异步乱序覆盖。
    - **8 项标准化规则**：前 6 项提供可操作复选框（默认全部勾选）；后 2 项（保留前导 0 编号、保留长数字文本）默认勾选并置灰锁定（`IsEnabled=false`），明确标注为始终开启的数据安全保护；底部常驻说明“处理时公式保持不变；前导 0 与长数字保护始终启用；尽量保留现有业务格式，不重新套固定美化模板”。
    - **输出与执行控制**：自动推导默认保存路径为源文件同级目录下的 `源文件名_格式统一.xlsx`；支持 `SaveFileDialog` 更改保存路径；即时拦截输出路径覆盖源文件并红字警示；执行时支持 `OperationProgress` 阶段（Reading/Preparing/Processing/Writing/Completed）与百分比动态映射；Processing 状态下严格锁定所有输入控件，避免并发改动。
-   - **输出文件已存在确认**：实现原生模态弹窗 `ExistingOutputDialog`，提供已批准的三选项「覆盖」「另存为...」「取消」；仅当用户明确选择覆盖时传递 `OverwriteExistingOutput = true`。
+   - **输出文件已存在确认**：实现原生模态弹窗 `ExistingOutputDialog`，提供已批准的三选项「覆盖」「另存为...」「取消」；仅当用户明确选择覆盖时传递 `OverwriteExistingOutput = true`；若在「另存为...」文件对话框中取消，安全返回 Ready 状态，不调用 Core 且不重复弹窗。
    - **执行结果与后置操作**：成功完成后进入 Success 状态，展示耗时、实际处理行数与输出路径；激活「打开生成文件」（系统关联程序打开）、「打开所在文件夹」（资源管理器定位选中）与「作为主表送入数据匹配 ->」快捷按钮。
    - **错误映射**：严格将 Core 的 `OperationErrorCode`（如 `FileLocked`, `UnsupportedFileType`, `OutputConflictsWithInput` 等）映射为清晰的中文提示与指引，并将 `Detail` 作为补充信息呈现，不将底层技术异常直接甩给用户。
 

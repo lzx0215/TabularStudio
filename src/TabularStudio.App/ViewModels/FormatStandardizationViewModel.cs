@@ -21,6 +21,7 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
     private readonly Func<string, string?>? _showSaveFileDialog;
     private readonly Func<string?>? _showOpenFileDialog;
     private bool _suppressPreviewRefresh;
+    private int _previewGeneration;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanConfigure))]
@@ -179,6 +180,7 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         if (value is not null && State != FormatPageState.Initial && State != FormatPageState.Processing)
         {
             ResetSuccess();
+            InvalidatePreviewForPendingRefresh();
             _ = RefreshPreviewAsync();
         }
     }
@@ -188,6 +190,7 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         if (State != FormatPageState.Initial && State != FormatPageState.Processing)
         {
             ResetSuccess();
+            InvalidatePreviewForPendingRefresh();
             _ = RefreshPreviewAsync();
         }
     }
@@ -298,9 +301,24 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         }
     }
 
+    private void InvalidatePreviewForPendingRefresh()
+    {
+        HasPreviewData = false;
+        PreviewDataTable = null;
+        PreviewRowCount = 0;
+        if (State != FormatPageState.Initial && State != FormatPageState.Processing)
+        {
+            State = FormatPageState.FileLoaded;
+        }
+    }
+
     [RelayCommand]
     public async Task RefreshPreviewAsync()
     {
+        int currentGeneration = ++_previewGeneration;
+
+        InvalidatePreviewForPendingRefresh();
+
         if (string.IsNullOrWhiteSpace(InputFilePath) || SelectedWorksheet is null)
         {
             return;
@@ -323,6 +341,11 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
                 new WorksheetSource(InputFilePath, SelectedWorksheet.Name, HeaderRowNumber));
 
             var previewResult = await _inspectionService.GetPreviewAsync(request);
+
+            if (currentGeneration != _previewGeneration)
+            {
+                return;
+            }
 
             if (!previewResult.Success || previewResult.Preview is null)
             {
@@ -368,6 +391,11 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         }
         catch (Exception ex)
         {
+            if (currentGeneration != _previewGeneration)
+            {
+                return;
+            }
+
             PreviewDataTable = null;
             HasPreviewData = false;
             PreviewRowCount = 0;
@@ -377,12 +405,20 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         }
         finally
         {
-            IsPreviewLoading = false;
+            if (currentGeneration == _previewGeneration)
+            {
+                IsPreviewLoading = false;
+            }
         }
     }
 
     [RelayCommand]
     public void ChangeOutputPath()
+    {
+        TryPromptSaveAs();
+    }
+
+    private bool TryPromptSaveAs()
     {
         string currentName = !string.IsNullOrWhiteSpace(OutputFilePath)
             ? Path.GetFileName(OutputFilePath)
@@ -398,7 +434,10 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
             IsUserSpecifiedOutputPath = true;
             ValidateOutputPathConflict();
             UpdateReadyState();
+            return true;
         }
+
+        return false;
     }
 
     [RelayCommand]
@@ -451,11 +490,18 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
                     overwriteExisting = true;
                     break;
                 case ExistingOutputChoice.SaveAs:
-                    ChangeOutputPath();
+                    bool pathChanged = TryPromptSaveAs();
+                    if (!pathChanged)
+                    {
+                        // 用户在另存为对话框中取消，取消本次执行，保持 Ready，不调用 Core
+                        return;
+                    }
+
                     if (string.IsNullOrWhiteSpace(OutputFilePath) || HasOutputConflictWithInput)
                     {
                         return;
                     }
+
                     // 另存为若依然已存在，递归或再次按确认处理
                     if (File.Exists(OutputFilePath))
                     {

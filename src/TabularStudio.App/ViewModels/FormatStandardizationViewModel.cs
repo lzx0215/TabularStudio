@@ -22,6 +22,7 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
     private readonly Func<string?>? _showOpenFileDialog;
     private bool _suppressPreviewRefresh;
     private int _previewGeneration;
+    private int _fileLoadGeneration;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanConfigure))]
@@ -223,8 +224,9 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
 
     public async Task LoadFileAsync(string filePath)
     {
-        ClearError();
-        ResetSuccess();
+        int currentLoadGeneration = ++_fileLoadGeneration;
+        ++_previewGeneration;
+        InvalidatePreviewForPendingRefresh();
 
         if (string.IsNullOrWhiteSpace(filePath))
         {
@@ -238,6 +240,11 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         }
         catch (Exception ex)
         {
+            if (currentLoadGeneration != _fileLoadGeneration)
+            {
+                return;
+            }
+
             SetError("文件路径无效", "所选文件路径格式不正确。", ex.Message);
             State = FormatPageState.Error;
             return;
@@ -246,16 +253,37 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         string extension = Path.GetExtension(fullPath);
         if (!string.Equals(extension, ".xlsx", StringComparison.OrdinalIgnoreCase))
         {
+            if (currentLoadGeneration != _fileLoadGeneration)
+            {
+                return;
+            }
+
             SetError("不支持的文件格式", "TabularStudio 第一版仅支持 .xlsx 格式文件。", fullPath);
             State = FormatPageState.Error;
             return;
         }
 
+        // 检查文件工作簿
+        var inspectionResult = await _inspectionService.InspectAsync(new WorkbookInspectionRequest(fullPath));
+
+        if (currentLoadGeneration != _fileLoadGeneration)
+        {
+            return;
+        }
+
+        if (!inspectionResult.Success)
+        {
+            MapOperationError(inspectionResult.Error);
+            State = FormatPageState.Error;
+            return;
+        }
+
+        ClearError();
+        ResetSuccess();
+
         InputFilePath = fullPath;
         Worksheets.Clear();
         SelectedWorksheet = null;
-        PreviewDataTable = null;
-        HasPreviewData = false;
         HeaderRowNumber = 1;
 
         // 推导默认输出路径
@@ -275,15 +303,6 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
 
         ValidateOutputPathConflict();
 
-        // 检查文件工作簿
-        var inspectionResult = await _inspectionService.InspectAsync(new WorkbookInspectionRequest(fullPath));
-        if (!inspectionResult.Success)
-        {
-            MapOperationError(inspectionResult.Error);
-            State = FormatPageState.Error;
-            return;
-        }
-
         foreach (var ws in inspectionResult.Worksheets)
         {
             Worksheets.Add(ws);
@@ -297,7 +316,13 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
             _suppressPreviewRefresh = true;
             SelectedWorksheet = Worksheets[0];
             _suppressPreviewRefresh = false;
+
             await RefreshPreviewAsync();
+
+            if (currentLoadGeneration != _fileLoadGeneration)
+            {
+                return;
+            }
         }
     }
 

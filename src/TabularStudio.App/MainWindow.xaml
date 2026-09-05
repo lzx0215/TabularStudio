@@ -19,8 +19,8 @@
         <DataTemplate DataType="{x:Type vm:FormatStandardizationViewModel}">
             <views:FormatStandardizationView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:DataMatchingPlaceholderViewModel}">
-            <views:DataMatchingPlaceholderView />
+        <DataTemplate DataType="{x:Type vm:DataMatchingViewModel}">
+            <views:DataMatchingView />
         </DataTemplate>
     </Window.Resources>
 

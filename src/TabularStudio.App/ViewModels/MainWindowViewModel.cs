@@ -20,13 +20,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public FormatStandardizationViewModel FormatStandardizationVm { get; }
 
-    public DataMatchingPlaceholderViewModel DataMatchingPlaceholderVm { get; }
+    public DataMatchingViewModel DataMatchingVm { get; }
+
+    public DataMatchingViewModel DataMatchingPlaceholderVm => DataMatchingVm;
 
     public MainWindowViewModel(
         IWorkbookInspectionService inspectionService,
-        IFormatStandardizationService formatService)
+        IFormatStandardizationService formatService,
+        IDataMatchingService matchingService)
     {
-        DataMatchingPlaceholderVm = new DataMatchingPlaceholderViewModel();
+        DataMatchingVm = new DataMatchingViewModel(inspectionService, matchingService);
 
         FormatStandardizationVm = new FormatStandardizationViewModel(
             inspectionService,
@@ -50,13 +53,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         IsFormatStandardizationSelected = false;
         IsDataMatchingSelected = true;
-        CurrentViewViewModel = DataMatchingPlaceholderVm;
+        CurrentViewViewModel = DataMatchingVm;
     }
 
     private void OnSendToDataMatching(string outputPath)
     {
-        DataMatchingPlaceholderVm.ReceiveMasterFilePath(outputPath);
+        DataMatchingVm.ReceiveMasterFilePath(outputPath);
         SelectDataMatching();
-        StatusMessage = "已接收主表文件，等待数据匹配功能载入";
+        StatusMessage = "已将格式统一结果作为主表送入数据匹配";
     }
 }

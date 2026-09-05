@@ -17,9 +17,10 @@ public partial class App : Application
         // 创建 Core Services (Composition Root)
         IWorkbookInspectionService inspectionService = new WorkbookInspectionService();
         IFormatStandardizationService formatService = new FormatStandardizationService();
+        IDataMatchingService matchingService = new DataMatchingService();
 
         // 构造 ViewModel 并注入接口
-        var mainWindowViewModel = new MainWindowViewModel(inspectionService, formatService);
+        var mainWindowViewModel = new MainWindowViewModel(inspectionService, formatService, matchingService);
 
         // 构造并显示 MainWindow
         var mainWindow = new MainWindow(mainWindowViewModel);

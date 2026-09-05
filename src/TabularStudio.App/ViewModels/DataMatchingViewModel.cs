@@ -413,6 +413,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             return;
         }
 
+        ClearExecuteErrorIfPresent();
         ResetSuccess();
         InvalidateMasterPreview();
         _ = RefreshMasterPreviewAsync();
@@ -425,6 +426,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             return;
         }
 
+        ClearExecuteErrorIfPresent();
         ResetSuccess();
         InvalidateMasterPreview();
         _ = RefreshMasterPreviewAsync();
@@ -729,6 +731,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             return;
         }
 
+        ClearExecuteErrorIfPresent();
         ResetSuccess();
         InvalidateReferencePreview();
         _ = RefreshReferencePreviewAsync();
@@ -741,6 +744,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             return;
         }
 
+        ClearExecuteErrorIfPresent();
         ResetSuccess();
         InvalidateReferencePreview();
         _ = RefreshReferencePreviewAsync();
@@ -892,6 +896,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             onConditionChanged: OnConditionChanged);
         Conditions.Add(row);
         UpdateConditionRowIndicesAndCanDelete();
+        ClearExecuteErrorIfPresent();
         ResetSuccess();
         UpdateReadyState();
     }
@@ -902,6 +907,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         {
             Conditions.Remove(row);
             UpdateConditionRowIndicesAndCanDelete();
+            ClearExecuteErrorIfPresent();
             ResetSuccess();
             UpdateReadyState();
         }
@@ -920,6 +926,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     private void OnConditionChanged()
     {
+        ClearExecuteErrorIfPresent();
         ResetSuccess();
         UpdateReadyState();
     }
@@ -994,20 +1001,30 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     private void OnReturnFieldSelectionChanged()
     {
+        ClearExecuteErrorIfPresent();
         ResetSuccess();
         OnPropertyChanged(nameof(SelectedReturnFieldsCount));
         OnPropertyChanged(nameof(TotalReturnFieldsCount));
         UpdateReadyState();
     }
 
-    partial void OnNormalizeComparisonKeysChanged(bool value) => ResetSuccess();
-    partial void OnIsStatusColumnEnabledChanged(bool value)
+    partial void OnNormalizeComparisonKeysChanged(bool value)
     {
+        ClearExecuteErrorIfPresent();
         ResetSuccess();
         UpdateReadyState();
     }
+
+    partial void OnIsStatusColumnEnabledChanged(bool value)
+    {
+        ClearExecuteErrorIfPresent();
+        ResetSuccess();
+        UpdateReadyState();
+    }
+
     partial void OnStatusColumnNameChanged(string value)
     {
+        ClearExecuteErrorIfPresent();
         ResetSuccess();
         UpdateReadyState();
     }
@@ -1015,6 +1032,13 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     #endregion
 
     #region Output Path & Conflict & SaveAs
+
+    partial void OnOutputFilePathChanged(string? value)
+    {
+        ClearExecuteErrorIfPresent();
+        ValidateOutputPathConflict();
+        UpdateReadyState();
+    }
 
     [RelayCommand]
     public void ChangeOutputPath()
@@ -1035,6 +1059,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         if (!string.IsNullOrWhiteSpace(chosenPath))
         {
             ResetSuccess();
+            ClearExecuteErrorIfPresent();
             OutputFilePath = chosenPath;
             IsUserSpecifiedOutputPath = true;
             ValidateOutputPathConflict();
@@ -1367,6 +1392,14 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             ProgressStageText = null;
 
             UpdateReadyState();
+        }
+    }
+
+    private void ClearExecuteErrorIfPresent()
+    {
+        if (_errorSource == "Execute")
+        {
+            ClearError();
         }
     }
 

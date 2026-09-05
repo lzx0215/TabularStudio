@@ -263,21 +263,7 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
             return;
         }
 
-        // 检查文件工作簿
-        var inspectionResult = await _inspectionService.InspectAsync(new WorkbookInspectionRequest(fullPath));
-
-        if (currentLoadGeneration != _fileLoadGeneration)
-        {
-            return;
-        }
-
-        if (!inspectionResult.Success)
-        {
-            MapOperationError(inspectionResult.Error);
-            State = FormatPageState.Error;
-            return;
-        }
-
+        // 立即在 Inspect 之前提交“新文件正在加载”的 UI 状态，使旧文件状态彻底失效
         ClearError();
         ResetSuccess();
 
@@ -302,6 +288,22 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         }
 
         ValidateOutputPathConflict();
+        State = FormatPageState.FileLoaded;
+
+        // 检查文件工作簿
+        var inspectionResult = await _inspectionService.InspectAsync(new WorkbookInspectionRequest(fullPath));
+
+        if (currentLoadGeneration != _fileLoadGeneration)
+        {
+            return;
+        }
+
+        if (!inspectionResult.Success)
+        {
+            MapOperationError(inspectionResult.Error);
+            State = FormatPageState.Error;
+            return;
+        }
 
         foreach (var ws in inspectionResult.Worksheets)
         {

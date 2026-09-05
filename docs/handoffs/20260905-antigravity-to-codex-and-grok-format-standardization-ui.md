@@ -18,7 +18,7 @@
    - 采用简单 Composition Root (`App.xaml.cs`) 负责创建与传递 Core Service 实例，未引入任何第三方 DI 容器。
 
 2. **格式统一页面核心链路**：
-   - **数据源选择与文件加载并发一致性保证**：通过 Windows 原生 `OpenFileDialog` 限制仅选择 `.xlsx` 文件，支持文件拖拽载入；引入 `_fileLoadGeneration` 版本控制与 `++_previewGeneration` 级联失效，确保快速连续选择/拖入文件时，旧文件异步结果绝对不覆盖或污染最新文件的状态与 Preview；调用 `InspectAsync` 解析并填充工作表列表，默认选中首个 Sheet；支持表头所在行（>= 1）数字微调。
+   - **数据源选择与文件加载并发一致性保证**：通过 Windows 原生 `OpenFileDialog` 限制仅选择 `.xlsx` 文件，支持文件拖拽载入；引入 `_fileLoadGeneration` 版本控制与 `++_previewGeneration` 级联失效，并在发起 `InspectAsync` 之前立即清除旧文件 UI 状态（`ClearError`、`ResetSuccess`、更新 `InputFilePath`、清空 `Worksheets`、重置 `SelectedWorksheet = null` 与 `HeaderRowNumber = 1`、清空 Preview，设置 `State = FileLoaded` 并使 `CanStart = false`）；杜绝了加载新文件 B 期间因调整 HeaderRow 对旧文件 A 产生 Preview 或重新进入 Ready 的隐患；如果 Inspect 失败，UI 严格保留新文件 B 路径及错误信息，绝不回滚恢复文件 A。
    - **数据预览与状态一致性保证**：调用 `GetPreviewAsync` 获取最多 20 行只读数据；动态生成 DataGrid 列，表头显示实际原始快照（空表头显示“第 A 列”等占位标签，不污染字段身份）；仅用于核对概貌，不限制实际处理行数。配置修改时立即失效旧 Preview 并退出 Ready 状态，防止以未验证状态执行；引入 `_previewGeneration` 版本控制，杜绝快速切换时的异步乱序覆盖。
    - **8 项标准化规则**：前 6 项提供可操作复选框（默认全部勾选）；后 2 项（保留前导 0 编号、保留长数字文本）默认勾选并置灰锁定（`IsEnabled=false`），明确标注为始终开启的数据安全保护；底部常驻说明“处理时公式保持不变；前导 0 与长数字保护始终启用；尽量保留现有业务格式，不重新套固定美化模板”。
    - **输出与执行控制**：自动推导默认保存路径为源文件同级目录下的 `源文件名_格式统一.xlsx`；支持 `SaveFileDialog` 更改保存路径；即时拦截输出路径覆盖源文件并红字警示；执行时支持 `OperationProgress` 阶段（Reading/Preparing/Processing/Writing/Completed）与百分比动态映射；Processing 状态下严格锁定所有输入控件，避免并发改动。

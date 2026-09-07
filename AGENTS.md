@@ -4,9 +4,9 @@
 
 ## 项目目标
 
-TabularStudio 是 Windows 本地桌面工具，用于离线处理 Excel 表格。
+TabularStudio 是 Windows 本地桌面工具，用于离线处理表格文件。
 
-MVP 只做两件已确认的事：
+产品只做两件已确认的事：
 
 1. **格式统一**
 2. **数据匹配**
@@ -17,9 +17,10 @@ MVP 只做两件已确认的事：
 - C#
 - .NET 10
 - WPF
-- ClosedXML
+- ClosedXML（`.xlsx`）
+- `.xls` / `.csv` 仅允许完全离线的本地方案，由 Codex 写入技术决策
 - 完全离线
-- 主要处理 `.xlsx`
+- 已确认格式：`.xlsx`、`.xls`、`.csv`
 
 任何超出上述目标与边界的功能，默认不属于当前项目。
 
@@ -30,7 +31,7 @@ MVP 只做两件已确认的事：
 | Project Owner | 用户 | 确认需求、确认 UI 方案、确认范围变更、最终验收 |
 | Product Manager | Grok | 维护需求与协作规则，拆 Issue，控制范围，组织 Handoff，做范围 Review |
 | UI Developer | Antigravity | 维护 UI 规格，实现 WPF 界面与交互，按契约调用 Core |
-| Core Developer | Codex | 维护处理规则、架构、契约中的 Core 部分，实现 Excel 处理逻辑与测试 |
+| Core Developer | Codex | 维护处理规则、架构、契约中的 Core 部分，实现表格处理逻辑与测试 |
 
 ### Project Owner
 
@@ -43,7 +44,7 @@ MVP 只做两件已确认的事：
 不能交给 Agent 自行决定：
 
 - 新增产品功能
-- 改变 MVP 范围
+- 改变已确认产品范围
 - 把未确认想法直接当成需求
 
 ### Grok（Product Manager）
@@ -87,7 +88,7 @@ MVP 只做两件已确认的事：
 - 维护 `docs/processing-rules.md`、`docs/architecture.md`
 - 与 Antigravity 共同维护 `docs/contracts.md`
 - 记录技术决策到 `docs/decisions/`
-- 实现 ClosedXML / `.xlsx` 处理逻辑与对应测试
+- 实现已确认格式的处理逻辑与对应测试（`.xlsx` 使用 ClosedXML；`.xls` / `.csv` 按已批准技术决策）
 - 保证处理行为符合已确认规则，而不是自行发明业务规则
 
 不能做：
@@ -95,7 +96,7 @@ MVP 只做两件已确认的事：
 - 自行设计或改写 UI
 - 修改 `docs/requirements.md` 来扩大功能
 - 引入数据库、Web、API、在线服务
-- 把主要文件格式从 `.xlsx` 扩到未确认格式并当作 MVP
+- 把文件格式扩到 `.xlsx` / `.xls` / `.csv` 之外的未确认格式
 
 ## 单一事实来源
 
@@ -118,13 +119,17 @@ MVP 只做两件已确认的事：
 
 ## 范围冻结
 
-当前阶段：**MVP 功能实现与集成阶段。**
+当前阶段：**已确认维护需求落地阶段。**
+
+MVP v0.1 已发布。当前只落地 `docs/requirements.md` 中 2026-09-07 已确认的维护变更，以及与之对应的 GitHub Issue。
 
 已经允许：
 
 - 在有对应 GitHub Issue 的前提下实现产品代码
 - 在有对应 GitHub Issue 的前提下实现 WPF UI
 - 按批准 Contract 做 UI / Core 集成
+- 按已确认需求支持 `.xlsx`、`.xls`、`.csv`
+- 按已确认需求实现格式统一批量、输出目录记忆、可选规则默认不启用
 
 仍然必须遵守：
 
@@ -136,18 +141,20 @@ MVP 只做两件已确认的事：
 - Core 不自行设计 UI
 - 不引入数据库、Web / API、AI 或在线能力
 - 只做已确认的「格式统一」和「数据匹配」
+- 数据匹配不做成批量
 
 硬性禁止：
 
 - 没有对应 Issue 的未授权实现
-- 擅自扩大 MVP 范围
+- 擅自扩大已确认范围
 - 新增「格式统一」「数据匹配」之外的产品功能
-- UI 直接实现 Excel 处理逻辑
+- UI 直接实现表格处理逻辑
 - Core 自行设计 UI
 - 引入数据库
 - 引入 Web / API
 - 引入 AI / 在线能力
 - 未经 Project Owner 批准修改需求范围
+- 把文件格式扩到 `.xlsx` / `.xls` / `.csv` 之外
 
 ## GitHub 协作规则
 
@@ -161,7 +168,7 @@ MVP 只做两件已确认的事：
 - Feature Issue 必须写清：对应需求条目、不包含的范围、验收标准。
 - Bug Issue 必须写清：复现步骤、期望、实际。
 - Task Issue 用于文档、脚手架、Handoff 等非功能工作。
-- Grok 负责确认 Issue 没有越出 MVP。
+- Grok 负责确认 Issue 没有越出 `docs/requirements.md` 已确认范围。
 - 未确认需求不得开成 Feature Issue。
 
 ### Branch
@@ -235,10 +242,12 @@ Handoff 至少包含：
 
 本阶段要求：
 
+- 先把已确认维护变更写入 `docs/requirements.md`，再拆 Feature Issue
 - 只做对应 GitHub Issue 范围内的已确认功能
 - UI 按批准契约调用 Core
 - Core 按批准处理规则实现
-- 不扩大 MVP 范围
+- 不扩大已确认范围
 - 不引入数据库 / Web / API / AI
 
 下一步必须等对应 Issue 下达，不得自动开始未批准功能。
+当前文档 Issue 合并前，不得开始批量、多格式或规则默认值的产品代码。

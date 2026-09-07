@@ -41,24 +41,24 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
     [ObservableProperty]
     private int _headerRowNumber = 1;
 
-    // 六项可操作规则 (全部默认勾选)
+    // 六项可操作规则 (可选规则默认不启用)
     [ObservableProperty]
-    private bool _trimOuterWhitespace = true;
+    private bool _trimOuterWhitespace = false;
 
     [ObservableProperty]
-    private bool _removeTabsNewLinesAndHiddenCharacters = true;
+    private bool _removeTabsNewLinesAndHiddenCharacters = false;
 
     [ObservableProperty]
-    private bool _normalizeFullWidthHalfWidth = true;
+    private bool _normalizeFullWidthHalfWidth = false;
 
     [ObservableProperty]
-    private bool _normalizeUnicode = true;
+    private bool _normalizeUnicode = false;
 
     [ObservableProperty]
-    private bool _normalizeSafeNumbers = true;
+    private bool _normalizeSafeNumbers = false;
 
     [ObservableProperty]
-    private bool _normalizeUnambiguousDates = true;
+    private bool _normalizeUnambiguousDates = false;
 
     // 数据预览
     [ObservableProperty]

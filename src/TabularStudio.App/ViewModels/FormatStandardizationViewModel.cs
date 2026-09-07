@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using TabularStudio.App.Dialogs;
 using TabularStudio.App.Models;
+using TabularStudio.App.Services;
 using TabularStudio.Core.Contracts;
 
 namespace TabularStudio.App.ViewModels;
@@ -20,6 +21,8 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
     private readonly Func<string, ExistingOutputChoice>? _confirmExistingOutput;
     private readonly Func<string, string?>? _showSaveFileDialog;
     private readonly Func<string?>? _showOpenFileDialog;
+    private readonly IOutputDirectoryPreferenceService _outputDirectoryService;
+    private readonly Func<string, string?, string?>? _showSaveFileDialogWithOptions;
     private bool _suppressPreviewRefresh;
     private int _previewGeneration;
     private int _fileLoadGeneration;
@@ -161,7 +164,9 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         Action<string>? onSendToDataMatching = null,
         Func<string, ExistingOutputChoice>? confirmExistingOutput = null,
         Func<string, string?>? showSaveFileDialog = null,
-        Func<string?>? showOpenFileDialog = null)
+        Func<string?>? showOpenFileDialog = null,
+        IOutputDirectoryPreferenceService? outputDirectoryPreferenceService = null,
+        Func<string, string?, string?>? showSaveFileDialogWithOptions = null)
     {
         _inspectionService = inspectionService ?? throw new ArgumentNullException(nameof(inspectionService));
         _formatService = formatService ?? throw new ArgumentNullException(nameof(formatService));
@@ -169,6 +174,8 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         _confirmExistingOutput = confirmExistingOutput;
         _showSaveFileDialog = showSaveFileDialog;
         _showOpenFileDialog = showOpenFileDialog;
+        _outputDirectoryService = outputDirectoryPreferenceService ?? new OutputDirectoryPreferenceService();
+        _showSaveFileDialogWithOptions = showSaveFileDialogWithOptions;
     }
 
     partial void OnSelectedWorksheetChanged(WorksheetInfo? value)
@@ -272,19 +279,19 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         SelectedWorksheet = null;
         HeaderRowNumber = 1;
 
-        // 推导默认输出路径
-        if (!IsUserSpecifiedOutputPath)
+        // 推导默认输出路径（方案 A：共用本机记住的输出目录；末端文件名按当前文件重新生成）
+        try
         {
-            try
-            {
-                string? directory = Path.GetDirectoryName(fullPath);
-                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(fullPath);
-                OutputFilePath = Path.Combine(directory ?? string.Empty, $"{fileNameWithoutExt}_格式统一.xlsx");
-            }
-            catch
-            {
-                OutputFilePath = null;
-            }
+            string? directory = Path.GetDirectoryName(fullPath);
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(fullPath);
+            string targetExtension = string.IsNullOrWhiteSpace(extension) ? ".xlsx" : extension;
+
+            string effectiveDirectory = _outputDirectoryService.ResolveOutputDirectory(directory ?? string.Empty);
+            OutputFilePath = Path.Combine(effectiveDirectory, $"{fileNameWithoutExt}_格式统一{targetExtension}");
+        }
+        catch
+        {
+            OutputFilePath = null;
         }
 
         ValidateOutputPathConflict();
@@ -451,20 +458,71 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
             ? Path.GetFileName(OutputFilePath)
             : "格式统一.xlsx";
 
-        string? selectedPath = _showSaveFileDialog != null
-            ? _showSaveFileDialog(currentName)
-            : DefaultShowSaveFileDialog(currentName);
+        string? initialDirectory = GetInitialDirectoryForSaveDialog();
+
+        string? selectedPath = _showSaveFileDialogWithOptions != null
+            ? _showSaveFileDialogWithOptions(currentName, initialDirectory)
+            : (_showSaveFileDialog != null
+                ? _showSaveFileDialog(currentName)
+                : DefaultShowSaveFileDialog(currentName, initialDirectory));
 
         if (!string.IsNullOrWhiteSpace(selectedPath))
         {
             OutputFilePath = selectedPath;
             IsUserSpecifiedOutputPath = true;
+            string? dir = Path.GetDirectoryName(selectedPath);
+            if (!string.IsNullOrWhiteSpace(dir))
+            {
+                _outputDirectoryService.SetRememberedDirectory(dir);
+            }
+
             ValidateOutputPathConflict();
             UpdateReadyState();
             return true;
         }
 
         return false;
+    }
+
+    private string? GetInitialDirectoryForSaveDialog()
+    {
+        if (!string.IsNullOrWhiteSpace(OutputFilePath))
+        {
+            try
+            {
+                string? dir = Path.GetDirectoryName(OutputFilePath);
+                if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir))
+                {
+                    return dir;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        string? remembered = _outputDirectoryService.GetRememberedDirectory();
+        if (!string.IsNullOrWhiteSpace(remembered) && Directory.Exists(remembered))
+        {
+            return remembered;
+        }
+
+        if (!string.IsNullOrWhiteSpace(InputFilePath))
+        {
+            try
+            {
+                string? dir = Path.GetDirectoryName(InputFilePath);
+                if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir))
+                {
+                    return dir;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        return null;
     }
 
     [RelayCommand]
@@ -846,14 +904,21 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         return dialog.ShowDialog() == true ? dialog.FileName : null;
     }
 
-    private static string? DefaultShowSaveFileDialog(string defaultFileName)
+    private static string? DefaultShowSaveFileDialog(string defaultFileName, string? initialDirectory = null)
     {
         var dialog = new SaveFileDialog
         {
             Filter = "Excel 工作簿 (*.xlsx)|*.xlsx",
             Title = "更改保存路径",
-            FileName = defaultFileName
+            FileName = defaultFileName,
+            DefaultExt = "xlsx",
+            AddExtension = true
         };
+
+        if (!string.IsNullOrWhiteSpace(initialDirectory) && Directory.Exists(initialDirectory))
+        {
+            dialog.InitialDirectory = initialDirectory;
+        }
 
         return dialog.ShowDialog() == true ? dialog.FileName : null;
     }

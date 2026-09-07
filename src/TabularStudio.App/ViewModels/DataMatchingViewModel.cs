@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using TabularStudio.App.Dialogs;
 using TabularStudio.App.Models;
+using TabularStudio.App.Services;
 using TabularStudio.Core.Contracts;
 
 namespace TabularStudio.App.ViewModels;
@@ -18,6 +19,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     private readonly Func<string, ExistingOutputChoice>? _confirmExistingOutput;
     private readonly Func<string, string?>? _showSaveFileDialog;
     private readonly Func<string?>? _showOpenFileDialog;
+    private readonly IOutputDirectoryPreferenceService _outputDirectoryService;
+    private readonly Func<string, string?, string?>? _showSaveFileDialogWithOptions;
 
     private bool _suppressMasterPreviewRefresh;
     private bool _suppressReferencePreviewRefresh;
@@ -243,13 +246,17 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         IDataMatchingService matchingService,
         Func<string, ExistingOutputChoice>? confirmExistingOutput = null,
         Func<string, string?>? showSaveFileDialog = null,
-        Func<string?>? showOpenFileDialog = null)
+        Func<string?>? showOpenFileDialog = null,
+        IOutputDirectoryPreferenceService? outputDirectoryPreferenceService = null,
+        Func<string, string?, string?>? showSaveFileDialogWithOptions = null)
     {
         _inspectionService = inspectionService ?? throw new ArgumentNullException(nameof(inspectionService));
         _matchingService = matchingService ?? throw new ArgumentNullException(nameof(matchingService));
         _confirmExistingOutput = confirmExistingOutput;
         _showSaveFileDialog = showSaveFileDialog;
         _showOpenFileDialog = showOpenFileDialog;
+        _outputDirectoryService = outputDirectoryPreferenceService ?? new OutputDirectoryPreferenceService();
+        _showSaveFileDialogWithOptions = showSaveFileDialogWithOptions;
 
         // 默认初始化 1 条匹配条件
         AddInitialCondition();
@@ -338,12 +345,6 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             ClearError();
         }
         ResetSuccess();
-
-        // 切换不同主表时重置用户自定义输出路径标记，以确保自动推导新主表的默认输出路径
-        if (!string.Equals(MasterFilePath, fullPath, StringComparison.OrdinalIgnoreCase))
-        {
-            IsUserSpecifiedOutputPath = false;
-        }
 
         MasterFilePath = fullPath;
         MasterWorksheets.Clear();
@@ -1052,9 +1053,13 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             ? Path.GetFileName(OutputFilePath)
             : "匹配结果.xlsx";
 
-        string? chosenPath = _showSaveFileDialog != null
-            ? _showSaveFileDialog(currentName)
-            : DefaultShowSaveFileDialog(currentName);
+        string? initialDirectory = GetInitialDirectoryForSaveDialog();
+
+        string? chosenPath = _showSaveFileDialogWithOptions != null
+            ? _showSaveFileDialogWithOptions(currentName, initialDirectory)
+            : (_showSaveFileDialog != null
+                ? _showSaveFileDialog(currentName)
+                : DefaultShowSaveFileDialog(currentName, initialDirectory));
 
         if (!string.IsNullOrWhiteSpace(chosenPath))
         {
@@ -1062,6 +1067,12 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             ClearExecuteErrorIfPresent();
             OutputFilePath = chosenPath;
             IsUserSpecifiedOutputPath = true;
+            string? dir = Path.GetDirectoryName(chosenPath);
+            if (!string.IsNullOrWhiteSpace(dir))
+            {
+                _outputDirectoryService.SetRememberedDirectory(dir);
+            }
+
             ValidateOutputPathConflict();
             UpdateReadyState();
             return true;
@@ -1070,15 +1081,63 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         return false;
     }
 
+    private string? GetInitialDirectoryForSaveDialog()
+    {
+        if (!string.IsNullOrWhiteSpace(OutputFilePath))
+        {
+            try
+            {
+                string? dir = Path.GetDirectoryName(OutputFilePath);
+                if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir))
+                {
+                    return dir;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        string? remembered = _outputDirectoryService.GetRememberedDirectory();
+        if (!string.IsNullOrWhiteSpace(remembered) && Directory.Exists(remembered))
+        {
+            return remembered;
+        }
+
+        if (!string.IsNullOrWhiteSpace(MasterFilePath))
+        {
+            try
+            {
+                string? dir = Path.GetDirectoryName(MasterFilePath);
+                if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir))
+                {
+                    return dir;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        return null;
+    }
+
     private void DeriveDefaultOutputPath()
     {
-        if (!IsUserSpecifiedOutputPath && !string.IsNullOrWhiteSpace(MasterFilePath))
+        if (!string.IsNullOrWhiteSpace(MasterFilePath))
         {
             try
             {
                 string? directory = Path.GetDirectoryName(MasterFilePath);
                 string fileNameWithoutExt = Path.GetFileNameWithoutExtension(MasterFilePath);
-                OutputFilePath = Path.Combine(directory ?? string.Empty, $"{fileNameWithoutExt}_匹配结果.xlsx");
+                string extension = Path.GetExtension(MasterFilePath);
+                if (string.IsNullOrWhiteSpace(extension))
+                {
+                    extension = ".xlsx";
+                }
+
+                string effectiveDirectory = _outputDirectoryService.ResolveOutputDirectory(directory ?? string.Empty);
+                OutputFilePath = Path.Combine(effectiveDirectory, $"{fileNameWithoutExt}_匹配结果{extension}");
             }
             catch
             {
@@ -1489,13 +1548,21 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         return dialog.Choice;
     }
 
-    private static string? DefaultShowSaveFileDialog(string defaultFileName)
+    private static string? DefaultShowSaveFileDialog(string defaultFileName, string? initialDirectory = null)
     {
         var dlg = new SaveFileDialog
         {
             Filter = "Excel 工作簿 (*.xlsx)|*.xlsx",
-            FileName = defaultFileName
+            Title = "更改保存路径",
+            FileName = defaultFileName,
+            DefaultExt = "xlsx",
+            AddExtension = true
         };
+
+        if (!string.IsNullOrWhiteSpace(initialDirectory) && Directory.Exists(initialDirectory))
+        {
+            dlg.InitialDirectory = initialDirectory;
+        }
 
         return dlg.ShowDialog() == true ? dlg.FileName : null;
     }

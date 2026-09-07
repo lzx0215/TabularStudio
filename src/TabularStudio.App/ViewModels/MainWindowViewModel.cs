@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TabularStudio.App.Services;
 using TabularStudio.Core.Contracts;
 
 namespace TabularStudio.App.ViewModels;
@@ -27,14 +28,21 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public MainWindowViewModel(
         IWorkbookInspectionService inspectionService,
         IFormatStandardizationService formatService,
-        IDataMatchingService matchingService)
+        IDataMatchingService matchingService,
+        IOutputDirectoryPreferenceService? outputDirectoryPreferenceService = null)
     {
-        DataMatchingVm = new DataMatchingViewModel(inspectionService, matchingService);
+        var preferenceService = outputDirectoryPreferenceService ?? new OutputDirectoryPreferenceService();
+
+        DataMatchingVm = new DataMatchingViewModel(
+            inspectionService,
+            matchingService,
+            outputDirectoryPreferenceService: preferenceService);
 
         FormatStandardizationVm = new FormatStandardizationViewModel(
             inspectionService,
             formatService,
-            onSendToDataMatching: OnSendToDataMatching);
+            onSendToDataMatching: OnSendToDataMatching,
+            outputDirectoryPreferenceService: preferenceService);
 
         // 默认显示格式统一
         CurrentViewViewModel = FormatStandardizationVm;

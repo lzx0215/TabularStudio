@@ -13,6 +13,8 @@ labels: bug
 
 ## Steps To Reproduce
 
+<!-- 必填。不得因流程简化而省略复现步骤。 -->
+
 1.
 2.
 3.
@@ -22,6 +24,15 @@ labels: bug
 <!-- 必须来自已确认需求、UI 规格或处理规则，不要写新期望。 -->
 
 ## Actual
+
+## Regression Test Case
+
+必填。修复后必须能回归验证。初始 Status 一律 `NOT RUN`。  
+未实际执行不得写 `PASS`。不得因流程简化而省略。
+
+| ID | 回归场景 | 期望 | Status |
+| --- | --- | --- | --- |
+| RT-01 |  |  | NOT RUN |
 
 ## Environment
 

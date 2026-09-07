@@ -24,8 +24,20 @@ labels: feature
 
 ## Acceptance Criteria
 
+<!-- Gate 1 要求：开发前必须具备本栏与 Functional Test Cases。 -->
+
 - [ ]
 - [ ]
+
+## Functional Test Cases
+
+Gate 1 要求：开发前必须列出。初始 Status 一律 `NOT RUN`。  
+未实际执行不得写 `PASS`。必测用例为 `NOT RUN` 时不得将 Issue 标为 Done。  
+不得把 Core automated tests 当作 UI Functional QA。
+
+| ID | 场景 | 期望 | 必测 | Status |
+| --- | --- | --- | --- | --- |
+| FT-01 |  |  | Yes | NOT RUN |
 
 ## Documents To Update
 
@@ -39,3 +51,4 @@ labels: feature
 
 - Assignee:
 - Reviewer:
+- 流程以 `docs/development-process.md` 为准。Gate 1 通过后连续执行，仅 Owner Gate 与 STOP 可中断。

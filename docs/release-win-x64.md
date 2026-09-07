@@ -2,6 +2,8 @@
 
 This procedure builds a local release candidate. It does not create a tag, GitHub Release, installer, or upload an asset. Package acceptance remains separate from build success.
 
+This procedure's artifact acceptance is Project Owner Gate 3 in `docs/development-process.md`: Release / Artifact Acceptance. Acceptance must lock the exact filename + size + SHA256. Existing verification rules in this document are not relaxed by the process simplification.
+
 ## Baseline gate
 
 Start with a clean checkout of latest main. Compare it with Final QA commit `95b6e86eb920cc3038cb796b7b14e13c8505404a`. If newer changes affect product code, UI, Core, contracts, or processing rules, stop for Project Owner review and renewed QA. Work on `task/25-win-x64-self-contained-release`.

@@ -1,4 +1,5 @@
 using System.Windows;
+using TabularStudio.App.Services;
 using TabularStudio.App.ViewModels;
 using TabularStudio.Core.Contracts;
 using TabularStudio.Core.Services;
@@ -19,8 +20,15 @@ public partial class App : Application
         IFormatStandardizationService formatService = new FormatStandardizationService();
         IDataMatchingService matchingService = new DataMatchingService();
 
+        // 创建 UI Services
+        IOutputDirectoryPreferenceService outputDirectoryPreferenceService = new OutputDirectoryPreferenceService();
+
         // 构造 ViewModel 并注入接口
-        var mainWindowViewModel = new MainWindowViewModel(inspectionService, formatService, matchingService);
+        var mainWindowViewModel = new MainWindowViewModel(
+            inspectionService,
+            formatService,
+            matchingService,
+            outputDirectoryPreferenceService);
 
         // 构造并显示 MainWindow
         var mainWindow = new MainWindow(mainWindowViewModel);

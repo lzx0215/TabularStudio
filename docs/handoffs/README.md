@@ -37,4 +37,6 @@
 ## Risks / open questions
 ```
 
-没有对应 Handoff 文件，不得声称已经交给另一角色。当前目录为空，表示尚未开始阶段交接。
+没有对应 Handoff 文件，不得声称已经交给另一角色。
+
+Handoff 仍是跨角色交接证据，但 **不是 Project Owner Gate**。写完 Handoff 后，接收方按 `docs/development-process.md` 连续执行，不得把 Handoff 当成逐步等待 Owner 的关卡。

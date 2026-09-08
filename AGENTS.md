@@ -288,4 +288,3 @@ Handoff 仍是跨角色交接证据，但 **不是 Owner Gate**。写完后接�
 ## 受控并行
 
 多个无依赖、无文件 / Contract / Baseline 冲突的独立 Issue 可并行，各自独立 Issue / Branch / PR / Gate 和工作树。同一 Issue 内 Gate 顺序不变，Owner 仍只参与三个常规 Gate。QA、Regression、Release preparation 可以与其它独立开发并行。有依赖或共享文件的任务先协调顺序；#34 → #31，#34 → #32，#31 + #32 → #33。main 变化仍触发 STOP；同步最新 main 后重新验证并锁定新的 PR head SHA。完整规则见 docs/development-process.md 第 13 节；不降低现有 STOP、Functional QA 或发布验收要求。
-

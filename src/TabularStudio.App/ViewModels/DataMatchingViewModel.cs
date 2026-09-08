@@ -124,6 +124,22 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     private bool _normalizeComparisonKeys = true;
 
     [ObservableProperty]
+    private bool _isMasterFilterEnabled;
+
+    [ObservableProperty]
+    private AvailableColumnItem? _selectedMasterFilterColumn;
+
+    [ObservableProperty]
+    private string _masterFilterValue = "是";
+
+    public bool HasValidMasterFilter => !IsMasterFilterEnabled ||
+        (SelectedMasterFilterColumn is not null && MasterAvailableColumns.Contains(SelectedMasterFilterColumn)
+            && !string.IsNullOrWhiteSpace(MasterFilterValue));
+
+    [ObservableProperty]
+    private int _resultSkippedCount;
+
+    [ObservableProperty]
     private bool _isStatusColumnEnabled = true;
 
     [ObservableProperty]
@@ -206,8 +222,10 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     public bool CanConfigure => !IsProcessing && State != DataMatchingPageState.Initial;
 
     public bool CanStart =>
-        State == DataMatchingPageState.Ready &&
+        (State is DataMatchingPageState.Ready or DataMatchingPageState.Success ||
+            (State == DataMatchingPageState.Error && _errorSource == "Execute")) &&
         !IsProcessing &&
+        HasValidMasterFilter &&
         !string.IsNullOrWhiteSpace(MasterFilePath) &&
         SelectedMasterWorksheet != null &&
         MasterHeaderRowNumber >= 1 &&
@@ -395,6 +413,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     private void InvalidateMasterPreview()
     {
+        SelectedMasterFilterColumn = null;
         HasMasterPreviewData = false;
         MasterPreviewDataTable = null;
         MasterPreviewRowCount = 0;
@@ -1016,6 +1035,18 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         UpdateReadyState();
     }
 
+    partial void OnIsMasterFilterEnabledChanged(bool value) => OnMasterFilterChanged();
+    partial void OnSelectedMasterFilterColumnChanged(AvailableColumnItem? value) => OnMasterFilterChanged();
+    partial void OnMasterFilterValueChanged(string value) => OnMasterFilterChanged();
+
+    private void OnMasterFilterChanged()
+    {
+        ClearExecuteErrorIfPresent();
+        ResetSuccess();
+        UpdateReadyState();
+        OnPropertyChanged(nameof(HasValidMasterFilter));
+    }
+
     partial void OnIsStatusColumnEnabledChanged(bool value)
     {
         ClearExecuteErrorIfPresent();
@@ -1224,6 +1255,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             hasValidConditions &&
             hasValidReturnFields &&
             hasValidStatusColumn &&
+            HasValidMasterFilter &&
             !string.IsNullOrWhiteSpace(OutputFilePath) &&
             !HasOutputConflictWithInput &&
             !IsMasterPreviewLoading &&
@@ -1303,7 +1335,12 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 },
                 OutputFilePath: OutputFilePath,
                 OverwriteExistingOutput: overwrite
-            );
+            )
+            {
+                MasterFilter = IsMasterFilterEnabled
+                    ? new MasterRowFilter(SelectedMasterFilterColumn!.Reference, MasterFilterValue)
+                    : null
+            };
 
             var result = await _matchingService.ExecuteAsync(request, progressHandler);
 
@@ -1318,6 +1355,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 ResultUnmatchedCount = result.Summary.UnmatchedCount;
                 ResultDuplicateCount = result.Summary.DuplicateCount;
                 ResultEmptyKeyCount = result.Summary.EmptyKeyCount;
+                ResultSkippedCount = result.Summary.SkippedCount;
                 ResultElapsed = result.Summary.Elapsed;
 
                 ProgressPercent = 100;
@@ -1510,7 +1548,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         {
             OperationErrorCode.FileNotFound => "请确认文件路径是否正确。",
             OperationErrorCode.UnsupportedFileType => "TabularStudio 第一版仅支持 .xlsx 格式文件。",
-            OperationErrorCode.FileLocked => "文件正被其他程序独占打开，请在 Excel 中关闭该文件后重试。",
+            OperationErrorCode.FileLocked => "文件正被其他程序占用，请在 WPS / Excel 等程序中关闭该文件，然后点击开始数据匹配重试，或更改保存路径。",
             OperationErrorCode.WorkbookUnreadable => "工作簿损坏或无法安全读取，请检查文件完整性。",
             OperationErrorCode.WorksheetNotFound => "指定的工作表在文件中未找到，请重新选择工作表。",
             OperationErrorCode.InvalidHeaderRow => "表头所在行必须大于或等于 1，且所在行及其下方必须包含有效数据。",
@@ -1519,7 +1557,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             OperationErrorCode.OutputConflictsWithInput => "禁止覆盖主表或对照表，请选择其他输出路径。",
             OperationErrorCode.OutputAlreadyExists => "指定输出路径已存在同名文件。",
             OperationErrorCode.OutputDirectoryNotWritable => "输出目录不存在或无写入权限，请选择其他输出目录。",
-            OperationErrorCode.FormulaCellNotAllowedForMatching => "匹配字段或返回字段中存在公式。当前版本不使用公式结果进行匹配，请改用普通值列后重试。",
+            OperationErrorCode.FormulaCellNotAllowedForMatching => "筛选字段、匹配字段或返回字段中存在公式。当前版本不使用公式结果进行匹配，请改用普通值列后重试。",
             OperationErrorCode.IncompleteOutputCleanupFailed => "任务中断或失败，且未能清理生成的临时或不完整文件。",
             _ => error.Message
         };

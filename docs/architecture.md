@@ -23,4 +23,14 @@ Contract 只暴露普通 .NET 数据结构，CSV nullable Sheet 增量见 contra
 
 自动化回归在 tests/TabularStudio.Tests；独立 Core FT harness 在 tools/Issue34.FunctionalQA，运行时只生成 synthetic 文件，逐例验证并检查输出 reopen 与输入 SHA256，不使用 WPF 自动化。
 
-断网整机、无 SDK 干净机器、任意复杂宏/嵌入对象保真不由 build/test 推断为通过；发布仍遵守 Gate 3。本 Issue 不创建发布包。
+断网整机、无 SDK 干净机器、任意复杂宏/嵌入对象保真不由 build/test 推断为通过；发布仍遵守 Gate 3。
+
+## 条件匹配增量（Issue #45，2026-09-08）
+
+当前数据匹配由 App 收集条件，Core DataMatchingService 统一处理。
+
+- DataMatchingRequest 新增可选 MasterFilter，DataMatchingSummary 新增 SkippedCount；均使用 init 属性保持既有构造参数和调用兼容。
+- UI 只收集筛选列与文本、校验完整性和展示统计；筛选算法、公式约束、安全标准化、行保留及输出保护均由 Core 实现。
+- 复用现有 KeyPart/CompositeKey 比较，不新增库或表达式引擎。筛选在内存执行，不改写输入。
+- 条件筛选复用同一内存算法覆盖三种格式；多格式与条件匹配在 #34 同步主线后共同验证。
+- App.Tests 引用 App 验证实际 ViewModel 和 Core 调用；Core 测试保持独立。此类自动化不等同于桌面人工 QA。

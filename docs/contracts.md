@@ -97,7 +97,7 @@ public sealed record ColumnReference(
     string? HeaderText);
 ```
 
-`WorksheetSource` 同时用于格式统一、主表和对照表。`HeaderRowNumber` 为 1 起始的物理行号（与 Excel 行号及 UI 显示一致）。主表与对照表来自同一个工作簿时，两个 `FilePath` 直接相同；Contract 不接收「与主表使用同一个文件」CheckBox 状态，也不增加额外业务模式。
+`WorksheetSource` 同时用于格式统一、主表和对照表。`HeaderRowNumber` 对 `.xlsx/.xls` 为 1 起始的工作表物理行号；对 `.csv` 为 1 起始的解析记录号，引用字段内部换行不增加记录号。主表与对照表来自同一个工作簿时，两个 `FilePath` 直接相同；Contract 不接收「与主表使用同一个文件」CheckBox 状态，也不增加额外业务模式。
 
 `ColumnReference` 是预览、匹配条件和返回字段共用的唯一列引用模型：
 

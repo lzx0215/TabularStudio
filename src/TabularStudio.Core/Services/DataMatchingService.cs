@@ -45,13 +45,13 @@ public sealed class DataMatchingService : IDataMatchingService
             stagingPath = reservation.Path!;
             Report(progress, OperationStage.Reading, null, null, null);
             token.ThrowIfCancellationRequested();
-            var masterOpen = TryOpenWorkbook(configuration.Master.FilePath);
+            var masterOpen = TryOpenWorkbook(configuration.Master.FilePath, token);
             if (masterOpen.Error is not null) return FailureAfterCleanup(masterOpen.Error, stagingPath);
             using var masterStream = masterOpen.Stream!;
             using var masterBook = masterOpen.Workbook!;
             token.ThrowIfCancellationRequested();
             // Separate read-only instances also support two sheets from the same input file.
-            var referenceOpen = TryOpenWorkbook(configuration.Reference.FilePath);
+            var referenceOpen = TryOpenWorkbook(configuration.Reference.FilePath, token);
             if (referenceOpen.Error is not null) return FailureAfterCleanup(referenceOpen.Error, stagingPath);
             using var referenceStream = referenceOpen.Stream!;
             using var referenceBook = referenceOpen.Workbook!;
@@ -69,7 +69,7 @@ public sealed class DataMatchingService : IDataMatchingService
             error = ValidateColumns(master!, validatedMasterColumns)
                 ?? ValidateColumns(reference!, referenceColumns.Concat(configuration.ReturnFields));
             if (error is not null) return FailureAfterCleanup(error, stagingPath);
-            if ((long)master!.LastColumn + configuration.ReturnFields.Count + (configuration.StatusColumn.Enabled ? 1 : 0) > XLHelper.MaxColumnNumber)
+            if ((long)master!.LastColumn + configuration.ReturnFields.Count + (configuration.StatusColumn.Enabled ? 1 : 0) > masterBook.MaxColumns)
                 return FailureAfterCleanup(Error(OperationErrorCode.InvalidConfiguration, "工作表没有足够的可追加列。"), stagingPath);
 
             var total = master.LastRow - master.HeaderRow;
@@ -147,7 +147,7 @@ public sealed class DataMatchingService : IDataMatchingService
             Report(progress, OperationStage.Writing, null, total, total);
             token.ThrowIfCancellationRequested();
             using (var staging = new FileStream(stagingPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
-                masterBook.SaveAs(staging);
+                masterBook.SaveAs(staging, token);
             token.ThrowIfCancellationRequested();
             if (configuration.OverwriteExistingOutput && File.Exists(outputPath))
             {
@@ -202,17 +202,19 @@ public sealed class DataMatchingService : IDataMatchingService
             var output = Path.GetFullPath(request.OutputFilePath);
             foreach (var source in new[] { request.Master, request.Reference })
             {
-                if (string.IsNullOrWhiteSpace(source.FilePath) || string.IsNullOrWhiteSpace(source.WorksheetName))
+                if (string.IsNullOrWhiteSpace(source.FilePath) || (!IsCsvPath(source.FilePath) && string.IsNullOrWhiteSpace(source.WorksheetName)))
                     return Error(OperationErrorCode.InvalidConfiguration, "输入文件路径和工作表名称不能为空。");
                 if (source.HeaderRowNumber < 1 || source.HeaderRowNumber > XLHelper.MaxRowNumber)
                     return Error(OperationErrorCode.InvalidHeaderRow, "表头行号无效。");
                 var input = Path.GetFullPath(source.FilePath);
                 if (string.Equals(input, output, StringComparison.OrdinalIgnoreCase))
                     return Error(OperationErrorCode.OutputConflictsWithInput, "输出不能覆盖任何输入文件。", output);
-                if (!IsXlsxPath(input) || !IsXlsxPath(output))
-                    return Error(OperationErrorCode.UnsupportedFileType, "输入和输出文件都必须为 .xlsx。");
+                if (!IsSupportedPath(input) || !SameFormat(request.Master.FilePath, output))
+                    return Error(OperationErrorCode.UnsupportedFileType, "输入必须为 .xlsx/.xls/.csv，输出格式必须与主表一致。");
                 if (!File.Exists(input)) return Error(OperationErrorCode.FileNotFound, "输入文件不存在。", input);
             }
+            if (IsCsvPath(request.Master.FilePath) && string.Equals(Path.GetFullPath(request.Master.FilePath), Path.GetFullPath(request.Reference.FilePath), StringComparison.OrdinalIgnoreCase))
+                return Error(OperationErrorCode.InvalidConfiguration, "CSV has no distinct worksheets; use two files.");
             if (!Directory.Exists(Path.GetDirectoryName(output)))
                 return Error(OperationErrorCode.OutputDirectoryNotWritable, "输出目录不存在或不可用。", output);
         }
@@ -223,16 +225,16 @@ public sealed class DataMatchingService : IDataMatchingService
         return null;
     }
 
-    private static SheetData? ReadSheet(XLWorkbook workbook, WorksheetSource source, out OperationError? error)
+    private static SheetData? ReadSheet(TabularWorkbook workbook, WorksheetSource source, out OperationError? error)
     {
         error = null;
-        var sheet = workbook.Worksheets.FirstOrDefault(s => string.Equals(s.Name, source.WorksheetName, StringComparison.Ordinal));
+        var sheet = workbook.FindSheet(source.WorksheetName);
         if (sheet is null)
         {
             error = Error(OperationErrorCode.WorksheetNotFound, "指定工作表不存在。", source.WorksheetName);
             return null;
         }
-        var cells = sheet.CellsUsed(XLCellsUsedOptions.Contents).Where(c => c.Address.RowNumber >= source.HeaderRowNumber).ToArray();
+        var cells = workbook.ContentCells(sheet).Where(c => c.Address.RowNumber >= source.HeaderRowNumber).ToArray();
         if (cells.Length == 0)
         {
             error = Error(OperationErrorCode.InvalidHeaderRow, "表头行及其下方没有有效数据范围。");

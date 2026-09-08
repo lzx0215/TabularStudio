@@ -17,7 +17,7 @@ public sealed record FormatStandardizationRequest(
     bool OverwriteExistingOutput);
 
 public sealed record FormatStandardizationSummary(
-    string ProcessedWorksheetName,
+    string? ProcessedWorksheetName,
     int ProcessedDataRowCount,
     TimeSpan Elapsed);
 

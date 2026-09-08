@@ -2,7 +2,7 @@ namespace TabularStudio.Core.Contracts;
 
 public sealed record WorksheetSource(
     string FilePath,
-    string WorksheetName,
+    string? WorksheetName,
     int HeaderRowNumber);
 
 public sealed record ColumnReference(

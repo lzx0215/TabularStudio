@@ -20,7 +20,7 @@ public sealed record PreviewRow(
     IReadOnlyList<PreviewCell> Cells);
 
 public sealed record PreviewTable(
-    string WorksheetName,
+    string? WorksheetName,
     int HeaderRowNumber,
     IReadOnlyList<ColumnReference> Columns,
     IReadOnlyList<PreviewRow> Rows);

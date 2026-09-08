@@ -51,7 +51,7 @@ internal static class WorkbookFileOperations
         {
             var stagingPath = Path.Combine(
                 outputDirectory,
-                $".{outputName}.{Guid.NewGuid():N}.staging.xlsx");
+                $".{outputName}.{Guid.NewGuid():N}.staging{Path.GetExtension(outputFilePath)}");
 
             try
             {
@@ -87,7 +87,7 @@ internal static class WorkbookFileOperations
             outputDirectory));
     }
 
-    internal static WorkbookOpenResult TryOpenWorkbook(string filePath)
+    internal static WorkbookOpenResult TryOpenWorkbook(string filePath, CancellationToken token = default)
     {
         FileStream? stream = null;
 
@@ -98,9 +98,10 @@ internal static class WorkbookFileOperations
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.ReadWrite | FileShare.Delete);
-            var workbook = new XLWorkbook(stream);
+            var workbook = new TabularWorkbook(stream, filePath, token);
             return new WorkbookOpenResult(stream, workbook, null);
         }
+        catch (OperationCanceledException) { stream?.Dispose(); throw; }
         catch (FileNotFoundException)
         {
             stream?.Dispose();
@@ -194,6 +195,9 @@ internal static class WorkbookFileOperations
         }
     }
 
+    internal static bool IsCsvPath(string p) => string.Equals(Path.GetExtension(p), ".csv", StringComparison.OrdinalIgnoreCase);
+    internal static bool IsSupportedPath(string p) => IsXlsxPath(p) || IsCsvPath(p) || string.Equals(Path.GetExtension(p), ".xls", StringComparison.OrdinalIgnoreCase);
+    internal static bool SameFormat(string a, string b) => string.Equals(Path.GetExtension(a), Path.GetExtension(b), StringComparison.OrdinalIgnoreCase);
     internal static bool IsXlsxPath(string path) =>
         string.Equals(Path.GetExtension(path), ".xlsx", StringComparison.OrdinalIgnoreCase);
 
@@ -215,6 +219,6 @@ internal static class WorkbookFileOperations
 
     internal sealed record WorkbookOpenResult(
         FileStream? Stream,
-        XLWorkbook? Workbook,
+        TabularWorkbook? Workbook,
         OperationError? Error);
 }

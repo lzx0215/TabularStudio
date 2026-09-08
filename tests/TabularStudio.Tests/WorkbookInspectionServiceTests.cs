@@ -41,7 +41,7 @@ public sealed class WorkbookInspectionServiceTests
     public async Task InspectAsync_ReturnsUnsupportedFileTypeForExistingNonXlsxFile()
     {
         using var directory = new TemporaryDirectory();
-        var path = System.IO.Path.Combine(directory.Path, "input.csv");
+        var path = System.IO.Path.Combine(directory.Path, "input.ods");
         await File.WriteAllTextAsync(path, "编号,姓名");
 
         var result = await _service.InspectAsync(new WorkbookInspectionRequest(path));
@@ -107,7 +107,7 @@ public sealed class WorkbookInspectionServiceTests
     {
         using var directory = new TemporaryDirectory();
         var missingPath = System.IO.Path.Combine(directory.Path, "missing.xlsx");
-        var unsupportedPath = System.IO.Path.Combine(directory.Path, "input.csv");
+        var unsupportedPath = System.IO.Path.Combine(directory.Path, "input.ods");
         await File.WriteAllTextAsync(unsupportedPath, "编号,姓名");
 
         var missingResult = await GetPreviewAsync(missingPath, "Sheet1", 1);

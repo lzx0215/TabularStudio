@@ -356,7 +356,7 @@ public sealed class DataMatchingServiceTests
             "return-high" => r with { ReturnFields = [new(100, "return")] },
             "missing" => r with { Master = r.Master with { FilePath = Path.Combine(files.DirectoryPath, "absent.xlsx") } },
             "reference-missing" => r with { Reference = r.Reference with { FilePath = Path.Combine(files.DirectoryPath, "absent.xlsx") } },
-            "extension" => r with { Reference = r.Reference with { FilePath = Path.ChangeExtension(files.ReferencePath, ".csv") } },
+            "extension" => r with { Reference = r.Reference with { FilePath = Path.ChangeExtension(files.ReferencePath, ".ods") } },
             "output-extension" => r with { OutputFilePath = Path.ChangeExtension(files.OutputPath, ".csv") },
             "output-blank" => r with { OutputFilePath = " " },
             "directory" => r with { OutputFilePath = Path.Combine(files.DirectoryPath, "missing", "output.xlsx") },

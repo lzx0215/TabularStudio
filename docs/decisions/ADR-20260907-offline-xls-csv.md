@@ -1,16 +1,36 @@
 # ADR-20260907 Offline XLS / CSV processing
 
-- Status: Proposed
-- Decision: **PROPOSED — PROJECT OWNER DECISION REQUIRED**
+- Status: Accepted under Owner delegated implementation authority (2026-09-08)
+- Decision: NPOI 2.7.4 HSSF + CsvHelper 33.1.0, with explicit security dependency constraints below
 - Date: 2026-09-07
 - Owner: Codex (Core Developer)
-- Confirmed by: NOT APPROVED — 本 ADR 尚无 Project Owner 第三方库决策
+- Authority: [initial exact dependency approval](https://github.com/lzx0215/TabularStudio/issues/34#issuecomment-5571428555), followed by Owner 2026-09-08 instruction authorizing Codex to change library/version, remediate vulnerabilities/licenses and complete #34 without changing requirements.
 - Related Issue: [#34](https://github.com/lzx0215/TabularStudio/issues/34)
 - Gate 1: [Pre-Development Approval](https://github.com/lzx0215/TabularStudio/issues/34#issuecomment-5571217002)，2026-09-07T13:17:03Z
 - Main baseline: `c0e91cb3f2f79b82d2c8ae80ce22374efdc7b801`
 - Branch: `issue-34-core-multiformat`
 
 ## Context
+
+## 2026-09-08 final decision (supersedes the historical proposal below)
+
+本节为当前决定；下方 2026-09-07 Proposed / STOP / NOT VERIFIED 原文保留历史，不能覆盖本节的实际证据。
+
+- NPOI 2.7.6 restore 实际引入 NSax 1.0.2 (LGPL-3.0-only) 和有 High 漏洞的 Cryptography.Xml 8.0.2，原实验已清理。
+- 选 NPOI **2.7.4**：这是 NSax 引入前的官方 Apache-2.0 包，提供 HSSF 真实 XLS 读写。2.7.5/2.7.6 含 NSax；2.8.0 二进制许可与 native 依赖变化，不是本次最小风险路径。没有修改第三方源码、隐藏依赖或抑制 NuGet audit。
+- 保留 CsvHelper **33.1.0**，采用 Apache-2.0；ClosedXML **0.105.1** 不变。
+- 显式安全约束：**System.Security.Cryptography.Xml 10.0.11**（带入 Pkcs 10.0.11）、**SixLabors.ImageSharp 2.1.11**、**BouncyCastle.Cryptography 2.6.2**。这些直接引用是本轮授权的 remediation，不冒称最初精确两包审批已涵盖它们。
+- 实际 NuGet audit：最终 Core graph 未报告已知漏洞；没有 NSax。该结果是当前源数据库的扫描结果，不保证未来无漏洞。依赖版本和扫描须持续维护。
+- 最终直接包：ClosedXML 0.105.1、NPOI 2.7.4、CsvHelper 33.1.0、BouncyCastle.Cryptography 2.6.2、SixLabors.ImageSharp 2.1.11、System.Security.Cryptography.Xml 10.0.11。
+- 实际传递包：ClosedXML.Parser 2.0.0、DocumentFormat.OpenXml 3.1.1、DocumentFormat.OpenXml.Framework 3.1.1、Enums.NET 5.0.0、ExcelNumberFormat 1.1.0、ExtendedNumerics.BigDecimal 2025.1001.2.129、MathNet.Numerics.Signed 5.0.0、Microsoft.IO.RecyclableMemoryStream 3.0.1、RBush.Signed 4.0.0、SharpZipLib 1.4.2、SixLabors.Fonts 1.0.1、System.IO.Packaging 8.0.1、System.Security.Cryptography.Pkcs 10.0.11、ZString 2.6.0。
+- 使用官方 nuspec 和实际 project.assets.json 核对，不以候选最低依赖充当 resolved graph。许可清单与原文在 [issue34-licenses](issue34-licenses/README.md)。旧 NPOI 版本维护风险仍存在；不用 Office、不在线授权、不运行时 restore。
+- 最终实现使用原 HSSF 工作簿 + 内存值投影，局部写回变化，不转换成中间 XLSX 文件。未变公式/样式/Sheet 留在原工作簿；复杂对象/旧 BIFF 完全保真 **NOT VERIFIED**。
+- CSV 技术选择由本轮授权落地于 processing-rules §11：严格 UTF-8、逗号、RFC4180 quoting、保留空记录、不齐行、按解析记录编号、保持 BOM 有无。不声称这些是最初 Gate 1 已批准 Expected Result；没有增加产品功能。
+- 已执行 .NET SDK 10.0.400 restore/build/regression 和独立 FT harness；具体 exact SHA 及最终结果归档于 PR。整机断网/无 SDK clean machine **NOT VERIFIED**，不由 no-restore 或代码检查推断。
+
+精确源码/包依据：[NPOI 2.7.4 nuspec](https://api.nuget.org/v3-flatcontainer/npoi/2.7.4/npoi.nuspec)、[NPOI 2.7.5 nuspec](https://api.nuget.org/v3-flatcontainer/npoi/2.7.5/npoi.nuspec)、[Cryptography.Xml 10.0.11](https://www.nuget.org/packages/System.Security.Cryptography.Xml/10.0.11)。
+
+## Historical proposal — 2026-09-07
 
 Issue #34 的 Gate 1 已批准 Requirements / Scope / AC / FT / VC；该批准没有批准具体第三方库、版本或 Open Questions。本 ADR 只提出可评审的离线依赖选择，不修改批准的测试包或产品规则。
 

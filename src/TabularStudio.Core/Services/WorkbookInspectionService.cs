@@ -1,6 +1,7 @@
 using System.Globalization;
 using ClosedXML.Excel;
 using TabularStudio.Core.Contracts;
+using static TabularStudio.Core.Services.WorkbookFileOperations;
 
 namespace TabularStudio.Core.Services;
 
@@ -41,7 +42,7 @@ public sealed class WorkbookInspectionService : IWorkbookInspectionService
         var filePath = request!.FilePath;
         cancellationToken.ThrowIfCancellationRequested();
 
-        var openResult = TryOpenWorkbook(filePath);
+        var openResult = TryOpenWorkbook(filePath, cancellationToken);
         if (openResult.Error is not null)
         {
             return InspectionFailure(openResult.Error);
@@ -53,7 +54,7 @@ public sealed class WorkbookInspectionService : IWorkbookInspectionService
         try
         {
             var worksheets = new List<WorksheetInfo>();
-            foreach (var worksheet in workbook.Worksheets)
+            foreach (var worksheet in workbook.Worksheets.Where(_ => !workbook.IsCsv))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 worksheets.Add(new WorksheetInfo(worksheet.Name));
@@ -89,7 +90,7 @@ public sealed class WorkbookInspectionService : IWorkbookInspectionService
             return PreviewFailure(validationError);
         }
 
-        if (string.IsNullOrWhiteSpace(source.WorksheetName))
+        if (!IsCsvPath(source.FilePath) && string.IsNullOrWhiteSpace(source.WorksheetName))
         {
             return PreviewFailure(new OperationError(
                 OperationErrorCode.InvalidConfiguration,
@@ -106,7 +107,7 @@ public sealed class WorkbookInspectionService : IWorkbookInspectionService
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        var openResult = TryOpenWorkbook(source.FilePath);
+        var openResult = TryOpenWorkbook(source.FilePath, cancellationToken);
         if (openResult.Error is not null)
         {
             return PreviewFailure(openResult.Error);
@@ -117,8 +118,7 @@ public sealed class WorkbookInspectionService : IWorkbookInspectionService
 
         try
         {
-            var worksheet = workbook.Worksheets.FirstOrDefault(candidate =>
-                string.Equals(candidate.Name, source.WorksheetName, StringComparison.Ordinal));
+            var worksheet = workbook.FindSheet(source.WorksheetName);
 
             if (worksheet is null)
             {
@@ -130,8 +130,7 @@ public sealed class WorkbookInspectionService : IWorkbookInspectionService
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var contentCells = worksheet
-                .CellsUsed(XLCellsUsedOptions.Contents)
+            var contentCells = workbook.ContentCells(worksheet)
                 .Where(cell => cell.Address.RowNumber >= source.HeaderRowNumber)
                 .ToArray();
 
@@ -153,7 +152,7 @@ public sealed class WorkbookInspectionService : IWorkbookInspectionService
             for (var columnNumber = firstColumnNumber; columnNumber <= lastColumnNumber; columnNumber++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var headerText = GetHeaderText(worksheet.Cell(source.HeaderRowNumber, columnNumber));
+                var headerText = workbook.Display(worksheet.Cell(source.HeaderRowNumber, columnNumber));
                 columns.Add(new ColumnReference(columnNumber, headerText));
             }
 
@@ -171,14 +170,14 @@ public sealed class WorkbookInspectionService : IWorkbookInspectionService
                 foreach (var column in columns)
                 {
                     var cell = worksheet.Cell(rowNumber, column.ColumnNumber);
-                    cells.Add(new PreviewCell(column.ColumnNumber, GetDisplayValue(cell)));
+                    cells.Add(new PreviewCell(column.ColumnNumber, workbook.Display(cell)));
                 }
 
                 rows.Add(new PreviewRow(rowNumber, cells));
             }
 
             var preview = new PreviewTable(
-                worksheet.Name,
+                workbook.IsCsv ? null : worksheet.Name,
                 source.HeaderRowNumber,
                 columns,
                 rows);
@@ -212,86 +211,15 @@ public sealed class WorkbookInspectionService : IWorkbookInspectionService
                 filePath);
         }
 
-        if (!string.Equals(Path.GetExtension(filePath), ".xlsx", StringComparison.OrdinalIgnoreCase))
+        if (!IsSupportedPath(filePath))
         {
             return new OperationError(
                 OperationErrorCode.UnsupportedFileType,
-                "仅支持 .xlsx 文件。",
+                "仅支持 .xlsx/.xls/.csv 文件。",
                 filePath);
         }
 
         return null;
-    }
-
-    private static WorkbookOpenResult TryOpenWorkbook(string filePath)
-    {
-        FileStream? stream = null;
-
-        try
-        {
-            stream = new FileStream(
-                filePath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.ReadWrite | FileShare.Delete);
-
-            var workbook = new XLWorkbook(stream);
-            return new WorkbookOpenResult(stream, workbook, null);
-        }
-        catch (FileNotFoundException)
-        {
-            stream?.Dispose();
-            return new WorkbookOpenResult(null, null, new OperationError(
-                OperationErrorCode.FileNotFound,
-                "Excel 文件不存在。",
-                filePath));
-        }
-        catch (DirectoryNotFoundException)
-        {
-            stream?.Dispose();
-            return new WorkbookOpenResult(null, null, new OperationError(
-                OperationErrorCode.FileNotFound,
-                "Excel 文件不存在。",
-                filePath));
-        }
-        catch (IOException exception) when (IsFileLocked(exception))
-        {
-            stream?.Dispose();
-            return new WorkbookOpenResult(null, null, new OperationError(
-                OperationErrorCode.FileLocked,
-                "Excel 文件正被其它程序独占占用。",
-                filePath));
-        }
-        catch (UnauthorizedAccessException)
-        {
-            stream?.Dispose();
-            return new WorkbookOpenResult(null, null, new OperationError(
-                OperationErrorCode.WorkbookUnreadable,
-                "Excel 文件无法读取。",
-                filePath));
-        }
-        catch (IOException)
-        {
-            stream?.Dispose();
-            return new WorkbookOpenResult(null, null, new OperationError(
-                OperationErrorCode.WorkbookUnreadable,
-                "Excel 文件无法读取或文件内容已损坏。",
-                filePath));
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            stream?.Dispose();
-            return new WorkbookOpenResult(null, null, new OperationError(
-                OperationErrorCode.WorkbookUnreadable,
-                "Excel 文件无法读取或文件内容已损坏。",
-                filePath));
-        }
-    }
-
-    private static bool IsFileLocked(IOException exception)
-    {
-        var nativeErrorCode = exception.HResult & 0xFFFF;
-        return nativeErrorCode is SharingViolation or LockViolation;
     }
 
     private static string? GetHeaderText(IXLCell cell)
@@ -329,8 +257,4 @@ public sealed class WorkbookInspectionService : IWorkbookInspectionService
             "处理 Excel 工作簿时发生意外错误。",
             $"{filePath} ({exception.GetType().Name})");
 
-    private sealed record WorkbookOpenResult(
-        FileStream? Stream,
-        XLWorkbook? Workbook,
-        OperationError? Error);
 }

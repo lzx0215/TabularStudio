@@ -72,7 +72,7 @@ public sealed class FormatStandardizationService : IFormatStandardizationService
             Report(progress, OperationStage.Reading, null, null, null);
             cancellationToken.ThrowIfCancellationRequested();
 
-            var workbookOpen = TryOpenWorkbook(validated.InputFilePath);
+            var workbookOpen = TryOpenWorkbook(validated.InputFilePath, cancellationToken);
             if (workbookOpen.Error is not null)
             {
                 return FailureAfterCleanup(workbookOpen.Error, stagingPath);
@@ -83,8 +83,7 @@ public sealed class FormatStandardizationService : IFormatStandardizationService
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var worksheet = workbook.Worksheets.FirstOrDefault(candidate =>
-                string.Equals(candidate.Name, validated.WorksheetName, StringComparison.Ordinal));
+            var worksheet = workbook.FindSheet(validated.WorksheetName);
 
             if (worksheet is null)
             {
@@ -94,8 +93,7 @@ public sealed class FormatStandardizationService : IFormatStandardizationService
                     validated.WorksheetName), stagingPath);
             }
 
-            var contentAtOrAfterHeader = worksheet
-                .CellsUsed(XLCellsUsedOptions.Contents)
+            var contentAtOrAfterHeader = workbook.ContentCells(worksheet)
                 .Where(cell => cell.Address.RowNumber >= validated.HeaderRowNumber)
                 .ToArray();
 
@@ -159,7 +157,7 @@ public sealed class FormatStandardizationService : IFormatStandardizationService
                     FileMode.Create,
                     FileAccess.ReadWrite,
                     FileShare.None);
-                workbook.SaveAs(stagingStream);
+                workbook.SaveAs(stagingStream, cancellationToken);
             }
             catch (IOException exception) when (IsFileLocked(exception))
             {
@@ -191,7 +189,7 @@ public sealed class FormatStandardizationService : IFormatStandardizationService
             stopwatch.Stop();
 
             var summary = new FormatStandardizationSummary(
-                worksheet.Name,
+                workbook.IsCsv ? null : worksheet.Name,
                 cellsByRow.Length,
                 stopwatch.Elapsed);
 
@@ -237,7 +235,7 @@ public sealed class FormatStandardizationService : IFormatStandardizationService
             return ValidationFailure("输入文件路径不能为空。");
         }
 
-        if (string.IsNullOrWhiteSpace(source.WorksheetName))
+        if (!IsCsvPath(source.FilePath) && string.IsNullOrWhiteSpace(source.WorksheetName))
         {
             return ValidationFailure("工作表名称不能为空。");
         }
@@ -276,11 +274,11 @@ public sealed class FormatStandardizationService : IFormatStandardizationService
                 inputFilePath));
         }
 
-        if (!IsXlsxPath(inputFilePath) || !IsXlsxPath(outputFilePath))
+        if (!IsSupportedPath(inputFilePath) || !SameFormat(inputFilePath, outputFilePath))
         {
             return new ValidationResult(null, new OperationError(
                 OperationErrorCode.UnsupportedFileType,
-                "输入和输出文件都必须使用 .xlsx 扩展名。"));
+                "输入必须为 .xlsx/.xls/.csv，输出格式必须与输入一致。"));
         }
 
         if (string.Equals(inputFilePath, outputFilePath, StringComparison.OrdinalIgnoreCase))
@@ -451,7 +449,7 @@ public sealed class FormatStandardizationService : IFormatStandardizationService
 
     private sealed record ValidatedRequest(
         string InputFilePath,
-        string WorksheetName,
+        string? WorksheetName,
         int HeaderRowNumber,
         string OutputFilePath,
         string OutputDirectory,

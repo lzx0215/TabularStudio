@@ -89,7 +89,7 @@ namespace TabularStudio.Core.Contracts;
 
 public sealed record WorksheetSource(
     string FilePath,
-    string WorksheetName,
+    string? WorksheetName,
     int HeaderRowNumber);
 
 public sealed record ColumnReference(
@@ -209,7 +209,7 @@ public sealed record PreviewRow(
     IReadOnlyList<PreviewCell> Cells);
 
 public sealed record PreviewTable(
-    string WorksheetName,
+    string? WorksheetName,
     int HeaderRowNumber,
     IReadOnlyList<ColumnReference> Columns,
     IReadOnlyList<PreviewRow> Rows);
@@ -223,13 +223,13 @@ public sealed record WorksheetPreviewResult(
 预览约定：
 
 - `WorkbookInspectionResult`、`WorksheetPreviewResult` 遵守 4.1 节的成功 / 失败不变量。
-- `HeaderRowNumber`、`ColumnReference.ColumnNumber`、`PreviewCell.ColumnNumber` 与 `WorksheetRowNumber` 均为大于等于 1 的物理行列号，与 Excel 行列位置一致。
+- `HeaderRowNumber`、`ColumnReference.ColumnNumber`、`PreviewCell.ColumnNumber` 与 `WorksheetRowNumber` 均为大于等于 1 的行列号。Excel 使用物理行列；CSV 使用解析记录号与字段序号，字段内换行不增加记录号。
 - `Columns` 来自指定表头行，供 UI 显示列头、配置匹配条件和选择返回字段；即使表头文本重复或为空，每一列仍由 `ColumnNumber` 唯一定位。
 - Core 返回实际 `HeaderText`，空表头为 `null`，不生成「第 A 列」等占位文案。UI 可按 Approved UI Baseline 的实现建议选择占位显示文本，但必须保留并回传原 `ColumnReference`，不得把占位文案当作物理列身份或原始表头名。
 - `Rows` 从表头之后的数据行开始，最多 20 行；预览上限不是请求参数，UI 不能通过 Contract 扩大。
 - `Columns`、`Rows` 与 `PreviewRow.Cells` 始终为非 `null` 集合；成功预览没有数据行时 `Rows = []`。
 - `PreviewRow.Cells` 与 `PreviewTable.Columns` 在列数和顺序上完全对齐，且对应位置的 `ColumnNumber` 相同。若某单元格在 Excel 中为空白，`DisplayValue` 为 `null`，便于 UI 直接绑定 DataGrid 或转为 `DataTable`，无需在 UI 层做稀疏列索引对齐。
-- `WorksheetRowNumber` 保留原工作表行号，便于 UI 说明样本位置。
+- `WorksheetRowNumber` 保留 Excel 原行号；CSV 为 1-based 解析记录号。
 - `DisplayValue` 是普通可显示字符串，不是 Excel 对象，也不授权 UI 根据显示字符串推断处理类型。
 - 表头行非法时返回 `InvalidHeaderRow`；Sheet 不存在时返回 `WorksheetNotFound`。
 
@@ -280,7 +280,7 @@ public sealed record FormatStandardizationRequest(
 
 ```csharp
 public sealed record FormatStandardizationSummary(
-    string ProcessedWorksheetName,
+    string? ProcessedWorksheetName,
     int ProcessedDataRowCount,
     TimeSpan Elapsed);
 
@@ -294,7 +294,7 @@ public sealed record FormatStandardizationResult(
 成功时：
 
 - `OutputFilePath` 是已写入的新结果文件路径。
-- `Summary.ProcessedWorksheetName` 是实际处理的 Sheet。
+- `Summary.ProcessedWorksheetName` 是实际处理的 Sheet；CSV 为 null。
 - `Summary.ProcessedDataRowCount` 只统计表头之后实际纳入处理范围的数据行。
 - `Summary.Elapsed` 是本次 Core 执行耗时，供 UI 按 Approved UI Baseline 展示；UI 根据这些结构化数据生成最终成功文案。
 
@@ -419,7 +419,7 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 | Error Code | Core 含义 | UI 责任 |
 | --- | --- | --- |
 | `FileNotFound` | 输入路径不存在 | 提示重新选择文件 |
-| `UnsupportedFileType` | 输入或输出不是 `.xlsx` | 提示 MVP 只支持 `.xlsx` |
+| `UnsupportedFileType` | 输入不属于已确认格式，或输出格式与输入/主表不一致 | 提示支持 `.xlsx/.xls/.csv` 且按原格式写回 |
 | `FileLocked` | 文件被其它程序独占 | 提示关闭占用后重试 |
 | `WorkbookUnreadable` | 工作簿损坏或无法安全读取 | 展示错误并允许重新选文件 |
 | `WorksheetNotFound` | 指定 Sheet 不存在 | 刷新选择并重新预览 |
@@ -453,7 +453,7 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 
 - UI 不需要引用 ClosedXML；Core 不需要引用 WPF。
 - 没有 Repository、数据库、网络 API、MediatR、CQRS、Event Bus、Plugin、Domain Event 或序列化协议。
-- 没有用户取消按钮、模糊匹配、公式计算、非 `.xlsx` 文件或第三个产品功能。
+- 没有用户取消按钮、模糊匹配、公式计算、未确认格式文件或第三个产品功能。
 
 ## 13. Project Owner 决策记录 (Decision Log)
 
@@ -483,7 +483,7 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 - ClosedXML 处理代码、格式统一算法或数据匹配算法；
 - WPF 页面、控件、ViewModel 或 Dialog 实现；
 - Repository、数据库、网络层、REST API DTO 或序列化协议；
-- 模糊匹配、AI、云服务、账号、第三个功能或非 `.xlsx` 格式；
+- 模糊匹配、AI、云服务、账号、第三个功能或`.xlsx/.xls/.csv` 以外格式；
 - UI 可配置的日期白名单、数字算法、Unicode 算法、状态值集合或输入覆盖逃生参数。
 
 后续修改本契约必须：
@@ -492,3 +492,13 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 2. 不得反向修改 Requirements / UI / Processing Baseline；
 3. 若 Review 发现产品行为冲突，提交 Grok / Project Owner 确认；
 4. PR 明确勾选 Contract Changes 并说明兼容影响。
+
+## Issue #34 多格式契约增量（2026-09-08）
+
+- WorksheetSource.WorksheetName 对 CSV 可为 null/空；非空值也忽略，不产生虚拟 Sheet。xlsx/xls 仍要求有效的工作表名。
+- CSV InspectAsync 成功返回 Worksheets=[]；不是读取失败。CSV PreviewTable.WorksheetName 和 FormatStandardizationSummary.ProcessedWorksheetName 返回 null。
+- CSV HeaderRowNumber / WorksheetRowNumber 是解析记录号，字段内换行不增加记录号。物理列身份、空/重复表头规则不变。
+- 同文件不同 Sheet 只适用于 xlsx/xls；同一个 CSV 同时作为两侧输入返回 InvalidConfiguration。
+- 不增加 OperationErrorCode，不改变接口方法和参数位置，不将任何库类型暴露到 Contract。
+- 实际读写边界见 processing-rules 第 11 节；不以库默认行为代替规则。
+- 已在“Antigravity UI 开发”协作任务取得 UI-side design review APPROVE；该任务声明不代表独立 Antigravity 身份，实际 diff review 证据随 PR 归档，不冒称独立身份会签。

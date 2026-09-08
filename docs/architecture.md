@@ -1,76 +1,26 @@
 # 架构
 
-- Status: Initial engineering skeleton（Issue #1）
-- Owner: **Codex**
-- Reviewer for scope: Grok
-- Related: `docs/requirements.md`、`docs/contracts.md`、`docs/decisions/`
+- Owner: Codex
+- Current implementation: Issue #34 Core 多格式支持；WPF 集成不在本 Issue。
 
-## 文档用途
+## 项目与依赖方向
 
-记录 TabularStudio 的实现结构，并保证结构只服务已确认 MVP。本次仅建立可编译、可测试的工程骨架，不实现格式统一、数据匹配、Excel 业务逻辑或最终 UI。
+Windows / .NET 10 / WPF，完全本地离线。TabularStudio.App 与 TabularStudio.Tests 引用 TabularStudio.Core，Core 不引用 WPF。
 
-## 已确认技术方向
+Core Services：WorkbookInspectionService、FormatStandardizationService、DataMatchingService。ApprovedValueNormalization 复用已确认清理/比较规则；WorkbookFileOperations 负责只读输入、临时输出和提交/清理。
 
-- 形态：Windows 本地桌面工具
-- 语言：C#
-- 运行时：.NET 10
-- UI：WPF
-- Excel：ClosedXML
-- 网络：完全离线
-- 文件：MVP 只处理 `.xlsx`
+TabularWorkbook 是内部格式适配器：
 
-## 工程结构
+- XLSX：持有原 ClosedXML XLWorkbook，沿用既有读写。
+- XLS：持有原 HSSF 工作簿和内存值模型；既有算法作用于内存模型，只把变化写回原 HSSF，不生成中间 XLSX，不复制重建整个 XLS。
+- CSV：CsvHelper 本地解析/写出，内存表格只供 Core 使用，不暴露虚拟 Sheet。具体编码、记录、错误与大小边界见 processing-rules §11。
 
-```text
-TabularStudio.sln
-├─ src/
-│  ├─ TabularStudio.App/       WPF 桌面应用入口
-│  └─ TabularStudio.Core/      Excel 处理与业务规则的 Core 边界
-└─ tests/
-   └─ TabularStudio.Tests/     Core 自动化测试
-```
+Contract 只暴露普通 .NET 数据结构，CSV nullable Sheet 增量见 contracts.md；没有引入网络 API、Office、数据库或在线授权。
 
-| 项目 | Target Framework | 职责 | 项目引用 |
-| --- | --- | --- | --- |
-| `TabularStudio.App` | `net10.0-windows` | WPF 应用入口；后续承载 UI 与应用编排 | `TabularStudio.Core` |
-| `TabularStudio.Core` | `net10.0` | 后续承载处理规则与 Excel 访问；不依赖 WPF | 无 |
-| `TabularStudio.Tests` | `net10.0` | Core 的 xUnit 自动化测试 | `TabularStudio.Core` |
+## 依赖与验证
 
-依赖方向固定为：
+现有 ClosedXML 0.105.1；新增 NPOI 2.7.4、CsvHelper 33.1.0；为修复旧依赖显式约束 BouncyCastle.Cryptography 2.6.2、SixLabors.ImageSharp 2.1.11、System.Security.Cryptography.Xml 10.0.11。最终选择和许可见 decisions/ADR-20260907-offline-xls-csv.md。
 
-```text
-TabularStudio.App ──────> TabularStudio.Core
-TabularStudio.Tests ────> TabularStudio.Core
-```
+自动化回归在 tests/TabularStudio.Tests；独立 Core FT harness 在 tools/Issue34.FunctionalQA，运行时只生成 synthetic 文件，逐例验证并检查输出 reopen 与输入 SHA256，不使用 WPF 自动化。
 
-Core 不反向引用 App。UI 与 Core 的具体调用契约在后续对应 Issue 中维护到 `docs/contracts.md`，Issue #1 不预先定义业务接口。
-
-## 技术依赖
-
-| 依赖 | 所属项目 | 用途 |
-| --- | --- | --- |
-| WPF | `TabularStudio.App` | Windows 桌面应用框架 |
-| CommunityToolkit.Mvvm | `TabularStudio.App` | 后续支持 MVVM；Issue #1 仅配置依赖 |
-| ClosedXML | `TabularStudio.Core` | 后续处理 `.xlsx`；Issue #1 不实现 Excel 逻辑 |
-| xUnit | `TabularStudio.Tests` | 自动化测试框架 |
-
-`global.json` 将 SDK 基线设为 .NET SDK `10.0.100`，并允许在 .NET 10 的更新 feature band 上构建。仓库不引入 Web 框架、数据库或在线 SDK。
-
-## 运行与数据边界
-
-- 应用在 Windows 本地运行。
-- 无服务端、无数据库、无远程 API。
-- 输入输出均为本地文件。
-- App 负责桌面交互与调用编排；Core 负责处理行为，避免把处理规则写入 UI。
-
-## Issue #1 明确不实现
-
-- 格式统一与数据匹配算法
-- Excel 读写业务逻辑
-- 最终页面、交互和 ViewModel
-- UI/Core 业务契约
-- `.xlsx` 之外的文件格式
-
-## 决策记录
-
-Issue #1 仅落实需求和 Issue 已确认的技术栈及最小项目拆分，没有产生需要长期单独记录的重要技术取舍，因此不新增 ADR。后续若出现影响范围、依赖方向或可替换性的重大决策，再记录到 `docs/decisions/`。
+断网整机、无 SDK 干净机器、任意复杂宏/嵌入对象保真不由 build/test 推断为通过；发布仍遵守 Gate 3。本 Issue 不创建发布包。

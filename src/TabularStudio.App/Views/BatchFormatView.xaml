@@ -155,7 +155,7 @@
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" FontSize="12"/>
-                        <ProgressBar Value="{Binding ProgressPercent}" Height="3" Margin="0,3,0,0" Foreground="{StaticResource PrimaryBrush}"/>
+                        <ProgressBar Value="{Binding ProgressPercent}" Height="8" Margin="0,4,0,0" Foreground="{StaticResource PrimaryBrush}"/>
                     </StackPanel>
                 </DockPanel>
             </Grid>

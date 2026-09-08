@@ -266,7 +266,7 @@
                             <TextBlock Text="{Binding ResultSkippedCount, StringFormat='未参与 {0}'}"/>
                         </WrapPanel>
                         <TextBlock Text="{Binding ProgressStageText}" FontSize="12"/>
-                        <ProgressBar Value="{Binding ProgressPercent}" IsIndeterminate="{Binding IsProgressIndeterminate}" Height="3" Margin="0,2,0,0" Foreground="{StaticResource PrimaryBrush}"/>
+                        <ProgressBar Value="{Binding ProgressPercent}" IsIndeterminate="{Binding IsProgressIndeterminate}" Height="8" Margin="0,4,0,0" Foreground="{StaticResource PrimaryBrush}"/>
                     </StackPanel>
                 </DockPanel>
             </Grid>

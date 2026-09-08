@@ -46,4 +46,3 @@
 - 本 #43 只改 requirements 与本文，与 PR #40 当前 Files changed 不重叠。
 - #43 合并前停 Gate 2。随后按已确认需求创建 Feature Issue，包含本验收包；若 Owner 未批准新增 UI 方案或存在契约冲突，先提交具体方案决策。
 - Feature 实现完成后独立 PR，锁定 exact head SHA 后才能合并；发布另走 artifact 验收。
-

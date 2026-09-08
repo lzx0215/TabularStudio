@@ -226,3 +226,17 @@ Gate 3 请求必须锁定：
 - `docs/release-win-x64.md`（仅增加 Gate 3 指向，不放宽验收）
 
 模板不得删掉本文已经要求的 Gate 1 字段、复现步骤、Regression Test Case、Actual Diff 或 Merge SHA 锁定字段。
+
+## 13. 受控并行（Issue #39）
+
+允许多个独立 Issue 并行推进。并行单元是 Issue：每项拥有独立 Issue、Branch、PR 和 Gate；不得共用一个 dirty working tree 承载两个 Issue 的未提交改动，也不得把多个不相关 Issue 混入同一分支或 PR。
+
+同一 Issue 的顺序仍为 Gate 1 → 合并前连续段 → Gate 2（exact PR head SHA）→ 合并 → 合并后连续段 →（如有发布包）Gate 3 → Done。Owner 仍只参与三个常规 Gate；并行不新增审批，也不把非 Owner Gate 变为逐步等待。
+
+同时满足以下条件才可并行：依赖已满足或不存在功能、契约、文档依赖；没有同时修改相同 Contract、Baseline 或核心文件；各 Issue 在开始工作前拥有干净、隔离的工作树。Functional QA、Regression、Release preparation、Done preparation 可与其它独立 Issue 的 Gate 1 或开发并行。纯协作文档 Task 也可与无文件冲突的产品工作并行。
+
+有依赖的后置 Issue 可以 Open 或准备 Gate 1，但依赖满足前不得实现。若文件、Contract、Baseline 或核心实现重叠，必须先协调串行顺序，不得等 Gate 2 才处理冲突。
+
+第 5 节 STOP 和第 6 节升级项全部保留，包括 QA FAIL、dirty working tree、main 变化、PR head SHA 变化、build / test FAIL。发现 origin/main 变化时停止原基线上的推进；每个未合并 PR 在请求或重新请求 Gate 2 前，必须同步最新 main，重新完成 build/test（纯文档为文档自检）、Actual Diff、Scope Review 和 Pre-Merge Readiness，记录新的 exact PR head SHA。旧 SHA 批准不能用于新 SHA。并行不放宽功能测试真实性、发布包 filename/size/SHA256 锁定，也不允许桌面 GUI 自动化。
+
+维护任务协调顺序：#29 合并后 QA 不阻塞其它独立工作；#34 完成 Core 多格式并更新契约后才可实现 #31；#32 与 #34 共享 Core/Contract/Baseline，默认 #34 → #32；#33 依赖 #32，多格式选择同时依赖 #31。此顺序不代表其它 Issue 自动通过其质量 Gate。

@@ -9,3 +9,7 @@ UI 方案：保留格式统一导航；原页面内使用文件列表、所选�
 验证：Release build PASS，0 warnings/errors；250 Core + 20 App tests PASS。新增回归覆盖混合失败、共同规则、独立表头、目录跨实例记忆、覆盖取消/另存、独占锁释放后重试、运行期间禁止重新加载/重复开始、整批源保护。独立 tools/Issue33.FunctionalQA 实际执行通过：三格式批量→重开预览/核对字段与输入哈希→所选 CSV 结果送条件匹配→对照 XLS→CSV 结果，再次执行成功。
 
 FT33-01～06 的 ViewModel/Core 可执行部分 PASS；FT33-07 静态入口检查 PASS。实际文件对话框、拖拽、WPF 可视布局、WPS 操作仍 NOT RUN。未启用桌面 GUI 自动化，不将上述集成工具认作人工 UI Functional QA。实现完成，完整 UI 验收尚未完成。
+
+## 启动缺陷修复（2026-09-08，Owner 请求打开程序时发现）
+
+实际启动初次 FAIL：Windows .NET Runtime 日志显示 XamlParseException，BatchFormatView 缺少 BoolToVisibilityConverter 静态资源。此前 build/ViewModel tests 未捕获此运行时资源问题，不能作为启动成功证据。已补齐局部资源，增加不显示窗口的 STA WPF 组件加载/布局回归。App 21 tests PASS；修复后实际程序启动，有主窗口句柄且 Responding=True。未自动点击控件，不代表完整 WPF/WPS Functional QA 通过。

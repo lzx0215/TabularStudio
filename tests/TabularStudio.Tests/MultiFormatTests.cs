@@ -83,6 +83,28 @@ public sealed class MultiFormatTests : IDisposable
         Assert.Equal(hash, Hash(path)); Assert.Empty(Directory.GetFiles(directory, "*.staging.*"));
     }
 
+    [Theory, MemberData(nameof(Pairs))]
+    public async Task ConditionalMatchingWorksAcrossAllFormats(string masterExtension, string referenceExtension)
+    {
+        var master = FilePath("filtered", masterExtension);
+        var reference = FilePath("lookup", referenceExtension);
+        Write(master, [["Key", "Flag"], ["001", "是"], ["001", "否"], ["", "否"]]);
+        Write(reference, [["Key", "Value"], ["001", "found"]]);
+        var original = Hash(master);
+        var request = Match(master, reference, FilePath("filtered-result", masterExtension)) with
+        { MasterFilter = new(new(2, "Flag"), "是") };
+        var result = await new DataMatchingService().ExecuteAsync(request);
+        Assert.True(result.Success, result.Error?.ToString());
+        Assert.Equal(1, result.Summary!.MatchedCount);
+        Assert.Equal(2, result.Summary.SkippedCount);
+        Assert.Equal(0, result.Summary.EmptyKeyCount);
+        var rows = Read(request.OutputFilePath);
+        Assert.Equal("found", rows[1][2]);
+        Assert.Equal("", rows[2][2]);
+        Assert.Equal("未参与匹配", rows[3][3]);
+        Assert.Equal(original, Hash(master));
+    }
+
     [Fact]
     public async Task CsvQuotesMultilineBlankRecordsBomAndHeaderRowRoundTrip()
     {

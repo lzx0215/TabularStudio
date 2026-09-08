@@ -31,3 +31,7 @@ UI reviewer task supplied design APPROVE with no UI blocker; actual diff review 
 - Arbitrary legacy BIFF, macros and embedded objects: NOT VERIFIED; synthetic formula/style/sheet coverage is not a universal preservation guarantee.
 - CSV encoding/parser/record decisions and memory model limits are documented in processing-rules section 11; unsupported encodings are not advertised as supported.
 - Next: actual diff/scope review and Owner Gate 2 for the exact PR SHA. Do not merge without approval. Post-merge main verification and applicable release QA remain required.
+
+## 2026-09-08 接手完成记录
+
+按 Owner 本轮五项任务免逐项审批授权同步 main（含 #45、#39），解决 architecture/processing-rules 冲突，保留条件筛选契约与算法。新增全部九种格式组合的条件筛选回归。Release build 0 warnings/errors；245 Core + 4 App 测试通过；独立 FT34-01～16 全部实际通过；当前 NuGet 源未报告四项目依赖已知漏洞。Actual Diff/Scope/Contract 由 Codex 按本轮授权复核。UI 实现交由后续 #31，本条不声明 WPF 人工验收或干净机器验证通过。

@@ -24,7 +24,7 @@ string? sent = null;
 var batch = new BatchFormatViewModel(inspection, new FormatStandardizationService(), preferences,
     confirm: _ => ExistingOutputChoice.Overwrite, sendToMatching: p => sent = p);
 await batch.LoadFilesAsync([paths[0], Path.Combine(root, "missing.csv"), paths[1], paths[2]]);
-Check(batch.Files.Count == 4 && batch.CanStart, "selection");
+Check(batch.Files.Count == 4 && !batch.CanStart, "selection");
 Check(!batch.Rules.TrimOuterWhitespace && !batch.Rules.NormalizeUnambiguousDates, "defaults");
 batch.Rules.TrimOuterWhitespace = true;
 await batch.StartAsync();

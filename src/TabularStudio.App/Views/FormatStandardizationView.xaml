@@ -32,7 +32,7 @@
                            Foreground="{StaticResource TextPrimaryBrush}"
                            VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1"
-                           Text="完全离线 · 仅支持 .xlsx 格式"
+                           Text="完全离线 · 支持 .xlsx / .xls / .csv"
                            FontSize="12"
                            Foreground="{StaticResource TextMutedBrush}"
                            VerticalAlignment="Center" />
@@ -83,12 +83,12 @@
                             <ColumnDefinition Width="120" />
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="工作表:"
+                        <TextBlock Visibility="{Binding HasWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}" Text="工作表:"
                                    VerticalAlignment="Center"
                                    FontSize="13"
                                    Foreground="{StaticResource TextSecondaryBrush}" />
                         <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding Worksheets}"
+                                  Visibility="{Binding HasWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}" ItemsSource="{Binding Worksheets}"
                                   SelectedItem="{Binding SelectedWorksheet}"
                                   DisplayMemberPath="Name"
                                   IsEnabled="{Binding CanConfigure}"

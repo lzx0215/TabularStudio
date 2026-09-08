@@ -36,6 +36,14 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
     [ObservableProperty]
     private string? _inputFilePath;
 
+    public bool IsCsvInput => TabularFileTypes.IsCsv(InputFilePath);
+    public bool HasWorksheetSelector => !IsCsvInput;
+    partial void OnInputFilePathChanged(string? value)
+    {
+        OnPropertyChanged(nameof(IsCsvInput));
+        OnPropertyChanged(nameof(HasWorksheetSelector));
+    }
+
     public ObservableCollection<WorksheetInfo> Worksheets { get; } = [];
 
     [ObservableProperty]
@@ -258,14 +266,14 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         }
 
         string extension = Path.GetExtension(fullPath);
-        if (!string.Equals(extension, ".xlsx", StringComparison.OrdinalIgnoreCase))
+        if (!TabularFileTypes.IsSupported(fullPath))
         {
             if (currentLoadGeneration != _fileLoadGeneration)
             {
                 return;
             }
 
-            SetError("不支持的文件格式", "TabularStudio 第一版仅支持 .xlsx 格式文件。", fullPath);
+            SetError("不支持的文件格式", "支持 .xlsx、.xls、.csv 格式文件。", fullPath);
             State = FormatPageState.Error;
             return;
         }
@@ -320,10 +328,10 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         State = FormatPageState.FileLoaded;
 
         // 默认选中第 1 个 Sheet (Approved UI Baseline 实现建议)
-        if (Worksheets.Count > 0)
+        if (IsCsvInput || Worksheets.Count > 0)
         {
             _suppressPreviewRefresh = true;
-            SelectedWorksheet = Worksheets[0];
+            SelectedWorksheet = IsCsvInput ? null : Worksheets[0];
             _suppressPreviewRefresh = false;
 
             await RefreshPreviewAsync();
@@ -353,7 +361,7 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
 
         InvalidatePreviewForPendingRefresh();
 
-        if (string.IsNullOrWhiteSpace(InputFilePath) || SelectedWorksheet is null)
+        if (string.IsNullOrWhiteSpace(InputFilePath) || (!IsCsvInput && SelectedWorksheet is null))
         {
             return;
         }
@@ -372,7 +380,7 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         try
         {
             var request = new WorksheetPreviewRequest(
-                new WorksheetSource(InputFilePath, SelectedWorksheet.Name, HeaderRowNumber));
+                new WorksheetSource(InputFilePath, SelectedWorksheet?.Name, HeaderRowNumber));
 
             var previewResult = await _inspectionService.GetPreviewAsync(request);
 
@@ -548,7 +556,7 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(InputFilePath) || SelectedWorksheet is null || string.IsNullOrWhiteSpace(OutputFilePath))
+        if (string.IsNullOrWhiteSpace(InputFilePath) || (!IsCsvInput && SelectedWorksheet is null) || string.IsNullOrWhiteSpace(OutputFilePath))
         {
             return;
         }
@@ -627,7 +635,7 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         });
 
         var request = new FormatStandardizationRequest(
-            Source: new WorksheetSource(InputFilePath, SelectedWorksheet.Name, HeaderRowNumber),
+            Source: new WorksheetSource(InputFilePath, SelectedWorksheet?.Name, HeaderRowNumber),
             OutputFilePath: OutputFilePath,
             Options: new FormatStandardizationOptions
             {
@@ -756,7 +764,7 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         }
 
         if (!string.IsNullOrWhiteSpace(InputFilePath) &&
-            SelectedWorksheet is not null &&
+            (IsCsvInput || SelectedWorksheet is not null) &&
             HeaderRowNumber >= 1 &&
             HasPreviewData &&
             !string.IsNullOrWhiteSpace(OutputFilePath) &&
@@ -833,7 +841,7 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
         string message = error.Code switch
         {
             OperationErrorCode.FileNotFound => "所选输入文件不存在，请重新选择有效文件。",
-            OperationErrorCode.UnsupportedFileType => "TabularStudio 第一版仅支持 .xlsx 格式文件。",
+            OperationErrorCode.UnsupportedFileType => "支持 .xlsx、.xls、.csv 格式文件。",
             OperationErrorCode.FileLocked => "文件正被其他程序占用，请在 Excel / WPS 中关闭该文件后重试。",
             OperationErrorCode.WorkbookUnreadable => "工作簿损坏或无法安全读取，请检查文件是否完整有效。",
             OperationErrorCode.WorksheetNotFound => "指定的工作表不存在，请重新选择工作表。",
@@ -896,7 +904,7 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
     {
         var dialog = new OpenFileDialog
         {
-            Filter = "Excel 工作簿 (*.xlsx)|*.xlsx",
+            Filter = TabularFileTypes.OpenFilter,
             Title = "选择 Excel 文件",
             CheckFileExists = true
         };
@@ -908,10 +916,10 @@ public sealed partial class FormatStandardizationViewModel : ObservableObject
     {
         var dialog = new SaveFileDialog
         {
-            Filter = "Excel 工作簿 (*.xlsx)|*.xlsx",
+            Filter = TabularFileTypes.SaveFilter(defaultFileName),
             Title = "更改保存路径",
             FileName = defaultFileName,
-            DefaultExt = "xlsx",
+            DefaultExt = Path.GetExtension(defaultFileName),
             AddExtension = true
         };
 

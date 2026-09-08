@@ -512,3 +512,7 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 - 不增加 OperationErrorCode，不改变接口方法和参数位置，不将任何库类型暴露到 Contract。
 - 实际读写边界见 processing-rules 第 11 节；不以库默认行为代替规则。
 - 已在“Antigravity UI 开发”协作任务取得 UI-side design review APPROVE；该任务声明不代表独立 Antigravity 身份，实际 diff review 证据随 PR 归档，不冒称独立身份会签。
+
+## Issue #31 UI 多格式调用确认
+
+两页对 CSV 传 WorksheetSource.WorksheetName=null；不要求或显示虚构 Sheet。Excel 从 inspection.Worksheets 选实际 Sheet。表头行与预览沿用原契约；输出跟输入/主表扩展名。CSV 不允许同文件不同 Sheet 模式。由 Codex 按 Owner 本轮跨角色授权完成 UI/Core 调用自检。

@@ -43,6 +43,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     // 状态枚举
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanConfigure))]
+    [NotifyPropertyChangedFor(nameof(CanUseSameFile))]
     [NotifyPropertyChangedFor(nameof(CanStart))]
     [NotifyPropertyChangedFor(nameof(CanExecuteSuccessActions))]
     private DataMatchingPageState _state = DataMatchingPageState.Initial;
@@ -50,6 +51,17 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     // 主表配置
     [ObservableProperty]
     private string? _masterFilePath;
+
+    public bool IsMasterCsv => TabularFileTypes.IsCsv(MasterFilePath);
+    public bool HasMasterWorksheetSelector => !IsMasterCsv;
+    public bool CanUseSameFile => CanConfigure && !IsMasterCsv;
+    partial void OnMasterFilePathChanged(string? value)
+    {
+        OnPropertyChanged(nameof(IsMasterCsv));
+        OnPropertyChanged(nameof(HasMasterWorksheetSelector));
+        OnPropertyChanged(nameof(CanUseSameFile));
+        if (IsMasterCsv) UseSameFileAsMaster = false;
+    }
 
     public ObservableCollection<WorksheetInfo> MasterWorksheets { get; } = [];
 
@@ -83,6 +95,14 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     [ObservableProperty]
     private string? _referenceFilePath;
+
+    public bool IsReferenceCsv => TabularFileTypes.IsCsv(ReferenceFilePath);
+    public bool HasReferenceWorksheetSelector => !IsReferenceCsv;
+    partial void OnReferenceFilePathChanged(string? value)
+    {
+        OnPropertyChanged(nameof(IsReferenceCsv));
+        OnPropertyChanged(nameof(HasReferenceWorksheetSelector));
+    }
 
     public ObservableCollection<WorksheetInfo> ReferenceWorksheets { get; } = [];
 
@@ -162,6 +182,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanStart))]
     [NotifyPropertyChangedFor(nameof(CanConfigure))]
+    [NotifyPropertyChangedFor(nameof(CanUseSameFile))]
     [NotifyPropertyChangedFor(nameof(CanBrowseMaster))]
     [NotifyPropertyChangedFor(nameof(CanBrowseReference))]
     private bool _isProcessing;
@@ -227,11 +248,11 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         !IsProcessing &&
         HasValidMasterFilter &&
         !string.IsNullOrWhiteSpace(MasterFilePath) &&
-        SelectedMasterWorksheet != null &&
+        (IsMasterCsv || SelectedMasterWorksheet != null) &&
         MasterHeaderRowNumber >= 1 &&
         HasMasterPreviewData &&
         !string.IsNullOrWhiteSpace(ReferenceFilePath) &&
-        SelectedReferenceWorksheet != null &&
+        (IsReferenceCsv || SelectedReferenceWorksheet != null) &&
         ReferenceHeaderRowNumber >= 1 &&
         HasReferencePreviewData &&
         Conditions.Count >= 1 &&
@@ -345,14 +366,14 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         }
 
         string extension = Path.GetExtension(fullPath);
-        if (!string.Equals(extension, ".xlsx", StringComparison.OrdinalIgnoreCase))
+        if (!TabularFileTypes.IsSupported(fullPath))
         {
             if (currentLoadGeneration != _masterFileLoadGeneration)
             {
                 return;
             }
 
-            SetError("不支持的主表文件格式", "TabularStudio 第一版仅支持 .xlsx 格式文件。", fullPath, "Master");
+            SetError("不支持的主表文件格式", "支持 .xlsx、.xls、.csv 格式文件。", fullPath, "Master");
             State = DataMatchingPageState.Error;
             return;
         }
@@ -401,10 +422,10 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         }
 
         // 默认选中第 1 个 Sheet
-        if (MasterWorksheets.Count > 0)
+        if (IsMasterCsv || MasterWorksheets.Count > 0)
         {
             _suppressMasterPreviewRefresh = true;
-            SelectedMasterWorksheet = MasterWorksheets[0];
+            SelectedMasterWorksheet = IsMasterCsv ? null : MasterWorksheets[0];
             _suppressMasterPreviewRefresh = false;
 
             await RefreshMasterPreviewAsync();
@@ -471,7 +492,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     {
         int currentGeneration = ++_masterPreviewGeneration;
 
-        if (string.IsNullOrWhiteSpace(MasterFilePath) || SelectedMasterWorksheet is null)
+        if (string.IsNullOrWhiteSpace(MasterFilePath) || (!IsMasterCsv && SelectedMasterWorksheet is null))
         {
             InvalidateMasterPreview();
             return;
@@ -490,7 +511,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         try
         {
             var request = new WorksheetPreviewRequest(
-                new WorksheetSource(MasterFilePath, SelectedMasterWorksheet.Name, MasterHeaderRowNumber));
+                new WorksheetSource(MasterFilePath, SelectedMasterWorksheet?.Name, MasterHeaderRowNumber));
 
             var result = await _inspectionService.GetPreviewAsync(request);
 
@@ -583,6 +604,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     partial void OnUseSameFileAsMasterChanged(bool value)
     {
+        if (value && IsMasterCsv) { UseSameFileAsMaster = false; return; }
         ++_referenceFileLoadGeneration;
         ++_referencePreviewGeneration;
         InvalidateReferencePreview();
@@ -667,14 +689,14 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         }
 
         string extension = Path.GetExtension(fullPath);
-        if (!string.Equals(extension, ".xlsx", StringComparison.OrdinalIgnoreCase))
+        if (!TabularFileTypes.IsSupported(fullPath))
         {
             if (currentLoadGeneration != _referenceFileLoadGeneration)
             {
                 return;
             }
 
-            SetError("不支持的对照表文件格式", "TabularStudio 第一版仅支持 .xlsx 格式文件。", fullPath, "Reference");
+            SetError("不支持的对照表文件格式", "支持 .xlsx、.xls、.csv 格式文件。", fullPath, "Reference");
             State = DataMatchingPageState.Error;
             return;
         }
@@ -717,10 +739,10 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         }
 
         // 默认选中第 1 个 Sheet
-        if (ReferenceWorksheets.Count > 0)
+        if (IsReferenceCsv || ReferenceWorksheets.Count > 0)
         {
             _suppressReferencePreviewRefresh = true;
-            SelectedReferenceWorksheet = ReferenceWorksheets[0];
+            SelectedReferenceWorksheet = IsReferenceCsv ? null : ReferenceWorksheets[0];
             _suppressReferencePreviewRefresh = false;
 
             await RefreshReferencePreviewAsync();
@@ -789,7 +811,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     {
         int currentGeneration = ++_referencePreviewGeneration;
 
-        if (string.IsNullOrWhiteSpace(ReferenceFilePath) || SelectedReferenceWorksheet is null)
+        if (string.IsNullOrWhiteSpace(ReferenceFilePath) || (!IsReferenceCsv && SelectedReferenceWorksheet is null))
         {
             InvalidateReferencePreview();
             return;
@@ -808,7 +830,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         try
         {
             var request = new WorksheetPreviewRequest(
-                new WorksheetSource(ReferenceFilePath, SelectedReferenceWorksheet.Name, ReferenceHeaderRowNumber));
+                new WorksheetSource(ReferenceFilePath, SelectedReferenceWorksheet?.Name, ReferenceHeaderRowNumber));
 
             var result = await _inspectionService.GetPreviewAsync(request);
 
@@ -1245,11 +1267,11 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         bool hasValidStatusColumn = !IsStatusColumnEnabled || !string.IsNullOrWhiteSpace(StatusColumnName);
 
         if (!string.IsNullOrWhiteSpace(MasterFilePath) &&
-            SelectedMasterWorksheet != null &&
+            (IsMasterCsv || SelectedMasterWorksheet != null) &&
             MasterHeaderRowNumber >= 1 &&
             HasMasterPreviewData &&
             !string.IsNullOrWhiteSpace(ReferenceFilePath) &&
-            SelectedReferenceWorksheet != null &&
+            (IsReferenceCsv || SelectedReferenceWorksheet != null) &&
             ReferenceHeaderRowNumber >= 1 &&
             HasReferencePreviewData &&
             hasValidConditions &&
@@ -1289,9 +1311,9 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     private async Task ExecuteMatchingAsync(bool overwrite)
     {
         if (string.IsNullOrWhiteSpace(MasterFilePath) ||
-            SelectedMasterWorksheet is null ||
+            (!IsMasterCsv && SelectedMasterWorksheet is null) ||
             string.IsNullOrWhiteSpace(ReferenceFilePath) ||
-            SelectedReferenceWorksheet is null ||
+            (!IsReferenceCsv && SelectedReferenceWorksheet is null) ||
             string.IsNullOrWhiteSpace(OutputFilePath))
         {
             return;
@@ -1323,8 +1345,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         try
         {
             var request = new DataMatchingRequest(
-                Master: new WorksheetSource(MasterFilePath, SelectedMasterWorksheet.Name, MasterHeaderRowNumber),
-                Reference: new WorksheetSource(ReferenceFilePath, SelectedReferenceWorksheet.Name, ReferenceHeaderRowNumber),
+                Master: new WorksheetSource(MasterFilePath, SelectedMasterWorksheet?.Name, MasterHeaderRowNumber),
+                Reference: new WorksheetSource(ReferenceFilePath, SelectedReferenceWorksheet?.Name, ReferenceHeaderRowNumber),
                 Conditions: Conditions.Select(c => new MatchingCondition(c.SelectedMasterColumn!.Reference, c.SelectedReferenceColumn!.Reference)).ToList(),
                 ReturnFields: ReturnFields.Where(f => f.IsSelected).Select(f => f.Reference).ToList(),
                 NormalizeComparisonKeys: NormalizeComparisonKeys,
@@ -1547,7 +1569,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         string message = error.Code switch
         {
             OperationErrorCode.FileNotFound => "请确认文件路径是否正确。",
-            OperationErrorCode.UnsupportedFileType => "TabularStudio 第一版仅支持 .xlsx 格式文件。",
+            OperationErrorCode.UnsupportedFileType => "支持 .xlsx、.xls、.csv 格式文件。",
             OperationErrorCode.FileLocked => "文件正被其他程序占用，请在 WPS / Excel 等程序中关闭该文件，然后点击开始数据匹配重试，或更改保存路径。",
             OperationErrorCode.WorkbookUnreadable => "工作簿损坏或无法安全读取，请检查文件完整性。",
             OperationErrorCode.WorksheetNotFound => "指定的工作表在文件中未找到，请重新选择工作表。",
@@ -1590,10 +1612,10 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     {
         var dlg = new SaveFileDialog
         {
-            Filter = "Excel 工作簿 (*.xlsx)|*.xlsx",
+            Filter = TabularFileTypes.SaveFilter(defaultFileName),
             Title = "更改保存路径",
             FileName = defaultFileName,
-            DefaultExt = "xlsx",
+            DefaultExt = Path.GetExtension(defaultFileName),
             AddExtension = true
         };
 
@@ -1609,7 +1631,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     {
         var dlg = new OpenFileDialog
         {
-            Filter = "Excel 工作簿 (*.xlsx)|*.xlsx",
+            Filter = TabularFileTypes.OpenFilter,
             Multiselect = false
         };
 

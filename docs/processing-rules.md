@@ -392,6 +392,7 @@
 - `未匹配`
 - `重复`
 - `匹配键为空`
+- `未参与匹配`（#45；主表未满足可选筛选条件）
 
 除非 requirements 经 Project Owner 确认变更，否则不得自行增加或改名。
 
@@ -531,3 +532,13 @@
 - 将 `"00123"` 与数字 `123` 视为相等；
 - ZipArchive、XmlReader / XmlWriter 或自定义 OOXML 流式处理架构；
 - 在没有真实性能或兼容性证据时提前设计复杂优化架构。
+
+## 2026-09-08 条件匹配增量（Issue #45）
+
+来源 requirements 6.2.4。此节扩展原四种行状态为五种，其余既有匹配规则不变。
+
+- MATCH-FILTER-001：MasterFilter 为 null 时不筛选。否则先验证主表筛选列有非空表头、存在且无公式；空指定值或标准化后为空返回 InvalidConfiguration，越界列返回 ColumnNotFound，公式返回 FormulaCellNotAllowedForMatching。不依赖公式缓存值，沿用全列公式预检，即使最终未参与的行也不放行公式键。
+- MATCH-FILTER-002：指定值为文本；与筛选列使用同一 KeyPart 类型比较和标准化开关。关闭标准化时按类型和值精确比较；文本不自动等于数字/布尔/日期。开启时文本清理、明确日期、整列安全数字判断沿用现有匹配逻辑；前导零与长数字保护保留，布尔不强转为文本。
+- MATCH-FILTER-003：每行先判断筛选，不符合时直接计 SkippedCount，保留原行，追加返回字段留空，状态写未参与匹配。符合时再执行原 AND、空键、唯一性与重复键规则。
+- MATCH-FILTER-004：总数 = MatchedCount + UnmatchedCount + DuplicateCount + EmptyKeyCount + SkippedCount。状态列关闭也照常计数；全部不参与仍输出新文件。不开启筛选时 SkippedCount=0。
+- 原四个状态的测试清单新增上述第五个状态。源文件、输出覆盖和重名保护不变。

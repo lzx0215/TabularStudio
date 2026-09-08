@@ -74,3 +74,13 @@ Core 不反向引用 App。UI 与 Core 的具体调用契约在后续对应 Issu
 ## 决策记录
 
 Issue #1 仅落实需求和 Issue 已确认的技术栈及最小项目拆分，没有产生需要长期单独记录的重要技术取舍，因此不新增 ADR。后续若出现影响范围、依赖方向或可替换性的重大决策，再记录到 `docs/decisions/`。
+
+## 条件匹配增量（Issue #45，2026-09-08）
+
+既有章节中的 Issue #1 骨架描述保留为历史。当前数据匹配由 App 收集条件，Core DataMatchingService 统一处理。
+
+- DataMatchingRequest 新增可选 MasterFilter，DataMatchingSummary 新增 SkippedCount；均使用 init 属性保持既有构造参数和调用兼容。
+- UI 只收集筛选列与文本、校验完整性和展示统计；筛选算法、公式约束、安全标准化、行保留及输出保护均由 Core 实现。
+- 复用现有 KeyPart/CompositeKey 比较，不新增库或表达式引擎。筛选在内存执行，不改写输入。
+- 现有 .xlsx 路径实现本功能；#34 多格式 I/O 独立推进。二者无功能硬依赖，共享文件需在 #34 同步主线时再次集成验证。
+- App.Tests 引用 App 验证实际 ViewModel 和 Core 调用；Core 测试保持独立。此类自动化不等同于桌面人工 QA。

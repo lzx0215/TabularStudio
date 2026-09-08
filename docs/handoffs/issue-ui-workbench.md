@@ -1,5 +1,7 @@
 # Issue #54 / PR #55 视觉返工交付
 
+> 2026-09-08 后续状态：本文件保留视觉返工的原始计划/历史证据。Owner 随后批准完整主表列实际值下拉的最小 Core/Contract 扩展，最新范围及验证见 [issue54-filter-values.md](issue54-filter-values.md)。此处“无 Core/Contract 变更”等描述仅适用于原视觉阶段，不代表当前 PR 全量差异。
+
 Owner已批准确认包第3–11节及AC01–13/FT01–08；错误详情直接展开显示且内部滚动。此轮停在Gate 2，不合并。新exact head见PR与本地 artifacts/issue54-rework/gate2-report.md，不再沿用94d1f5d。
 
 ## 实现与范围检查

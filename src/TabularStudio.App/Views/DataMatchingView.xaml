@@ -203,11 +203,19 @@
                                 <StackPanel IsEnabled="{Binding CanConfigure}" Margin="0,0,0,4">
                                     <CheckBox Content="仅匹配满足条件的主表行" IsChecked="{Binding IsMasterFilterEnabled}" Margin="0,0,6,4" FontSize="13"/>
                                     <WrapPanel IsEnabled="{Binding IsMasterFilterEnabled}">
-                                        <TextBlock Text="主表列" VerticalAlignment="Center" Margin="0,0,8,0" TextWrapping="Wrap"/>
+                                        <TextBlock Text="主表" VerticalAlignment="Center" Margin="0,0,8,0" TextWrapping="Wrap"/>
                                         <ComboBox ItemsSource="{Binding MasterAvailableColumns}" SelectedItem="{Binding SelectedMasterFilterColumn}" DisplayMemberPath="DisplayName" MinWidth="120" MaxWidth="180" ToolTip="选择用于筛选主表行的列" Margin="0,0,8,0"/>
                                         <TextBlock Text="等于" VerticalAlignment="Center" Margin="0,0,8,0" TextWrapping="Wrap"/>
-                                        <TextBox Text="{Binding MasterFilterValue, UpdateSourceTrigger=PropertyChanged}" Width="150" Padding="6,3" ToolTip="例如：是"/>
+                                        <ComboBox x:Name="MasterFilterValueSelector" ItemsSource="{Binding MasterFilterValues}"
+                                                  SelectedItem="{Binding SelectedMasterFilterValue}" DisplayMemberPath="DisplayText"
+                                                  IsEditable="False" IsEnabled="{Binding CanSelectMasterFilterValue}"
+                                                  Width="170" MaxDropDownHeight="240" Margin="0,0,0,4"
+                                                  ToolTip="从所选主表列的完整数据中选择实际值"/>
                                     </WrapPanel>
+                                    <TextBox Text="{Binding MasterFilterValuesMessage, Mode=OneWay}" IsReadOnly="True"
+                                             TextWrapping="Wrap" MaxHeight="56" BorderThickness="0" Padding="0" MinHeight="0"
+                                             VerticalScrollBarVisibility="Auto" Background="Transparent" FontSize="12"
+                                             Visibility="{Binding IsMasterFilterEnabled, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                 </StackPanel>
                                 <CheckBox Content="自动修复常见匹配差异（仅用于比较）" IsChecked="{Binding NormalizeComparisonKeys}" IsEnabled="{Binding CanConfigure}" FontSize="13" Margin="0,0,6,4" ToolTip="自动修复常见匹配差异 (空格/全半角/文本数字/日期统一，仅用于比较，不改源数据)"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4" IsEnabled="{Binding CanConfigure}">

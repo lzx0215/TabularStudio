@@ -91,7 +91,15 @@ public sealed class BatchViewResourceTests
                 matchVm.ReturnFields[2].IsSelected = true; matchVm.ReturnFields[3].IsSelected = true;
                 matchVm.IsMasterFilterEnabled = true;
                 matchVm.SelectedMasterFilterColumn = matchVm.MasterAvailableColumns[2];
-                matchVm.MasterFilterValue = "是";
+                Await(matchVm.MasterFilterValuesLoadTask);
+                matching.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.DataBind);
+                var valueSelector = (ComboBox)matching.FindName("MasterFilterValueSelector");
+                Assert.False(valueSelector.IsEditable);
+                Assert.Equal(2, valueSelector.Items.Count);
+                Assert.Null(valueSelector.SelectedItem);
+                valueSelector.SelectedItem = matchVm.MasterFilterValues.Single(v => v.Value.RawValue == "是");
+                matching.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.DataBind);
+                Assert.Equal("是", matchVm.SelectedMasterFilterValue!.Value.RawValue);
                 matchVm.OutputFilePath = Path.Combine(fixtureDirectory, "result.csv");
                 Await(matchVm.StartAsync());
                 Assert.True(matchVm.HasSuccess, matchVm.ErrorMessage);

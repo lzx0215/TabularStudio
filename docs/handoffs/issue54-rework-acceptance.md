@@ -1,5 +1,7 @@
 # Issue #54 视觉返工 AC / FT
 
+> 2026-09-08 后续状态：本文件保留视觉返工的原始计划/历史证据。Owner 随后批准完整主表列实际值下拉的最小 Core/Contract 扩展，最新范围及验证见 [issue54-filter-values.md](issue54-filter-values.md)。此处“无 Core/Contract 变更”等描述仅适用于原视觉阶段，不代表当前 PR 全量差异。
+
 Owner 已确认确认包第3–11节及AC01–13/FT01–08。错误区最终决定：直接展示全部真实详情，有界高度、内部滚动，不使用Expander。以下FT为验收计划，不代表执行通过；本轮执行状态见交付报告。
 
 ## 7. Acceptance Criteria（Owner 已确认）

@@ -25,12 +25,14 @@ public sealed class BatchFormatViewModelTests : IDisposable
         var paths = new[] { Input("a", ".xlsx"), Path.Combine(directory, "missing.csv"), Input("b", ".xls"), Input("c", ".csv") };
         var original = paths.Where(File.Exists).ToDictionary(p => p, File.ReadAllBytes);
         var vm = Create(); await vm.LoadFilesAsync(paths);
-        Assert.Equal(4, vm.Files.Count); Assert.True(vm.CanStart);
+        Assert.Equal(4, vm.Files.Count); Assert.False(vm.CanStart);
         Assert.False(vm.Rules.TrimOuterWhitespace); Assert.False(vm.Rules.NormalizeUnambiguousDates);
-        vm.Rules.TrimOuterWhitespace = true;
+        vm.Rules.TrimOuterWhitespace = true; Assert.True(vm.CanStart);
         await vm.StartAsync();
         Assert.Contains("成功 3，失败 1", vm.Summary); Assert.Equal(100, vm.ProgressPercent); Assert.True(vm.CanStart);
         Assert.StartsWith("失败", vm.Files[1].ResultText);
+        Assert.Equal(paths[1], Assert.Single(vm.Failures).FilePath);
+        Assert.Contains("不存在", vm.Failures[0].Reason);
         foreach (var item in vm.Files.Where(f => f.ResultPath is not null))
         {
             var preview = await new WorkbookInspectionService().GetPreviewAsync(new(new(item.ResultPath!, item.Editor.SelectedWorksheet?.Name, 1)));
@@ -46,7 +48,7 @@ public sealed class BatchFormatViewModelTests : IDisposable
         var a = Input("a", ".xlsx"); var b = Input("b", ".csv");
         using (var book = new XLWorkbook(a))
         { var sheet = book.Worksheet(1); sheet.Name = "Other"; sheet.Row(1).InsertRowsAbove(1); sheet.Cell(1, 1).Value = "preamble"; book.Save(); }
-        var vm = Create(); await vm.LoadFilesAsync([a, b]);
+        var vm = Create(); await vm.LoadFilesAsync([a, b]); vm.Rules.TrimOuterWhitespace = true;
         vm.Files[0].Editor.HeaderRowNumber = 2; await vm.Files[0].Editor.RefreshPreviewAsync();
         var output = Path.Combine(directory, "outputs"); Directory.CreateDirectory(output); vm.SetOutputDirectory(output);
         await vm.StartAsync(); Assert.All(vm.Files, f => Assert.NotNull(f.ResultPath));
@@ -62,7 +64,7 @@ public sealed class BatchFormatViewModelTests : IDisposable
         var alternate = Path.Combine(directory, "alternate.csv");
         string? sent = null;
         var vm = Create(_ => choice, _ => alternate, p => sent = p);
-        await vm.LoadFilesAsync([input]); await vm.StartAsync();
+        await vm.LoadFilesAsync([input]); vm.Rules.TrimOuterWhitespace = true; await vm.StartAsync();
         var initial = vm.Files[0].ResultPath!; var before = File.ReadAllBytes(initial);
         await vm.StartAsync(); Assert.Contains("失败 1", vm.Summary); Assert.Equal(before, File.ReadAllBytes(initial));
         choice = ExistingOutputChoice.SaveAs; await vm.StartAsync(); Assert.True(File.Exists(alternate)); Assert.Equal(before, File.ReadAllBytes(initial));
@@ -81,7 +83,7 @@ public sealed class BatchFormatViewModelTests : IDisposable
     {
         var gate = new DelayedBatch();
         var vm = new BatchFormatViewModel(new WorkbookInspectionService(), new FormatStandardizationService(), Preferences(), gate);
-        var input = Input("source", ".csv"); await vm.LoadFilesAsync([input]);
+        var input = Input("source", ".csv"); await vm.LoadFilesAsync([input]); vm.Rules.TrimOuterWhitespace = true;
         var task = vm.StartAsync(); Assert.True(vm.IsBusy); Assert.False(vm.CanStart); Assert.False(vm.CanConfigure);
         await vm.StartAsync(); await vm.LoadFilesAsync([]); Assert.Single(vm.Files); Assert.Equal(1, gate.Calls);
         gate.Completion.SetResult(new([])); await task; Assert.False(vm.IsBusy);

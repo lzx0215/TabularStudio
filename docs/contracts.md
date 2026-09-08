@@ -516,3 +516,12 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 ## Issue #31 UI 多格式调用确认
 
 两页对 CSV 传 WorksheetSource.WorksheetName=null；不要求或显示虚构 Sheet。Excel 从 inspection.Worksheets 选实际 Sheet。表头行与预览沿用原契约；输出跟输入/主表扩展名。CSV 不允许同文件不同 Sheet 模式。由 Codex 按 Owner 本轮跨角色授权完成 UI/Core 调用自检。
+
+## 格式统一批量（Issue #32）
+
+- IBatchFormatStandardizationService.ExecuteAsync(BatchFormatRequest, IProgress<BatchFormatProgress>?, CancellationToken) 返回 BatchFormatResult。
+- BatchFormatRequest(Items, Options)：Items 为 BatchFormatItem 列表，每项 Source、OutputFilePath、OverwriteExistingOutput；整个请求共用一套 FormatStandardizationOptions。调用方按记忆目录与原文件名_格式统一+原扩展名生成路径。
+- BatchFormatResult.Items 按输入顺序返回 BatchFormatItemResult(Index, Item, Result)；Result 为原单文件结果，SucceededCount/FailedCount 汇总。BatchFormatProgress 为 CompletedCount/TotalCount。
+- Core 快照列表，逐文件调用单文件服务，单文件失败继续且不回滚已提交结果。取消抛 OperationCanceledException，保留此前提交结果。
+- 任一输出与整批任一输入同路径时该项 OutputConflictsWithInput；批内重复输出的全部冲突项 InvalidConfiguration。Windows 路径按绝对路径、忽略大小写比较。已有输出仍逐项需要覆盖许可，保护检查优先于许可。
+- 不扩展数据匹配批量，不增加网络、格式转换或合并结果。UI 只收集参数/确认覆盖/显示结果，不实现处理算法。

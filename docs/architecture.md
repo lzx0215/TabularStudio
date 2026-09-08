@@ -34,3 +34,7 @@ Contract 只暴露普通 .NET 数据结构，CSV nullable Sheet 增量见 contra
 - 复用现有 KeyPart/CompositeKey 比较，不新增库或表达式引擎。筛选在内存执行，不改写输入。
 - 条件筛选复用同一内存算法覆盖三种格式；多格式与条件匹配在 #34 同步主线后共同验证。
 - App.Tests 引用 App 验证实际 ViewModel 和 Core 调用；Core 测试保持独立。此类自动化不等同于桌面人工 QA。
+
+## 批量编排（Issue #32）
+
+BatchFormatStandardizationService 在 Core 内顺序调用 IFormatStandardizationService，复用多格式与原子写入逻辑；只增加批次输入保护、逐项隔离、结果/进度汇总。单文件契约与匹配服务不变。UI 调用 IBatchFormatStandardizationService；无需新依赖或持久存储。

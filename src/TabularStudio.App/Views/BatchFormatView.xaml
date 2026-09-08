@@ -1,0 +1,79 @@
+<UserControl x:Class="TabularStudio.App.Views.BatchFormatView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24">
+            <TextBlock Text="格式统一" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" />
+            <TextBlock Text="一次处理一个或多个文件 · 支持 .xlsx / .xls / .csv · 完全离线" Margin="0,6,0,16" Foreground="{StaticResource TextMutedBrush}" />
+            <Border Style="{StaticResource CardBorderStyle}" AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,10">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding CanConfigure}">
+                            <Button Content="选择文件..." Command="{Binding BrowseFilesCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" />
+                            <Button Content="移除所选" Command="{Binding RemoveSelectedCommand}" Style="{StaticResource SecondaryButtonStyle}" />
+                        </StackPanel>
+                        <TextBlock Text="1. 文件列表（也可拖入）" Style="{StaticResource SectionHeaderStyle}" />
+                    </DockPanel>
+                    <ListBox ItemsSource="{Binding Files}" SelectedItem="{Binding SelectedFile}" MaxHeight="180" MinHeight="65" IsEnabled="{Binding CanConfigure}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="4">
+                                    <TextBlock Text="{Binding FilePath}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FilePath}" />
+                                    <TextBlock Text="{Binding ResultText}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CardBorderStyle}" IsEnabled="{Binding CanConfigure}">
+                <StackPanel DataContext="{Binding SelectedFile.Editor}">
+                    <TextBlock Text="2. 所选文件设置与预览" Style="{StaticResource SectionHeaderStyle}" />
+                    <WrapPanel Margin="0,0,0,10">
+                        <TextBlock Text="工作表" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="{Binding HasWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <ComboBox ItemsSource="{Binding Worksheets}" SelectedItem="{Binding SelectedWorksheet}" DisplayMemberPath="Name" MinWidth="150" Margin="0,0,16,0" Visibility="{Binding HasWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <TextBlock Text="表头行" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <TextBox Text="{Binding HeaderRowNumber, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}" Width="70" Margin="0,0,16,0" />
+                        <Button Content="刷新预览" Command="{Binding RefreshPreviewCommand}" Style="{StaticResource SecondaryButtonStyle}" />
+                    </WrapPanel>
+                    <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" Foreground="#B91C1C" Margin="0,0,0,6" />
+                    <DataGrid ItemsSource="{Binding PreviewDataTable.DefaultView}" AutoGeneratingColumn="OnPreviewAutoGeneratingColumn"
+                              IsReadOnly="True" AutoGenerateColumns="True" CanUserAddRows="False" Height="165" />
+                    <DockPanel Margin="0,10,0,0">
+                        <Button DockPanel.Dock="Right" Content="更改此文件输出..." Command="{Binding ChangeOutputPathCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" />
+                        <TextBox Text="{Binding OutputFilePath, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding OutputFilePath}" />
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CardBorderStyle}" IsEnabled="{Binding CanConfigure}">
+                <StackPanel>
+                    <TextBlock Text="3. 整批共用规则" Style="{StaticResource SectionHeaderStyle}" />
+                    <WrapPanel>
+                        <CheckBox Content="清理前后空格" IsChecked="{Binding Rules.TrimOuterWhitespace}" Margin="0,0,20,8" />
+                        <CheckBox Content="清理 Tab / 换行 / 隐藏字符" IsChecked="{Binding Rules.RemoveTabsNewLinesAndHiddenCharacters}" Margin="0,0,20,8" />
+                        <CheckBox Content="全角 / 半角统一" IsChecked="{Binding Rules.NormalizeFullWidthHalfWidth}" Margin="0,0,20,8" />
+                        <CheckBox Content="Unicode 标准化" IsChecked="{Binding Rules.NormalizeUnicode}" Margin="0,0,20,8" />
+                        <CheckBox Content="普通数字安全统一" IsChecked="{Binding Rules.NormalizeSafeNumbers}" Margin="0,0,20,8" />
+                        <CheckBox Content="明确日期安全统一" IsChecked="{Binding Rules.NormalizeUnambiguousDates}" Margin="0,0,20,8" />
+                    </WrapPanel>
+                    <TextBlock Text="前导 0、长数字始终保护；公式保持不变。可选规则默认不启用。" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextMutedBrush}" />
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="4. 输出与执行" Style="{StaticResource SectionHeaderStyle}" />
+                    <WrapPanel Margin="0,0,0,10">
+                        <Button Content="选择整批输出目录..." Command="{Binding ChooseOutputDirectoryCommand}" IsEnabled="{Binding CanConfigure}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8" />
+                        <Button Content="开始处理" Command="{Binding StartCommand}" IsEnabled="{Binding CanStart}" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,8" />
+                        <Button Content="所选结果用于数据匹配" Command="{Binding SendSelectedToMatchingCommand}" IsEnabled="{Binding CanUseSelectedResult}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8" />
+                        <Button Content="打开所选结果" Command="{Binding OpenSelectedResultCommand}" IsEnabled="{Binding CanUseSelectedResult}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8" />
+                        <Button Content="打开输出目录" Command="{Binding OpenSelectedDirectoryCommand}" IsEnabled="{Binding CanUseSelectedResult}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8" />
+                    </WrapPanel>
+                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercent}" Height="8" />
+                    <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                    <TextBlock Text="每个文件单独生成结果；一个文件失败不影响其它文件。详情见文件列表。" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Margin="0,6,0,0" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

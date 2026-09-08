@@ -504,6 +504,23 @@
                 <StackPanel>
                     <TextBlock Text="4. 匹配规则与容错选项" Style="{StaticResource SectionHeaderStyle}" />
 
+                    <StackPanel IsEnabled="{Binding CanConfigure}" Margin="0,0,0,12">
+                        <CheckBox Content="仅匹配满足条件的主表行"
+                                  IsChecked="{Binding IsMasterFilterEnabled}" Margin="0,0,0,6" />
+                        <WrapPanel IsEnabled="{Binding IsMasterFilterEnabled}">
+                            <TextBlock Text="主表列" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <ComboBox ItemsSource="{Binding MasterAvailableColumns}"
+                                      SelectedItem="{Binding SelectedMasterFilterColumn}"
+                                      DisplayMemberPath="DisplayName" MinWidth="160" MaxWidth="260"
+                                      ToolTip="选择用于筛选主表行的列" Margin="0,0,8,0" />
+                            <TextBlock Text="等于" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Text="{Binding MasterFilterValue, UpdateSourceTrigger=PropertyChanged}"
+                                     Width="150" Padding="6,3" ToolTip="例如：是" />
+                        </WrapPanel>
+                        <TextBlock Text="不满足条件的行仍保留，返回字段留空；满足条件后按下方比较规则和已选匹配条件执行。"
+                                   TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,6,0,0" />
+                    </StackPanel>
+
                     <CheckBox Content="自动修复常见匹配差异 (空格/全半角/文本数字/日期统一，仅用于比较，不改源数据)"
                               IsChecked="{Binding NormalizeComparisonKeys}"
                               IsEnabled="{Binding CanConfigure}"
@@ -669,6 +686,10 @@
                                        TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
+
+                    <TextBlock Text="{Binding ResultSkippedCount, StringFormat='未参与匹配：{0} 行'}"
+                               Visibility="{Binding HasSuccess, Converter={StaticResource BoolToVisibilityConverter}}"
+                               FontSize="12" Margin="0,0,0,8" />
 
                     <!-- 进度指示 -->
                     <Grid Margin="0,0,0,16">

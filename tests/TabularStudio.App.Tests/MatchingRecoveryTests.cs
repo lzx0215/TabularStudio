@@ -121,4 +121,35 @@ public sealed class MatchingRecoveryTests : IDisposable
     {
         if (Directory.Exists(_directory)) Directory.Delete(_directory, true);
     }
+
+    [Fact]
+    public async Task FilterConfigurationFlowsToCoreAndResetOnMasterChange()
+    {
+        var vm = await CreateAsync();
+        Assert.False(vm.IsMasterFilterEnabled);
+        vm.IsMasterFilterEnabled = true;
+        Assert.False(vm.CanStart);
+        vm.SelectedMasterFilterColumn = vm.MasterAvailableColumns[0];
+        vm.MasterFilterValue = "001";
+        Assert.True(vm.CanStart);
+        await vm.StartAsync();
+        Assert.True(vm.HasSuccess);
+        Assert.Equal(1, vm.ResultMatchedCount);
+        Assert.Equal(0, vm.ResultSkippedCount);
+        vm.MasterFilterValue = "no";
+        await vm.StartAsync();
+        Assert.True(vm.HasSuccess);
+        Assert.Equal(0, vm.ResultMatchedCount);
+        Assert.Equal(1, vm.ResultSkippedCount);
+        vm.MasterFilterValue = "";
+        Assert.False(vm.CanStart);
+        vm.IsMasterFilterEnabled = false;
+        Assert.True(vm.CanStart);
+        await vm.StartAsync();
+        Assert.Equal(1, vm.ResultMatchedCount);
+        vm.IsMasterFilterEnabled = true;
+        await vm.LoadMasterFileAsync(vm.MasterFilePath!);
+        Assert.Null(vm.SelectedMasterFilterColumn);
+        Assert.False(vm.CanStart);
+    }
 }

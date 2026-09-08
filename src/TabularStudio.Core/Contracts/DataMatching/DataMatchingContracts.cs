@@ -1,5 +1,7 @@
 namespace TabularStudio.Core.Contracts;
 
+public sealed record MasterRowFilter(ColumnReference Column, string EqualsValue);
+
 public sealed record MatchingCondition(
     ColumnReference MasterColumn,
     ColumnReference ReferenceColumn);
@@ -18,7 +20,10 @@ public sealed record DataMatchingRequest(
     bool NormalizeComparisonKeys,
     MatchingStatusColumnOptions StatusColumn,
     string OutputFilePath,
-    bool OverwriteExistingOutput);
+    bool OverwriteExistingOutput)
+{
+    public MasterRowFilter? MasterFilter { get; init; }
+}
 
 public sealed record ReturnedFieldMapping(
     ColumnReference RequestedColumn,
@@ -30,7 +35,10 @@ public sealed record DataMatchingSummary(
     int UnmatchedCount,
     int DuplicateCount,
     int EmptyKeyCount,
-    TimeSpan Elapsed);
+    TimeSpan Elapsed)
+{
+    public int SkippedCount { get; init; }
+}
 
 public sealed record DataMatchingResult(
     bool Success,

@@ -63,7 +63,10 @@ public sealed class DataMatchingService : IDataMatchingService
             if (error is not null) return FailureAfterCleanup(error, stagingPath);
             var masterColumns = configuration.Conditions.Select(c => c.MasterColumn).ToArray();
             var referenceColumns = configuration.Conditions.Select(c => c.ReferenceColumn).ToArray();
-            error = ValidateColumns(master!, masterColumns)
+            var filter = configuration.MasterFilter;
+            var filterColumns = filter is null ? Array.Empty<ColumnReference>() : new[] { filter.Column };
+            var validatedMasterColumns = masterColumns.Concat(filterColumns).ToArray();
+            error = ValidateColumns(master!, validatedMasterColumns)
                 ?? ValidateColumns(reference!, referenceColumns.Concat(configuration.ReturnFields));
             if (error is not null) return FailureAfterCleanup(error, stagingPath);
             if ((long)master!.LastColumn + configuration.ReturnFields.Count + (configuration.StatusColumn.Enabled ? 1 : 0) > XLHelper.MaxColumnNumber)
@@ -72,11 +75,16 @@ public sealed class DataMatchingService : IDataMatchingService
             var total = master.LastRow - master.HeaderRow;
             Report(progress, OperationStage.Preparing, null, null, total);
             token.ThrowIfCancellationRequested();
-            error = CheckFormulas(master, masterColumns, token)
+            error = CheckFormulas(master, validatedMasterColumns, token)
                 ?? CheckFormulas(reference!, referenceColumns.Concat(configuration.ReturnFields), token);
             if (error is not null) return FailureAfterCleanup(error, stagingPath);
             var safeMaster = SafeNumericColumns(master, masterColumns, configuration.NormalizeComparisonKeys, token);
             var safeReference = SafeNumericColumns(reference!, referenceColumns, configuration.NormalizeComparisonKeys, token);
+            var safeFilter = SafeNumericColumns(master, filterColumns, configuration.NormalizeComparisonKeys, token);
+            var expectedFilter = filter is null ? null : new CompositeKey(new[]
+            {
+                ReadTextPart(filter.EqualsValue, safeFilter.Contains(filter.Column.ColumnNumber), configuration.NormalizeComparisonKeys)
+            });
             var index = new Dictionary<CompositeKey, int>();
             for (var row = reference!.HeaderRow + 1; row <= reference.LastRow; row++)
             {
@@ -104,14 +112,17 @@ public sealed class DataMatchingService : IDataMatchingService
             var statusNumber = master.LastColumn + mappings.Length + 1;
             if (statusName is not null) master.Sheet.Cell(master.HeaderRow, statusNumber).Value = statusName;
 
-            int matched = 0, unmatched = 0, duplicate = 0, empty = 0;
+            int matched = 0, unmatched = 0, duplicate = 0, empty = 0, skipped = 0;
             Report(progress, OperationStage.Processing, 0, 0, total);
             for (var row = master.HeaderRow + 1; row <= master.LastRow; row++)
             {
                 token.ThrowIfCancellationRequested();
-                var key = ReadKey(master, row, masterColumns, safeMaster, configuration.NormalizeComparisonKeys);
+                var participates = filter is null || expectedFilter!.Equals(
+                    ReadKey(master, row, filterColumns, safeFilter, configuration.NormalizeComparisonKeys));
+                var key = participates ? ReadKey(master, row, masterColumns, safeMaster, configuration.NormalizeComparisonKeys) : null;
                 string status;
-                if (key is null) { empty++; status = "匹配键为空"; }
+                if (!participates) { skipped++; status = "未参与匹配"; }
+                else if (key is null) { empty++; status = "匹配键为空"; }
                 else if (!index.TryGetValue(key, out var referenceRow)) { unmatched++; status = "未匹配"; }
                 else if (referenceRow == 0) { duplicate++; status = "重复"; }
                 else
@@ -147,7 +158,7 @@ public sealed class DataMatchingService : IDataMatchingService
             if (error is not null) return FailureAfterCleanup(error, stagingPath);
             stagingPath = null;
             var result = new DataMatchingResult(true, outputPath,
-                new DataMatchingSummary(total, matched, unmatched, duplicate, empty, clock.Elapsed), mappings, statusName, null);
+                new DataMatchingSummary(total, matched, unmatched, duplicate, empty, clock.Elapsed) { SkippedCount = skipped }, mappings, statusName, null);
             // Output is committed. Observer failures must not turn a completed operation into a failure.
             try { Report(progress, OperationStage.Completed, 100, total, total); }
             catch (Exception exception) when (exception is not OperationCanceledException) { }
@@ -183,6 +194,9 @@ public sealed class DataMatchingService : IDataMatchingService
             || string.IsNullOrWhiteSpace(request.OutputFilePath)
             || (request.StatusColumn.Enabled && string.IsNullOrWhiteSpace(request.StatusColumn.ColumnName)))
             return Error(OperationErrorCode.InvalidConfiguration, "数据匹配配置不完整。");
+        if (request.MasterFilter is { } filter && (filter.Column is null || string.IsNullOrWhiteSpace(filter.EqualsValue)
+            || (request.NormalizeComparisonKeys && NormalizeText(filter.EqualsValue, ComparisonOptions).Length == 0)))
+            return Error(OperationErrorCode.InvalidConfiguration, "请选择主表筛选列并填写非空比较值。");
         try
         {
             var output = Path.GetFullPath(request.OutputFilePath);
@@ -282,13 +296,9 @@ public sealed class DataMatchingService : IDataMatchingService
             if (cell.DataType == XLDataType.Blank) return null;
             if (cell.DataType == XLDataType.Text)
             {
-                var text = normalize ? NormalizeText(cell.GetString(), ComparisonOptions) : cell.GetString();
-                if (text.Length == 0) return null;
-                if (normalize && safeNumbers.Contains(columns[i].ColumnNumber) && TryGetComparisonNumber(text, out var number))
-                    parts[i] = new KeyPart("Number", number);
-                else if (normalize && TryGetApprovedDate(text, out var date, out var hasTime))
-                    parts[i] = DatePart(date, hasTime);
-                else parts[i] = new KeyPart("Text", text);
+                var part = ReadTextPart(cell.GetString(), safeNumbers.Contains(columns[i].ColumnNumber), normalize);
+                if (part.Kind == "Text" && (string)part.Value == "") return null;
+                parts[i] = part;
             }
             else if (normalize && cell.DataType == XLDataType.DateTime)
             {
@@ -306,6 +316,14 @@ public sealed class DataMatchingService : IDataMatchingService
             };
         }
         return new CompositeKey(parts);
+    }
+
+    private static KeyPart ReadTextPart(string value, bool safeNumeric, bool normalize)
+    {
+        var text = normalize ? NormalizeText(value, ComparisonOptions) : value;
+        if (normalize && safeNumeric && TryGetComparisonNumber(text, out var number)) return new KeyPart("Number", number);
+        if (normalize && TryGetApprovedDate(text, out var date, out var hasTime)) return DatePart(date, hasTime);
+        return new KeyPart("Text", text);
     }
 
     private static KeyPart DatePart(DateTime date, bool hasTime) => hasTime

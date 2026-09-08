@@ -333,10 +333,17 @@ public sealed record DataMatchingRequest(
     bool NormalizeComparisonKeys,
     MatchingStatusColumnOptions StatusColumn,
     string OutputFilePath,
-    bool OverwriteExistingOutput);
+    bool OverwriteExistingOutput)
+{
+    public MasterRowFilter? MasterFilter { get; init; }
+}
+
+public sealed record MasterRowFilter(ColumnReference Column, string EqualsValue);
 ```
 
 请求约定：
+
+- #45：`MasterFilter = null`（默认）表示不筛选；非空时指定主表物理列与非空文本值。仅等于值的行进入联合匹配，其余保留并标记未参与匹配。筛选列也校验有效表头、物理列与公式；筛选比较沿用 `NormalizeComparisonKeys`。
 
 - `Conditions` 至少 1 条，全部固定为 AND；每一侧都通过 `ColumnReference.ColumnNumber` 定位用户实际选择的物理列。Contract 不提供 AND / OR、模糊、包含或相似度操作符。
 - `ReturnFields` 至少 1 个，按用户选择顺序使用 `ColumnReference` 表达对照表物理列；UI 不计算最终输出列名。
@@ -358,7 +365,10 @@ public sealed record DataMatchingSummary(
     int UnmatchedCount,
     int DuplicateCount,
     int EmptyKeyCount,
-    TimeSpan Elapsed);
+    TimeSpan Elapsed)
+{
+    public int SkippedCount { get; init; }
+}
 
 public sealed record DataMatchingResult(
     bool Success,
@@ -375,8 +385,8 @@ public sealed record DataMatchingResult(
 - 成功时 `ReturnedFields.Count == request.ReturnFields.Count`，每一项按相同索引对应；失败时保证为空集合 `[]`。
 - 状态列启用时，`ActualStatusColumnName` 返回 Core 生成的最终唯一列名；关闭时或处理失败时为 `null`。
 - `Summary` 返回主表总数据行、匹配成功、未匹配、重复、匹配键为空数量及耗时 `Elapsed`；UI 固定展示这 5 项指标（即使 `EmptyKeyCount = 0` 也正常显示 `0 行`），严禁将“匹配键为空”合并进“未匹配”；`Success = false` 时为 `null`。
-- 四种行级结果数量之和必须等于 `TotalMasterDataRowCount`。
-- 状态文本固定为「匹配成功」「未匹配」「重复」「匹配键为空」，不由 UI 自定义。
+- #45 增加 `SkippedCount`（默认 0），UI 在原五项指标之外显示「未参与匹配」数量。五种行级结果数量之和必须等于 `TotalMasterDataRowCount`，不得把跳过行并入其它计数。
+- 状态文本固定为「匹配成功」「未匹配」「重复」「匹配键为空」「未参与匹配」，不由 UI 自定义。
 - Core 保留主表字段和行顺序，不把内存比较值写回任一输入。
 
 ## 8. 输出已存在与输入保护流程

@@ -1,114 +1,164 @@
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Background="{StaticResource AppBackgroundBrush}" x:Class="TabularStudio.App.Views.BatchFormatView">
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Background="{StaticResource AppBackgroundBrush}" x:Class="TabularStudio.App.Views.BatchFormatView" FontSize="13">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </UserControl.Resources>
-    <ScrollViewer Margin="20" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-        <StackPanel Margin="0" MinWidth="1010" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
-            <TextBlock Text="格式统一" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}"/>
-            <TextBlock Text="一次处理一个或多个文件 · 支持 .xlsx / .xls / .csv · 完全离线" Margin="0,6,0,16" Foreground="{StaticResource TextMutedBrush}"/>
-            <Grid Margin="0,0,0,4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="280"/>
-                    <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="*" MinWidth="400"/>
-                    <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="250"/>
-                </Grid.ColumnDefinitions>
-                <Border Style="{StaticResource CardBorderStyle}" AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop" Grid.Column="0">
-                    <StackPanel>
-                        <TextBlock Text="文件列表" Style="{StaticResource SectionHeaderStyle}"/>
-                        <StackPanel Orientation="Horizontal" IsEnabled="{Binding CanConfigure}" Margin="0,0,0,12">
-                            <Button Content="添加文件" Command="{Binding BrowseFilesCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,5,0" Padding="8,6"/>
-                            <Button Content="修改" Command="{Binding ReplaceCheckedFilesCommand}" IsEnabled="{Binding HasCheckedFiles}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,5,0" Padding="8,6"/>
-                            <Button Content="移除" Command="{Binding RemoveSelectedCommand}" IsEnabled="{Binding HasCheckedFiles}" Style="{StaticResource SecondaryButtonStyle}" Padding="8,6" Margin="0,0,5,0"/>
-                        </StackPanel>
-                        <TextBlock Text="支持多选或拖入。勾选后修改、移除；点击文件查看预览。" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="{StaticResource TextSecondaryBrush}"/>
-                        <ListBox ItemsSource="{Binding Files}" SelectedItem="{Binding SelectedFile, Mode=TwoWay}" MinHeight="65" IsEnabled="{Binding CanConfigure}" HorizontalContentAlignment="Stretch" Height="250" BorderThickness="0">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <DockPanel Margin="4">
-                                        <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsChecked}" VerticalAlignment="Center" Margin="0,0,10,0" ToolTip="勾选后可修改或移除"/>
-                                        <Button DockPanel.Dock="Right" Content="预览" Command="{Binding DataContext.PreviewFileCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" Margin="10,0,0,0"/>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FilePath}"/>
-                                            <TextBlock Text="{Binding ResultText}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                        </StackPanel>
-                                    </DockPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" MinWidth="0"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="2*" MinWidth="0"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="1*" MinWidth="0"/>
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource CardBorderStyle}" AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop" Grid.Column="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="{Binding Files.Count, StringFormat='文件列表（{0}）'}" Style="{StaticResource SectionHeaderStyle}" Grid.Row="0"/>
+                    <StackPanel Orientation="Horizontal" IsEnabled="{Binding CanConfigure}" Margin="0,0,0,8" Grid.Row="1">
+                        <Button Content="添加文件" Command="{Binding BrowseFilesCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,5,0" Padding="8,6"/>
+                        <Button Content="修改" Command="{Binding ReplaceCheckedFilesCommand}" IsEnabled="{Binding HasCheckedFiles}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,5,0" Padding="8,6"/>
+                        <Button Content="移除" Command="{Binding RemoveSelectedCommand}" IsEnabled="{Binding HasCheckedFiles}" Style="{StaticResource SecondaryButtonStyle}" Padding="8,6" Margin="0,0,5,0"/>
                     </StackPanel>
-                </Border>
-                <Border Style="{StaticResource CardBorderStyle}" IsEnabled="{Binding CanConfigure}" Grid.Column="2">
-                    <StackPanel>
-                        <DockPanel Margin="0,0,0,10">
-                            <TextBlock Text="预览文件：" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <ComboBox x:Name="PreviewFileSelector" ItemsSource="{Binding Files}" SelectedItem="{Binding SelectedFile, Mode=TwoWay}" DisplayMemberPath="FileName" MinWidth="100"/>
+                    <ListBox ItemsSource="{Binding Files}" SelectedItem="{Binding SelectedFile, Mode=TwoWay}" MinHeight="0" IsEnabled="{Binding CanConfigure}" HorizontalContentAlignment="Stretch" BorderThickness="0" Grid.Row="2">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="4">
+                                    <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsChecked}" VerticalAlignment="Center" Margin="0,0,10,0" ToolTip="勾选后可修改或移除"/>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FileName}"/>
+                                        <TextBlock Text="{Binding ResultText}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ResultText}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <TextBlock Text="勾选用于修改或移除。" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Grid.Row="3"/>
+                </Grid>
+            </Border>
+            <Border Style="{StaticResource CardBorderStyle}" IsEnabled="{Binding CanConfigure}" Grid.Column="2">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,6">
+                        <TextBlock Text="当前文件" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <ComboBox x:Name="PreviewFileSelector" ItemsSource="{Binding Files}" SelectedItem="{Binding SelectedFile, Mode=TwoWay}" DisplayMemberPath="FileName" MinWidth="100"/>
+                    </DockPanel>
+                    <TextBox Text="{Binding SelectedFile.FilePath, Mode=OneWay}" Margin="0,0,0,8" Foreground="{StaticResource TextSecondaryBrush}" IsReadOnly="True" BorderThickness="0" Padding="0" FontSize="13" Height="20" Grid.Row="1"/>
+                    <Grid DataContext="{Binding SelectedFile.Editor}" Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <WrapPanel Margin="0,0,0,6">
+                            <TextBlock Text="工作表" Margin="0,0,5,0" VerticalAlignment="Center" Visibility="{Binding HasWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            <ComboBox ItemsSource="{Binding Worksheets}" SelectedItem="{Binding SelectedWorksheet}" DisplayMemberPath="Name" MinWidth="85" Margin="0,0,5,0" Visibility="{Binding HasWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}" MaxWidth="180"/>
+                            <TextBlock Text="表头行" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBox Text="{Binding HeaderRowNumber, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}" Width="48" Margin="0,0,5,0"/>
+                            <Button Content="刷新预览" Command="{Binding RefreshPreviewCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,5,0" Padding="8,4"/>
+                        </WrapPanel>
+                        <DataGrid x:Name="FilePreviewGrid" ItemsSource="{Binding PreviewDataTable.DefaultView}" AutoGeneratingColumn="OnPreviewAutoGeneratingColumn" IsReadOnly="True" AutoGenerateColumns="True" CanUserAddRows="False" Grid.Row="1"/>
+                        <DockPanel Margin="0,6,0,0" Grid.Row="2">
+                            <Button DockPanel.Dock="Right" Content="此文件输出…" Command="{Binding ChangeOutputPathCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0"/>
+                            <TextBox Text="{Binding OutputFilePath, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding OutputFilePath}"/>
                         </DockPanel>
-                        <TextBlock Text="{Binding SelectedFile.FilePath}" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="{StaticResource TextSecondaryBrush}"/>
-                        <StackPanel DataContext="{Binding SelectedFile.Editor}">
-                            <TextBlock Text="文件预览" Style="{StaticResource SectionHeaderStyle}"/>
-                            <WrapPanel Margin="0,0,0,10">
-                                <TextBlock Text="工作表" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="{Binding HasWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                <ComboBox ItemsSource="{Binding Worksheets}" SelectedItem="{Binding SelectedWorksheet}" DisplayMemberPath="Name" MinWidth="100" Margin="0,0,16,0" Visibility="{Binding HasWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                <TextBlock Text="表头行" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBox Text="{Binding HeaderRowNumber, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}" Width="70" Margin="0,0,16,0"/>
-                                <Button Content="刷新预览" Command="{Binding RefreshPreviewCommand}" Style="{StaticResource SecondaryButtonStyle}"/>
-                            </WrapPanel>
-                            <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" Foreground="#B91C1C" Margin="0,0,0,6"/>
-                            <DataGrid x:Name="FilePreviewGrid" ItemsSource="{Binding PreviewDataTable.DefaultView}" AutoGeneratingColumn="OnPreviewAutoGeneratingColumn" IsReadOnly="True" AutoGenerateColumns="True" CanUserAddRows="False" Height="220"/>
-                            <DockPanel Margin="0,10,0,0">
-                                <Button DockPanel.Dock="Right" Content="更改输出" Command="{Binding ChangeOutputPathCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0"/>
-                                <TextBox Text="{Binding OutputFilePath, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding OutputFilePath}"/>
-                            </DockPanel>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource CardBorderStyle}" IsEnabled="{Binding CanConfigure}" Grid.Column="4">
+                    </Grid>
+                </Grid>
+            </Border>
+            <Border Style="{StaticResource CardBorderStyle}" IsEnabled="{Binding CanConfigure}" Grid.Column="4">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock Text="整批共用规则" Style="{StaticResource SectionHeaderStyle}"/>
                         <StackPanel>
-                            <CheckBox Content="清理前后空格" IsChecked="{Binding Rules.TrimOuterWhitespace}" Margin="0,0,0,18" FontSize="12"/>
-                            <CheckBox Content="清理 Tab / 换行 / 隐藏字符" IsChecked="{Binding Rules.RemoveTabsNewLinesAndHiddenCharacters}" Margin="0,0,0,18" FontSize="12"/>
-                            <CheckBox Content="全角 / 半角统一" IsChecked="{Binding Rules.NormalizeFullWidthHalfWidth}" Margin="0,0,0,18" FontSize="12"/>
-                            <CheckBox Content="Unicode 标准化" IsChecked="{Binding Rules.NormalizeUnicode}" Margin="0,0,0,18" FontSize="12"/>
-                            <CheckBox Content="普通数字安全统一" IsChecked="{Binding Rules.NormalizeSafeNumbers}" Margin="0,0,0,18" FontSize="12"/>
-                            <CheckBox Content="明确日期安全统一" IsChecked="{Binding Rules.NormalizeUnambiguousDates}" Margin="0,0,0,18" FontSize="12"/>
+                            <CheckBox Content="清理前后空格" IsChecked="{Binding Rules.TrimOuterWhitespace}" Margin="0,0,0,10" FontSize="13" ToolTip="清理前后空格"/>
+                            <CheckBox Content="清理隐藏字符 / Tab / 换行" IsChecked="{Binding Rules.RemoveTabsNewLinesAndHiddenCharacters}" Margin="0,0,0,10" FontSize="13" ToolTip="清理 Tab / 换行 / 隐藏字符"/>
+                            <CheckBox Content="全角 / 半角统一" IsChecked="{Binding Rules.NormalizeFullWidthHalfWidth}" Margin="0,0,0,10" FontSize="13" ToolTip="全角 / 半角统一"/>
+                            <CheckBox Content="Unicode 标准化" IsChecked="{Binding Rules.NormalizeUnicode}" Margin="0,0,0,10" FontSize="13" ToolTip="Unicode 标准化"/>
+                            <CheckBox Content="普通数字安全统一" IsChecked="{Binding Rules.NormalizeSafeNumbers}" Margin="0,0,0,10" FontSize="13" ToolTip="普通数字安全统一"/>
+                            <CheckBox Content="明确日期安全统一" IsChecked="{Binding Rules.NormalizeUnambiguousDates}" Margin="0,0,0,10" FontSize="13" ToolTip="明确日期安全统一"/>
                         </StackPanel>
                         <TextBlock Text="前导 0、长数字始终保护；公式保持不变。可选规则默认不启用。" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
                         <TextBlock Text="{Binding RuleHint}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
                     </StackPanel>
-                </Border>
-            </Grid>
-            <Border Style="{StaticResource CardBorderStyle}">
-                <StackPanel>
-                    <TextBlock Text="输出与执行" Style="{StaticResource SectionHeaderStyle}"/>
-                    <WrapPanel Margin="0,0,0,10">
-                        <Button Content="选择整批输出目录..." Command="{Binding ChooseOutputDirectoryCommand}" IsEnabled="{Binding CanConfigure}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
-                        <Button Content="开始处理" Command="{Binding StartCommand}" IsEnabled="{Binding CanStart}" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,8"/>
-                        <Button Content="所选结果用于数据匹配" Command="{Binding SendSelectedToMatchingCommand}" IsEnabled="{Binding CanUseSelectedResult}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
-                        <Button Content="打开所选结果" Command="{Binding OpenSelectedResultCommand}" IsEnabled="{Binding CanUseSelectedResult}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
-                        <Button Content="打开输出目录" Command="{Binding OpenSelectedDirectoryCommand}" IsEnabled="{Binding CanUseSelectedResult}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
-                    </WrapPanel>
-                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercent}" Height="8"/>
-                    <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" Margin="0,10,0,0"/>
-                    <ItemsControl ItemsSource="{Binding Failures}" Margin="0,8,0,0">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border BorderBrush="{StaticResource DangerBrush}" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding FilePath, StringFormat='失败文件：{0}'}" TextWrapping="Wrap" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}"/>
-                                        <TextBlock Text="{Binding Reason, StringFormat='原因：{0}'}" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                        <TextBlock Text="{Binding Context}" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                        <TextBlock Text="{Binding Detail, StringFormat='详情：{0}'}" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <TextBlock Text="每个文件单独生成结果；一个文件失败不影响其它文件。" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Margin="0,6,0,0"/>
-                </StackPanel>
+                </ScrollViewer>
             </Border>
-        </StackPanel>
-    </ScrollViewer>
+        </Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="96" Margin="0,0,0,6" Grid.Row="1">
+            <StackPanel>
+                <TextBlock Text="{Binding SelectedFile.Editor.ErrorMessage}" TextWrapping="Wrap" Foreground="#B91C1C" Margin="0,0,0,6"/>
+                <ItemsControl ItemsSource="{Binding Failures}" Margin="0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="{StaticResource DangerBrush}" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <TextBox Text="{Binding FilePath, Mode=OneWay, StringFormat='失败文件：{0}'}" TextWrapping="Wrap" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0" MinHeight="0"/>
+                                    <TextBox Text="{Binding Reason, Mode=OneWay, StringFormat='原因：{0}'}" TextWrapping="Wrap" Margin="0,4,0,0" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0" MinHeight="0"/>
+                                    <TextBox Text="{Binding Context, Mode=OneWay}" TextWrapping="Wrap" Margin="0,4,0,0" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0" MinHeight="0"/>
+                                    <TextBox Text="{Binding Detail, Mode=OneWay, StringFormat='详情：{0}'}" TextWrapping="Wrap" Margin="0,4,0,0" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0" MinHeight="0"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+            <ScrollViewer.Style>
+                <Style TargetType="ScrollViewer">
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding Failures.Count}" Value="0"/>
+                                <Condition Binding="{Binding SelectedFile.Editor.HasError, TargetNullValue=False, FallbackValue=False}" Value="False"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </MultiDataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ScrollViewer.Style>
+        </ScrollViewer>
+        <Border x:Name="FixedFooter" Grid.Row="2" Style="{StaticResource CardBorderStyle}" Margin="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <DockPanel Margin="0,0,12,0">
+                        <TextBlock Text="整批输出" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Button DockPanel.Dock="Right" Content="更改目录" Command="{Binding ChooseOutputDirectoryCommand}" IsEnabled="{Binding CanConfigure}" Margin="6,0,0,0"/>
+                        <TextBox Text="{Binding OutputDirectoryDisplay, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding OutputDirectoryDisplay}"/>
+                    </DockPanel>
+                    <Button x:Name="StartButton" Grid.Column="1" Content="开始处理" Command="{Binding StartCommand}" IsEnabled="{Binding CanStart}" Style="{StaticResource PrimaryButtonStyle}" MinWidth="132"/>
+                </Grid>
+                <DockPanel Grid.Row="1" Margin="0,6,0,0">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Content="所选结果用于匹配" Command="{Binding SendSelectedToMatchingCommand}" IsEnabled="{Binding CanUseSelectedResult}" Margin="6,0,0,0"/>
+                        <Button Content="打开结果" Command="{Binding OpenSelectedResultCommand}" IsEnabled="{Binding CanUseSelectedResult}" Margin="6,0,0,0"/>
+                        <Button Content="打开目录" Command="{Binding OpenSelectedDirectoryCommand}" IsEnabled="{Binding CanUseSelectedResult}" Margin="6,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" FontSize="12"/>
+                        <ProgressBar Value="{Binding ProgressPercent}" Height="3" Margin="0,3,0,0" Foreground="{StaticResource PrimaryBrush}"/>
+                    </StackPanel>
+                </DockPanel>
+            </Grid>
+        </Border>
+    </Grid>
 </UserControl>

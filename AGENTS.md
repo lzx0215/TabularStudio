@@ -282,5 +282,10 @@ Handoff 仍是跨角色交接证据，但 **不是 Owner Gate**。写完后接�
 - 不扩大已确认范围
 - 不引入数据库 / Web / API / AI
 
-下一步必须等对应 Issue 通过 Owner Gate 1，不得自动开始未批准功能。
-当前流程文档 Issue 合并前，不得开始批量、多格式或规则默认值的产品代码。
+每个 Issue 必须满足对应 Gate 1 后才能实现；独立 Issue 可按下文受控并行规则推进。
+流程基线已落地；批量、多格式或规则默认值的实现仍须有对应 Issue，并满足依赖及质量 Gate。
+
+## 受控并行
+
+多个无依赖、无文件 / Contract / Baseline 冲突的独立 Issue 可并行，各自独立 Issue / Branch / PR / Gate 和工作树。同一 Issue 内 Gate 顺序不变，Owner 仍只参与三个常规 Gate。QA、Regression、Release preparation 可以与其它独立开发并行。有依赖或共享文件的任务先协调顺序；#34 → #31，#34 → #32，#31 + #32 → #33。main 变化仍触发 STOP；同步最新 main 后重新验证并锁定新的 PR head SHA。完整规则见 docs/development-process.md 第 13 节；不降低现有 STOP、Functional QA 或发布验收要求。
+

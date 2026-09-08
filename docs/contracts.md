@@ -525,3 +525,7 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 - Core 快照列表，逐文件调用单文件服务，单文件失败继续且不回滚已提交结果。取消抛 OperationCanceledException，保留此前提交结果。
 - 任一输出与整批任一输入同路径时该项 OutputConflictsWithInput；批内重复输出的全部冲突项 InvalidConfiguration。Windows 路径按绝对路径、忽略大小写比较。已有输出仍逐项需要覆盖许可，保护检查优先于许可。
 - 不扩展数据匹配批量，不增加网络、格式转换或合并结果。UI 只收集参数/确认覆盖/显示结果，不实现处理算法。
+
+## Issue #33 批量 UI 调用确认
+
+BatchFormatViewModel 收集每文件 Source/OutputFilePath/OverwriteExistingOutput，构造一套共享 Options 后调用 IBatchFormatStandardizationService。按结果 Index 对应原列表显示结果；完成比例使用 CompletedCount/TotalCount。CSV 无 Sheet；失败继续由 Core 实现。UI 不能把覆盖某项的确认当作整批许可。取消覆盖保留该文件，使用未覆盖许可的请求返回逐项失败。由 Codex 按本轮授权完成 UI/Core 自检。

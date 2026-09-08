@@ -19,7 +19,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string _statusMessage = "就绪";
 
-    public FormatStandardizationViewModel FormatStandardizationVm { get; }
+    public BatchFormatViewModel FormatStandardizationVm { get; }
 
     public DataMatchingViewModel DataMatchingVm { get; }
 
@@ -38,11 +38,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
             matchingService,
             outputDirectoryPreferenceService: preferenceService);
 
-        FormatStandardizationVm = new FormatStandardizationViewModel(
+        FormatStandardizationVm = new BatchFormatViewModel(
             inspectionService,
             formatService,
-            onSendToDataMatching: OnSendToDataMatching,
-            outputDirectoryPreferenceService: preferenceService);
+            sendToMatching: OnSendToDataMatching,
+            preferences: preferenceService);
 
         // 默认显示格式统一
         CurrentViewViewModel = FormatStandardizationVm;

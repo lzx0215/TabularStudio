@@ -16,6 +16,9 @@
         FontFamily="Segoe UI, Microsoft YaHei UI">
 
     <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:BatchFormatViewModel}">
+            <views:BatchFormatView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:FormatStandardizationViewModel}">
             <views:FormatStandardizationView />
         </DataTemplate>

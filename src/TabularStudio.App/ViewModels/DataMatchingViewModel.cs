@@ -206,7 +206,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     public bool CanConfigure => !IsProcessing && State != DataMatchingPageState.Initial;
 
     public bool CanStart =>
-        State == DataMatchingPageState.Ready &&
+        (State is DataMatchingPageState.Ready or DataMatchingPageState.Success ||
+            (State == DataMatchingPageState.Error && _errorSource == "Execute")) &&
         !IsProcessing &&
         !string.IsNullOrWhiteSpace(MasterFilePath) &&
         SelectedMasterWorksheet != null &&
@@ -1510,7 +1511,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         {
             OperationErrorCode.FileNotFound => "请确认文件路径是否正确。",
             OperationErrorCode.UnsupportedFileType => "TabularStudio 第一版仅支持 .xlsx 格式文件。",
-            OperationErrorCode.FileLocked => "文件正被其他程序独占打开，请在 Excel 中关闭该文件后重试。",
+            OperationErrorCode.FileLocked => "文件正被其他程序占用，请在 WPS / Excel 等程序中关闭该文件，然后点击开始数据匹配重试，或更改保存路径。",
             OperationErrorCode.WorkbookUnreadable => "工作簿损坏或无法安全读取，请检查文件完整性。",
             OperationErrorCode.WorksheetNotFound => "指定的工作表在文件中未找到，请重新选择工作表。",
             OperationErrorCode.InvalidHeaderRow => "表头所在行必须大于或等于 1，且所在行及其下方必须包含有效数据。",

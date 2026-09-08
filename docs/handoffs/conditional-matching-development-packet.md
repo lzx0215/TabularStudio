@@ -41,8 +41,9 @@
 
 ## 依赖与顺序
 
-- #34 / PR #40 当前修改 DataMatchingService、contracts、processing-rules。条件匹配实现会修改相同文件，因此先完成 #34 的合并，再基于最新 main 建独立 Feature 分支。
+- 2026-09-08 由 Codex 按 Owner 本次审核与继续授权调整顺序：先实现条件匹配，再由 #34 同步最新 main。核对 PR #40 Actual Diff 后，行筛选不依赖多格式 I/O；共享文件需协调合并与验证，但不是功能硬依赖。不在本任务合并或改写 #34 的依赖库决策。
 - #41 / PR #42 先修复数据匹配重试；条件匹配 UI 应包含该修复，不在新功能中重新实现一次。
 - 本 #43 只改 requirements 与本文，与 PR #40 当前 Files changed 不重叠。
 - #43 合并前停 Gate 2。随后按已确认需求创建 Feature Issue，包含本验收包；若 Owner 未批准新增 UI 方案或存在契约冲突，先提交具体方案决策。
 - Feature 实现完成后独立 PR，锁定 exact head SHA 后才能合并；发布另走 artifact 验收。
+

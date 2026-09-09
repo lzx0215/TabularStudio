@@ -83,7 +83,9 @@ public sealed class DataMatchingService : IDataMatchingService
             var safeFilter = SafeNumericColumns(master, filterColumns, configuration.NormalizeComparisonKeys, token);
             var expectedFilter = filter is null ? null : new CompositeKey(new[]
             {
-                ReadTextPart(filter.EqualsValue, safeFilter.Contains(filter.Column.ColumnNumber), configuration.NormalizeComparisonKeys)
+                filter.SelectedValue is { } selected
+                    ? ReadTypedFilterPart(selected, safeFilter.Contains(filter.Column.ColumnNumber), configuration.NormalizeComparisonKeys)
+                    : ReadTextPart(filter.EqualsValue, safeFilter.Contains(filter.Column.ColumnNumber), configuration.NormalizeComparisonKeys)
             });
             var index = new Dictionary<CompositeKey, int>();
             for (var row = reference!.HeaderRow + 1; row <= reference.LastRow; row++)
@@ -194,8 +196,7 @@ public sealed class DataMatchingService : IDataMatchingService
             || string.IsNullOrWhiteSpace(request.OutputFilePath)
             || (request.StatusColumn.Enabled && string.IsNullOrWhiteSpace(request.StatusColumn.ColumnName)))
             return Error(OperationErrorCode.InvalidConfiguration, "数据匹配配置不完整。");
-        if (request.MasterFilter is { } filter && (filter.Column is null || string.IsNullOrWhiteSpace(filter.EqualsValue)
-            || (request.NormalizeComparisonKeys && NormalizeText(filter.EqualsValue, ComparisonOptions).Length == 0)))
+        if (request.MasterFilter is { } filter && (filter.Column is null || !IsValidFilter(filter, request.NormalizeComparisonKeys)))
             return Error(OperationErrorCode.InvalidConfiguration, "请选择主表筛选列并填写非空比较值。");
         try
         {
@@ -320,6 +321,43 @@ public sealed class DataMatchingService : IDataMatchingService
         return new CompositeKey(parts);
     }
 
+    private static bool IsValidFilter(MasterRowFilter filter, bool normalize)
+    {
+        var value = filter.SelectedValue;
+        if (value is null || value.Kind == ColumnValueKind.Text)
+        {
+            var text = value?.RawValue ?? filter.EqualsValue;
+            return !string.IsNullOrWhiteSpace(text) && (!normalize || NormalizeText(text, ComparisonOptions).Length > 0);
+        }
+        return value.Kind switch
+        {
+            ColumnValueKind.Number => double.TryParse(value.RawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var n) && double.IsFinite(n),
+            ColumnValueKind.Boolean => bool.TryParse(value.RawValue, out _),
+            ColumnValueKind.DateTime => DateTime.TryParseExact(value.RawValue, "O", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out _),
+            ColumnValueKind.TimeSpan => TimeSpan.TryParseExact(value.RawValue, "c", CultureInfo.InvariantCulture, out _),
+            ColumnValueKind.Error => Enum.TryParse<XLError>(value.RawValue, out var e) && Enum.IsDefined(e),
+            _ => false
+        };
+    }
+
+    private static KeyPart ReadTypedFilterPart(ColumnFilterValue value, bool safeNumeric, bool normalize)
+    {
+        if (value.Kind == ColumnValueKind.Text) return ReadTextPart(value.RawValue, safeNumeric, normalize);
+        if (value.Kind == ColumnValueKind.DateTime)
+        {
+            var date = DateTime.ParseExact(value.RawValue, "O", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+            return normalize ? DatePart(date, value.HasTime) : new KeyPart("RawDateTime", date);
+        }
+        return value.Kind switch
+        {
+            ColumnValueKind.Number => new("Number", double.Parse(value.RawValue, CultureInfo.InvariantCulture)),
+            ColumnValueKind.Boolean => new("Boolean", bool.Parse(value.RawValue)),
+            ColumnValueKind.TimeSpan => new("TimeSpan", TimeSpan.ParseExact(value.RawValue, "c", CultureInfo.InvariantCulture)),
+            ColumnValueKind.Error => new("Error", Enum.Parse<XLError>(value.RawValue)),
+            _ => throw new InvalidOperationException("Invalid typed filter.")
+        };
+    }
+
     private static KeyPart ReadTextPart(string value, bool safeNumeric, bool normalize)
     {
         var text = normalize ? NormalizeText(value, ComparisonOptions) : value;
@@ -345,7 +383,7 @@ public sealed class DataMatchingService : IDataMatchingService
         return true;
     }
 
-    private static bool HasTimeComponent(IXLCell cell, DateTime date)
+    internal static bool HasTimeComponent(IXLCell cell, DateTime date)
     {
         var format = cell.Style.NumberFormat.Format;
         var hasDateToken = false;

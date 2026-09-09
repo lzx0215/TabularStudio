@@ -149,12 +149,27 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     [ObservableProperty]
     private AvailableColumnItem? _selectedMasterFilterColumn;
 
+    public ObservableCollection<ColumnValueOption> MasterFilterValues { get; } = [];
+
     [ObservableProperty]
-    private string _masterFilterValue = "是";
+    private ColumnValueOption? _selectedMasterFilterValue;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSelectMasterFilterValue))]
+    private bool _isMasterFilterValuesLoading;
+
+    [ObservableProperty]
+    private string? _masterFilterValuesMessage;
+
+    public bool CanSelectMasterFilterValue => !IsMasterFilterValuesLoading;
+    public Task MasterFilterValuesLoadTask { get; private set; } = Task.CompletedTask;
+    private CancellationTokenSource? _masterFilterValuesCancellation;
+    private int _masterFilterValuesGeneration;
 
     public bool HasValidMasterFilter => !IsMasterFilterEnabled ||
         (SelectedMasterFilterColumn is not null && MasterAvailableColumns.Contains(SelectedMasterFilterColumn)
-            && !string.IsNullOrWhiteSpace(MasterFilterValue));
+            && !IsMasterFilterValuesLoading && SelectedMasterFilterValue is not null
+            && MasterFilterValues.Contains(SelectedMasterFilterValue));
 
     [ObservableProperty]
     private int _resultSkippedCount;
@@ -491,6 +506,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     private async Task RefreshMasterPreviewAsync()
     {
         int currentGeneration = ++_masterPreviewGeneration;
+        SelectedMasterFilterColumn = null;
 
         if (string.IsNullOrWhiteSpace(MasterFilePath) || (!IsMasterCsv && SelectedMasterWorksheet is null))
         {
@@ -1057,9 +1073,65 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         UpdateReadyState();
     }
 
-    partial void OnIsMasterFilterEnabledChanged(bool value) => OnMasterFilterChanged();
-    partial void OnSelectedMasterFilterColumnChanged(AvailableColumnItem? value) => OnMasterFilterChanged();
-    partial void OnMasterFilterValueChanged(string value) => OnMasterFilterChanged();
+    partial void OnIsMasterFilterEnabledChanged(bool value)
+    {
+        if (!value) SelectedMasterFilterColumn = null;
+        OnMasterFilterChanged();
+    }
+    partial void OnSelectedMasterFilterColumnChanged(AvailableColumnItem? value)
+    {
+        MasterFilterValuesLoadTask = LoadMasterFilterValuesAsync(value);
+        OnMasterFilterChanged();
+    }
+    partial void OnSelectedMasterFilterValueChanged(ColumnValueOption? value) => OnMasterFilterChanged();
+
+    private async Task LoadMasterFilterValuesAsync(AvailableColumnItem? column)
+    {
+        var generation = ++_masterFilterValuesGeneration;
+        _masterFilterValuesCancellation?.Cancel();
+        _masterFilterValuesCancellation?.Dispose();
+        _masterFilterValuesCancellation = null;
+        SelectedMasterFilterValue = null;
+        MasterFilterValues.Clear();
+        MasterFilterValuesMessage = null;
+        IsMasterFilterValuesLoading = false;
+        if (column is null || !MasterAvailableColumns.Contains(column) || string.IsNullOrWhiteSpace(MasterFilePath)) return;
+        var cancellation = new CancellationTokenSource();
+        _masterFilterValuesCancellation = cancellation;
+        IsMasterFilterValuesLoading = true;
+        MasterFilterValuesMessage = "正在读取主表列的全部候选值…";
+        OnMasterFilterChanged();
+        try
+        {
+            var source = new WorksheetSource(MasterFilePath, SelectedMasterWorksheet?.Name, MasterHeaderRowNumber);
+            var result = await _inspectionService.GetColumnValuesAsync(new(source, column.Reference), cancellation.Token);
+            if (generation != _masterFilterValuesGeneration) return;
+            if (!result.Success)
+            {
+                MasterFilterValuesMessage = string.Join("\n", new[] { result.Error?.Message ?? "读取筛选值失败。", result.Error?.Detail }
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
+                return;
+            }
+            foreach (var option in result.Values) MasterFilterValues.Add(option);
+            MasterFilterValuesMessage = result.Values.Count == 0 ? "该列没有可选择的非空值。" : $"已读取 {result.Values.Count} 个实际值。";
+        }
+        catch (OperationCanceledException)
+        {
+            if (generation == _masterFilterValuesGeneration) MasterFilterValuesMessage = "候选值读取已取消，请重新选择主表列。";
+        }
+        catch (Exception ex)
+        {
+            if (generation == _masterFilterValuesGeneration) MasterFilterValuesMessage = $"读取筛选值失败：{ex.Message}";
+        }
+        finally
+        {
+            if (generation == _masterFilterValuesGeneration)
+            {
+                IsMasterFilterValuesLoading = false;
+                OnMasterFilterChanged();
+            }
+        }
+    }
 
     private void OnMasterFilterChanged()
     {
@@ -1360,7 +1432,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             )
             {
                 MasterFilter = IsMasterFilterEnabled
-                    ? new MasterRowFilter(SelectedMasterFilterColumn!.Reference, MasterFilterValue)
+                    ? new MasterRowFilter(SelectedMasterFilterColumn!.Reference, SelectedMasterFilterValue!.Value.RawValue) { SelectedValue = SelectedMasterFilterValue.Value }
                     : null
             };
 

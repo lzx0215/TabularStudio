@@ -5,7 +5,7 @@ using static TabularStudio.Core.Services.WorkbookFileOperations;
 
 namespace TabularStudio.Core.Services;
 
-public sealed class WorkbookInspectionService : IWorkbookInspectionService
+public sealed partial class WorkbookInspectionService : IWorkbookInspectionService
 {
     private const int PreviewRowLimit = 20;
     private const int SharingViolation = 32;

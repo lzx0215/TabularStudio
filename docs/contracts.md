@@ -529,3 +529,15 @@ Contract 永远不提供 `AllowOverwriteInput`。输出写入中断时，Core �
 ## Issue #33 批量 UI 调用确认
 
 BatchFormatViewModel 收集每文件 Source/OutputFilePath/OverwriteExistingOutput，构造一套共享 Options 后调用 IBatchFormatStandardizationService。按结果 Index 对应原列表显示结果；完成比例使用 CompletedCount/TotalCount。CSV 无 Sheet；失败继续由 Core 实现。UI 不能把覆盖某项的确认当作整批许可。取消覆盖保留该文件，使用未覆盖许可的请求返回逐项失败。由 Codex 按本轮授权完成 UI/Core 自检。
+
+
+## Issue #54 Owner 确认增量：主表实际值候选（2026-09-08）
+
+本节是 Owner 在当前任务审阅 `artifacts/filter-feedback/column-value-proposal.md` 后明确“确认”的最小 Core/Contract 扩展，覆盖此前 #54 纯视觉返工中对本增量的禁止。由 Codex 按 Owner 跨角色授权完成 UI/Core 调用自检；不冒称独立人员会签。
+
+- `IWorkbookInspectionService.GetColumnValuesAsync(ColumnValuesRequest, CancellationToken)`：只读完整列，返回 `ColumnValuesResult(Success, Values, Error)`。请求使用 `WorksheetSource` 和物理 `ColumnReference`；CSV 无 Sheet。失败返回空 Values；取消抛 OperationCanceledException。接口默认实现返回 InvalidConfiguration，不支持新入口的旧实现不会伪造候选。
+- `ColumnValueOption(DisplayText, Value)`：DisplayText 仅用于展示，匹配必须传 Value；`ColumnFilterValue(Kind, RawValue, HasTime=false)` 不暴露 ClosedXML/NPOI 类型。
+- Kind：Text / Number / Boolean / DateTime / TimeSpan / Error。RawValue 分别为原文本、Invariant double round-trip、布尔文本、Invariant DateTime O、TimeSpan c、受支持的 Excel 错误枚举名称；HasTime 仅影响日期规范化的比较粒度，按源格式沿用现有规则。
+- `MasterRowFilter.SelectedValue` 为可选属性。非空时优先使用带类型值；空时继续使用现有 EqualsValue 文本路径，位置参数不变。无效带类型值返回 InvalidConfiguration。
+- 列候选按表头之后全部数据的首次出现顺序、原值类型/值/日期粒度去重，不根据显示文字去重，不预先执行比较规范化。显示冲突追加类型和原值说明；空白不作为候选，所选列任何数据公式导致整体失败并附真实 File/Sheet/Header/Cell。
+- 执行时仍重新读取输入，遵守既有比较规范化、公式拒绝、输出保护和五类统计；候选快照不作为输入文件锁，不保证文件被外部修改后的候选仍存在。

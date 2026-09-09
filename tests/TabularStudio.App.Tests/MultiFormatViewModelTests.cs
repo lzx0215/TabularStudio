@@ -64,7 +64,8 @@ public sealed class MultiFormatViewModelTests : IDisposable
         vm.Conditions[0].SelectedMasterColumn = vm.MasterAvailableColumns[0];
         vm.Conditions[0].SelectedReferenceColumn = vm.ReferenceAvailableColumns[0];
         vm.ReturnFields[1].IsSelected = true;
-        vm.IsMasterFilterEnabled = true; vm.SelectedMasterFilterColumn = vm.MasterAvailableColumns[0]; vm.MasterFilterValue = "001";
+        vm.IsMasterFilterEnabled = true; vm.SelectedMasterFilterColumn = vm.MasterAvailableColumns[0]; await vm.MasterFilterValuesLoadTask;
+        vm.SelectedMasterFilterValue = vm.MasterFilterValues.Single(v => v.Value.RawValue == "001");
         Assert.True(vm.CanStart);
         await vm.StartAsync(); Assert.True(vm.HasSuccess, vm.ErrorMessage); Assert.Equal(1, vm.ResultMatchedCount);
         Assert.Equal(a, Path.GetExtension(vm.ResultOutputFilePath));

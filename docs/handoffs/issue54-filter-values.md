@@ -43,3 +43,15 @@
 Implementation / Automated Verification：PASS。Actual Diff Verification / Scope Review：按已批准增量自检，通过；PR更新后需以GitHub实际head及Files changed复核。Pre-Merge Readiness：自动化通过，完整桌面QA待执行；**不宣称可直接合并或Issue Done**。Owner Gate 2尚未授予新exact head批准，旧SHA一律不适用。
 
 接收方下一步：按原FT-01～08及FV-07实际操作新版WPF，保留完整窗口证据；所有必测项完成且Owner锁定新的exact PR head后才可合并。发布包继续独立验收，不自动更新已发布第二版。
+
+## 2026-09-09 验证工具兼容修复（Owner 已授权）
+
+发布就绪检查在 `042e7bbae24f5e2687041524f807e06f331198eb` 发现 `Issue33.FunctionalQA/Program.cs:44` 编译错误 CS1061：仍引用已移除的 `MasterFilterValue`。该工具未包含在 solution 中，因此此前 solution 构建及298项测试没有覆盖其编译。
+
+- 沿用 #54 / PR #55 的验证修复范围；工具改为等待 `MasterFilterValuesLoadTask`，从实际候选中按 Text 类型及原值 `001` 选择 `SelectedMasterFilterValue`。
+- 验证候选加载结束、未选择时禁止执行、显式选择后可以执行；匹配和批量重试后再次核对全部输入 SHA256。
+- 将现有 `Issue33.FunctionalQA` 项目加入 `TabularStudio.sln` 的 tools 分组，后续 solution 构建会检查该调用方。构建工具不等于自动执行功能场景，仍须单独 `dotnet run`。
+- 本轮 Release solution build：PASS，0 warnings / 0 errors，包含 Issue33.FunctionalQA；Core 267 + App 31 全部 PASS，0 FAIL / 0 SKIP。
+- 修复后的工具在两个全新目录中分别运行，均 PASS：三格式批量部分失败后继续、输出重新打开、选中 CSV 结果发送到匹配、与 XLS 按实际候选条件匹配、CSV 输出、批量重试及输入哈希保护。
+- 证据：本工作树 `artifacts/issue54-tool-fix/` 下的 build.log、test.log、test-results、functional-run-1.log、functional-run-2.log 及 run-1/run-2 合成样例。
+- 本轮测试对象为上述 exact commit 加本节工具修复；最终提交 SHA 及提交后的复核结果以 PR #55 记录为准。本次修复未修改 src、Contract、产品需求或发布包。原桌面 FT-01～08、FV-07 仍为 NOT RUN，不能把工具恢复视作桌面QA、Gate 2/3或正式发布验收通过。

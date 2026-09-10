@@ -1,3 +1,5 @@
+> 2026-09-10：本文的旧发布审批、Gate、STOP、固定基线和验收流程已废止。以下内容仅作为历史构建与验证参考；版本、测试数量和路径需按当前任务核实。不得把历史记录或未执行的检查当作当前验证结果。参见 [流程废止说明](development-process.md)。
+
 # Windows x64 MVP v0.1.0 package (Issue #25)
 
 This procedure builds a local release candidate. It does not create a tag, GitHub Release, installer, or upload an asset. Package acceptance remains separate from build success.

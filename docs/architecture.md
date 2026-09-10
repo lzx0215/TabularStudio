@@ -1,5 +1,7 @@
 # 架构
 
+2026-09-10 表格对比增量：`TableComparisonService` 通过现有 `TabularWorkbook` 读取三种格式，在 Core 中按实际坐标构建稀疏值快照，严格比较并生成报告，不枚举巨大的纯空矩形。`TabularWorkbook.ComparisonValue` 只读取公式缓存，不触发计算或外部链接。`TableComparisonViewModel` / `TableComparisonView` 负责输入、取消、前 1000 条差异展示及导出调用；完整差异保留在 Core 结果中。报告复用临时文件和原子提交保护，超出单 Sheet 行数时拆分明细 Sheet。不新增依赖。完整规则见 `positional-comparison.md`。
+
 - Owner: Codex
 - Current implementation: Issue #34 Core 多格式支持；WPF 集成不在本 Issue。
 

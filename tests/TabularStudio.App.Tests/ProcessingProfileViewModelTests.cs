@@ -216,12 +216,14 @@ public sealed class ProcessingProfileViewModelTests : IDisposable
         Func<string, string?>? prompt = null,
         Func<string, bool>? overwrite = null,
         Func<string, bool>? delete = null,
-        IWorkbookInspectionService? inspectionService = null)
+        IWorkbookInspectionService? inspectionService = null,
+        string? masterContents = null,
+        string? referenceContents = null)
     {
         var master = Path.Combine(_directory, "master.csv");
         var reference = Path.Combine(_directory, "ref.csv");
-        File.WriteAllText(master, "Dept,Code,Name\r\nCardiology,001,John\r\nNeurology,002,Jane\r\n");
-        File.WriteAllText(reference, "Code,Desc\r\n001,Heart\r\n002,Brain\r\n");
+        File.WriteAllText(master, masterContents ?? "Dept,Code,Name\r\nCardiology,001,John\r\nNeurology,002,Jane\r\n");
+        File.WriteAllText(reference, referenceContents ?? "Code,Desc\r\n001,Heart\r\n002,Brain\r\n");
 
         var inspection = inspectionService ?? new WorkbookInspectionService();
         var vm = new DataMatchingViewModel(
@@ -246,6 +248,100 @@ public sealed class ProcessingProfileViewModelTests : IDisposable
 
         vm.OutputFilePath = Path.Combine(_directory, "out.csv");
         return vm;
+    }
+
+    [Fact]
+    public async Task MatchingProfile_ApplyAfterSuccess_ClearsOldResultAndUsesNewSettingsOnlyOnStart()
+    {
+        var store = new InMemoryProfileStore();
+        var vm = await CreateMatchingVm(store,
+            validator: new ProcessingProfileValidator(new WorkbookInspectionService()),
+            prompt: _ => "标准化全部匹配",
+            masterContents: "Dept,Code,Name\r\nCardiology, A ,John\r\nNeurology, B ,Jane\r\n",
+            referenceContents: "Code,Desc\r\nA,Heart\r\nB,Brain\r\n");
+        vm.NormalizeComparisonKeys = true;
+        vm.SaveProfile();
+        Assert.Equal("已保存：标准化全部匹配", vm.ProfileStatusMessage);
+
+        vm.NormalizeComparisonKeys = false;
+        vm.IsMasterFilterEnabled = true;
+        vm.SelectedMasterFilterColumn = vm.MasterAvailableColumns[0];
+        await vm.MasterFilterValuesLoadTask;
+        vm.SelectedMasterFilterValue = vm.MasterFilterValues.Single(v => v.Value.RawValue == "Cardiology");
+        await vm.StartAsync();
+        Assert.True(vm.HasSuccess, vm.ErrorMessage);
+        Assert.Equal(0, vm.ResultMatchedCount);
+        Assert.Equal(1, vm.ResultUnmatchedCount);
+        Assert.Equal(1, vm.ResultSkippedCount);
+        var oldOutput = vm.ResultOutputFilePath!;
+        var oldBytes = File.ReadAllBytes(oldOutput);
+        var filesBefore = Directory.GetFiles(_directory).Order().ToArray();
+
+        await vm.ApplyProfileAsync();
+
+        Assert.Equal("已应用：标准化全部匹配", vm.ProfileStatusMessage);
+        Assert.True(vm.NormalizeComparisonKeys);
+        Assert.False(vm.IsMasterFilterEnabled);
+        Assert.False(vm.HasSuccess);
+        Assert.False(vm.CanExecuteSuccessActions);
+        Assert.Null(vm.ResultOutputFilePath);
+        Assert.Null(vm.SuccessMessage);
+        Assert.Equal(0, vm.ResultTotalMasterDataRowCount);
+        Assert.Equal(0, vm.ResultMatchedCount);
+        Assert.Equal(0, vm.ResultUnmatchedCount);
+        Assert.Equal(0, vm.ResultDuplicateCount);
+        Assert.Equal(0, vm.ResultEmptyKeyCount);
+        Assert.Equal(0, vm.ResultSkippedCount);
+        Assert.Equal(TimeSpan.Zero, vm.ResultElapsed);
+        Assert.Equal(0, vm.ProgressPercent);
+        Assert.Null(vm.ProgressStageText);
+        Assert.True(vm.CanStart);
+        Assert.Equal(oldOutput, vm.OutputFilePath);
+        Assert.Equal(oldBytes, File.ReadAllBytes(oldOutput));
+        Assert.Equal(filesBefore, Directory.GetFiles(_directory).Order().ToArray());
+
+        vm.OutputFilePath = Path.Combine(_directory, "new-settings.csv");
+        await vm.StartAsync();
+        Assert.True(vm.HasSuccess, vm.ErrorMessage);
+        Assert.Equal(2, vm.ResultMatchedCount);
+        Assert.Equal(0, vm.ResultSkippedCount);
+        Assert.Equal(oldBytes, File.ReadAllBytes(oldOutput));
+    }
+
+    [Fact]
+    public async Task MatchingProfile_RejectedAfterSuccess_PreservesCurrentSettingsAndResult()
+    {
+        var store = new InMemoryProfileStore();
+        var vm = await CreateMatchingVm(store,
+            validator: new ProcessingProfileValidator(new WorkbookInspectionService()),
+            prompt: _ => "匹配配置");
+        vm.SaveProfile();
+        await vm.StartAsync();
+        Assert.True(vm.HasSuccess, vm.ErrorMessage);
+        var oldOutput = vm.ResultOutputFilePath!;
+        var oldBytes = File.ReadAllBytes(oldOutput);
+        var oldCondition = vm.Conditions[0];
+        var oldMessage = vm.SuccessMessage;
+        var profile = store.MatchingProfiles["匹配配置"];
+        store.MatchingProfiles[profile.Name] = profile with
+        {
+            Matching = profile.Matching! with
+            {
+                Conditions = [new MatchingCondition(new ColumnReference(99, "Missing"), new ColumnReference(1, "Code"))]
+            }
+        };
+
+        await vm.ApplyProfileAsync();
+
+        Assert.StartsWith("未应用：", vm.ProfileStatusMessage);
+        Assert.Same(oldCondition, vm.Conditions[0]);
+        Assert.True(vm.HasSuccess);
+        Assert.True(vm.CanExecuteSuccessActions);
+        Assert.Equal(2, vm.ResultMatchedCount);
+        Assert.Equal(oldMessage, vm.SuccessMessage);
+        Assert.Equal(oldOutput, vm.ResultOutputFilePath);
+        Assert.Equal(oldBytes, File.ReadAllBytes(oldOutput));
+        Assert.False(vm.IsProfileValidating);
     }
 
     [Fact]

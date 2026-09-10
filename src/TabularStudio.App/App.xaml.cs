@@ -20,6 +20,7 @@ public partial class App : Application
         IWorkbookInspectionService inspectionService = new WorkbookInspectionService();
         IFormatStandardizationService formatService = new FormatStandardizationService();
         IDataMatchingService matchingService = new DataMatchingService();
+        ITableComparisonService comparisonService = new TableComparisonService();
 
 #if DEBUG
         string? testDataDir = Environment.GetEnvironmentVariable("TABULARSTUDIO_TEST_DATA_DIRECTORY");
@@ -40,8 +41,9 @@ public partial class App : Application
             formatService,
             matchingService,
             outputDirectoryPreferenceService,
-            profileStore,
-            profileValidator);
+            comparisonService: comparisonService,
+            profileStore: profileStore,
+            profileValidator: profileValidator);
 
         // 构造并显示 MainWindow
         var mainWindow = new MainWindow(mainWindowViewModel);

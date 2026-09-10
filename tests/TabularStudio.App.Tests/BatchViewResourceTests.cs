@@ -63,6 +63,7 @@ public sealed class BatchViewResourceTests
                     Assert.Equal("FirstHeader", grid.Columns[0].Header);
                 }
                 finally { Directory.Delete(directory, true); }
+                TableComparisonViewResourceCheck.Verify();
                 var matching = new DataMatchingView
                 {
                     DataContext = new DataMatchingViewModel(new WorkbookInspectionService(), new DataMatchingService())

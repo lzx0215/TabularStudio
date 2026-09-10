@@ -112,6 +112,31 @@ internal sealed class TabularWorkbook : IDisposable
             ? cell.CachedValue.ToString(CultureInfo.CurrentCulture) : cell.GetFormattedString(CultureInfo.CurrentCulture);
     }
 
+    // Comparison reads persisted formula results only; it must never trigger evaluation.
+    public XLCellValue ComparisonValue(IXLCell cell)
+    {
+        if (!cell.HasFormula) return cell.Value;
+        if (binary is not null)
+        {
+            var source = binary.GetSheet(cell.Worksheet.Name).GetRow(cell.Address.RowNumber - 1)
+                .GetCell(cell.Address.ColumnNumber - 1);
+            return source.CachedFormulaResultType switch
+            {
+                CellType.String => source.StringCellValue,
+                CellType.Numeric => source.NumericCellValue,
+                CellType.Boolean => source.BooleanCellValue,
+                CellType.Error => FromExcelError(source.ErrorCellValue),
+                _ => throw MissingFormulaResult(cell)
+            };
+        }
+        var cached = cell.CachedValue;
+        if (cached.Type == XLDataType.Blank) throw MissingFormulaResult(cell);
+        return cached;
+    }
+
+    private static InvalidDataException MissingFormulaResult(IXLCell cell) => new(
+        $"工作表 {cell.Worksheet.Name} 的 {cell.Address} 公式缺少已保存的计算结果，请在 Excel/WPS 中重新计算并保存后再比较。");
+
     public void SaveAs(Stream output, CancellationToken token = default)
     {
         if (csv)

@@ -1756,6 +1756,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             ResultUnmatchedCount = 0;
             ResultDuplicateCount = 0;
             ResultEmptyKeyCount = 0;
+            ResultSkippedCount = 0;
             ResultElapsed = TimeSpan.Zero;
             SuccessMessage = null;
             ProgressPercent = 0;
@@ -2215,6 +2216,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 _isApplyingProfile = false;
             }
 
+            // Invalidate the previous result only after the complete profile was applied.
+            ResetSuccess();
             _appliedProfileName = profile.Name;
             ProfileStatusMessage = $"已应用：{profile.Name}";
             UpdateReadyState();

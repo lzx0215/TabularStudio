@@ -1,7 +1,7 @@
 # Issue #56 配置服务契约与实现交接
 
 - Issue：https://github.com/lzx0215/TabularStudio/issues/56；基线 9b608adea1fe6f1a79b14ec7a58dc476605fcaf7；PR 未创建。
-- Owner 已于2026-09-09回复“批准”：需求/Scope/AC/FT、两行 UI 增量及本次合成样例 GUI 验收。正式范围在 requirements §15；批准包在 saved-processing-config.md；UI 在 saved-config-ui-approved.md。
+- Owner 已于2026-09-09回复“批准”：需求/Scope/AC/FT、两行 UI 增量及本次合成样例 GUI 验收。正式范围在 requirements §16（与 v0.3.0 整合后由 §15 顺延）；批准包在 saved-processing-config.md；UI 在 saved-config-ui-approved.md。
 - Codex 契约评审：同意下列服务边界。Antigravity 需先阅读并在独立 `issue56-ui-handoff.md` 写明同意或具体冲突；无冲突即继续 UI 实现，不等待 Owner。
 - Antigravity 会签证据：实际 CLI 会话 `b1f6932e-b02d-40ee-b89d-df9ff4cf0fcf` 首轮最终响应明确表示“完全赞同 ProcessingProfileContracts.cs 及 issue56-contract.md 中定义的服务边界与数据模型”，并记录已在 UI Handoff 会签。原始响应保存在仓库外 `issue56-execution-20260909/ui-files-only/ui-stream.jsonl`。后续 UI 修复重写 Handoff 时未保留原会签段，协调者在此保留来源记录；不是代替 Antigravity 新签署。
 

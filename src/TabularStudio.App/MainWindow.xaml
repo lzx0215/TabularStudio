@@ -1,5 +1,8 @@
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:vm="clr-namespace:TabularStudio.App.ViewModels" xmlns:views="clr-namespace:TabularStudio.App.Views" x:Class="TabularStudio.App.MainWindow" mc:Ignorable="d" Title="TabularStudio - 本地离线表格工具" Width="1280" Height="720" MinWidth="960" MinHeight="640" WindowStartupLocation="CenterScreen" Background="{StaticResource AppBackgroundBrush}" FontFamily="Segoe UI, Microsoft YaHei UI" FontSize="13">
     <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:TableComparisonViewModel}">
+            <views:TableComparisonView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:BatchFormatViewModel}">
             <views:BatchFormatView/>
         </DataTemplate>
@@ -26,6 +29,7 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <RadioButton Content="格式统一" Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsFormatStandardizationSelected, Mode=TwoWay}" Command="{Binding SelectFormatStandardizationCommand}" Margin="0,0,8,0"/>
                     <RadioButton Content="数据匹配" Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsDataMatchingSelected, Mode=TwoWay}" Command="{Binding SelectDataMatchingCommand}"/>
+                    <RadioButton Content="表格对比" Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsTableComparisonSelected, Mode=TwoWay}" Command="{Binding SelectTableComparisonCommand}" Margin="8,0,0,0"/>
                 </StackPanel>
             </DockPanel>
         </Border>

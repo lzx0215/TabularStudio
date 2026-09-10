@@ -36,7 +36,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IFormatStandardizationService formatService,
         IDataMatchingService matchingService,
         IOutputDirectoryPreferenceService? outputDirectoryPreferenceService = null,
-        ITableComparisonService? comparisonService = null)
+        ITableComparisonService? comparisonService = null,
+        IProcessingProfileStore? profileStore = null,
+        IProcessingProfileValidator? profileValidator = null)
     {
         var preferenceService = outputDirectoryPreferenceService ?? new OutputDirectoryPreferenceService();
         TableComparisonVm = new(inspectionService, comparisonService ?? new TableComparisonService(), preferenceService);
@@ -44,13 +46,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
         DataMatchingVm = new DataMatchingViewModel(
             inspectionService,
             matchingService,
-            outputDirectoryPreferenceService: preferenceService);
+            outputDirectoryPreferenceService: preferenceService,
+            profileStore: profileStore,
+            profileValidator: profileValidator);
 
         FormatStandardizationVm = new BatchFormatViewModel(
             inspectionService,
             formatService,
             sendToMatching: OnSendToDataMatching,
-            preferences: preferenceService);
+            preferences: preferenceService,
+            profileStore: profileStore,
+            profileValidator: profileValidator);
 
         // 默认显示格式统一
         CurrentViewViewModel = FormatStandardizationVm;

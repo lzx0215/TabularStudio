@@ -7,6 +7,7 @@ using System.Windows.Media.Imaging;
 using TabularStudio.App.Services;
 using TabularStudio.App.ViewModels;
 using TabularStudio.App.Views;
+using TabularStudio.Core.Contracts;
 using TabularStudio.Core.Services;
 
 namespace TabularStudio.App.Tests;
@@ -20,8 +21,18 @@ internal static class TableComparisonViewResourceCheck
         Directory.CreateDirectory(directory);
         try
         {
-            var vm = new TableComparisonViewModel(new WorkbookInspectionService(), new TableComparisonService(),
-                new OutputDirectoryPreferenceService(Path.Combine(directory, "preferences.json")));
+            var inspection = new WorkbookInspectionService();
+            var profiles = new JsonProcessingProfileStore(Path.Combine(directory, "profiles"));
+            Assert.True(profiles.Save(new(1, "格式配置", ProcessingProfileKind.FormatStandardization,
+                new(true, false, false, false, false, false), null)).Success);
+            Assert.True(profiles.Save(new(1, "匹配配置", ProcessingProfileKind.DataMatching, null,
+                new([new(new(1, "A"), new(1, "A"))], [new(2, "B")], false,
+                    new(false, "匹配状态"), null))).Success);
+            var shellVm = new MainWindowViewModel(inspection, new FormatStandardizationService(), new DataMatchingService(),
+                new OutputDirectoryPreferenceService(Path.Combine(directory, "preferences.json")),
+                comparisonService: new TableComparisonService(), profileStore: profiles,
+                profileValidator: new ProcessingProfileValidator(inspection));
+            var vm = shellVm.TableComparisonVm;
             var view = new TableComparisonView { DataContext = vm, Width = 740, Height = 580 };
             var left = Path.Combine(directory, "left.csv"); var right = Path.Combine(directory, "right.csv");
             File.WriteAllText(left, "A,B\r\nx,1\r\n"); File.WriteAllText(right, "A,B\r\nx,2\r\n");
@@ -49,7 +60,6 @@ internal static class TableComparisonViewResourceCheck
             encoder.Save(image);
 
             // Verify the comparison route in the current top-navigation shell after integration.
-            var shellVm = new MainWindowViewModel(new WorkbookInspectionService(), new FormatStandardizationService(), new DataMatchingService());
             shellVm.SelectTableComparisonCommand.Execute(null);
             Assert.True(shellVm.IsTableComparisonSelected);
             Assert.False(shellVm.IsFormatStandardizationSelected);
@@ -76,8 +86,54 @@ internal static class TableComparisonViewResourceCheck
             var shellEncoder = new PngBitmapEncoder(); shellEncoder.Frames.Add(BitmapFrame.Create(shellBitmap));
             using var shellImage = File.Create(Path.Combine(AppContext.BaseDirectory, "table-comparison-shell.png"));
             shellEncoder.Save(shellImage);
+
+            var format = shellVm.FormatStandardizationVm;
+            format.SelectedProfile = format.Profiles[0];
+            format.ApplyProfile();
+            Pump(format.LoadFilesAsync([left]));
+            var matching = shellVm.DataMatchingVm;
+            Pump(matching.LoadMasterFileAsync(left));
+            Pump(matching.LoadReferenceFileAsync(right));
+            matching.SelectedProfile = matching.Profiles[0];
+            Pump(matching.ApplyProfileAsync());
+            Assert.Equal("已应用：匹配配置", matching.ProfileStatusMessage);
+            foreach (var size in new[] { new Size(944, 601), new Size(1264, 681) })
+            {
+                shellVm.SelectFormatStandardization();
+                LayoutAndRender(client, size, "profiles-format");
+                var formatView = Descendants(client).OfType<BatchFormatView>().Single();
+                Assert.Same(format, formatView.DataContext);
+                Assert.Single(Descendants(formatView).OfType<ComboBox>()
+                    .Single(c => ReferenceEquals(c.ItemsSource, format.Profiles)).Items);
+                shellVm.SelectDataMatching();
+                LayoutAndRender(client, size, "profiles-matching");
+                var matchingView = Descendants(client).OfType<DataMatchingView>().Single();
+                Assert.Same(matching, matchingView.DataContext);
+                Assert.Single(Descendants(matchingView).OfType<ComboBox>()
+                    .Single(c => ReferenceEquals(c.ItemsSource, matching.Profiles)).Items);
+                shellVm.SelectTableComparison();
+                LayoutAndRender(client, size, "profiles-comparison");
+                Assert.Contains("不一致", Descendants(client).OfType<TableComparisonView>()
+                    .Single().FindName("ResultSummary") is TextBlock summary ? summary.Text : "");
+            }
         }
         finally { Directory.Delete(directory, true); }
+    }
+
+    private static void LayoutAndRender(FrameworkElement client, Size size, string name)
+    {
+        client.Width = size.Width;
+        client.Height = size.Height;
+        client.Measure(size);
+        client.Arrange(new Rect(size));
+        client.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+        client.UpdateLayout();
+        var bitmap = new RenderTargetBitmap((int)size.Width, (int)size.Height, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(client);
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var image = File.Create(Path.Combine(AppContext.BaseDirectory, $"{name}-{size.Width}.png"));
+        encoder.Save(image);
     }
 
     private static IEnumerable<DependencyObject> Descendants(DependencyObject parent)

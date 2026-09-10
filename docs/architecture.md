@@ -40,3 +40,11 @@ Contract 只暴露普通 .NET 数据结构，CSV nullable Sheet 增量见 contra
 ## 批量编排（Issue #32）
 
 BatchFormatStandardizationService 在 Core 内顺序调用 IFormatStandardizationService，复用多格式与原子写入逻辑；只增加批次输入保护、逐项隔离、结果/进度汇总。单文件契约与匹配服务不变。UI 调用 IBatchFormatStandardizationService；无需新依赖或持久存储。
+
+## 本机处理配置（Issue #56）
+
+`JsonProcessingProfileStore` 与 `ProcessingProfileValidator` 位于 Core，无新增生产依赖。App 通过接口调用存储与校验；已有表格服务保持原行为。配置目录默认是 LocalApplicationData/TabularStudio/processing-profiles，构造函数允许测试注入独立目录。
+
+每个命名配置一个版本 1 JSON，按功能分目录，文件名由规范化名称的 SHA256 生成，名称不能控制文件路径。读取拒绝未知成员、缺失必需构造参数、错误结构、未知版本和超过 1 MiB 的文件；错误单独展示，不使其他配置不可用。写入先完整序列化并写临时文件、刷盘，再以同目录原子替换提交；失败保留原文件。每功能目录短期独占锁串行化协作进程的保存/删除，不长期锁住配置或输入文件。
+
+配置不是数据文件快照：只有显式选定的筛选字面值属于配置。应用时检查新预览和新候选，列号与原表头均相同但业务含义变化无法自动识别。DEBUG GUI 验收可在组合根中注入测试目录；发布版本不启用测试环境覆盖。

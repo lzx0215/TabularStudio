@@ -543,3 +543,14 @@ BatchFormatViewModel 收集每文件 Source/OutputFilePath/OverwriteExistingOutp
 - `MasterRowFilter.SelectedValue` 为可选属性。非空时优先使用带类型值；空时继续使用现有 EqualsValue 文本路径，位置参数不变。无效带类型值返回 InvalidConfiguration。
 - 列候选按表头之后全部数据的首次出现顺序、原值类型/值/日期粒度去重，不根据显示文字去重，不预先执行比较规范化。显示冲突追加类型和原值说明；空白不作为候选，所选列任何数据公式导致整体失败并附真实 File/Sheet/Header/Cell。
 - 执行时仍重新读取输入，遵守既有比较规范化、公式拒绝、输出保护和五类统计；候选快照不作为输入文件锁，不保证文件被外部修改后的候选仍存在。
+
+## 本机处理配置（Issue #56，Owner Gate 1 已批准）
+
+新增 `Contracts/Profiles/ProcessingProfileContracts.cs`，准确签名以该文件为准。原标准化、匹配及检查请求保持兼容。
+
+- `ProcessingProfile` 的 Version=1，包含名称、功能类型及两类互斥设置。六个格式规则显式保存；匹配保存有序条件、返回列、标准化、状态列及可选带类型筛选值。
+- `IProcessingProfileStore` 提供 List/Load/Save/Delete。配置按功能隔离，名称 Trim 后按 OrdinalIgnoreCase 判断重名；未确认不能覆盖。List 返回有效项与坏文件错误；应用时须重新 Load，不能复用陈旧缓存。
+- `IProcessingProfileValidator` 先验证配置结构，再以引用的物理列号和原始表头对比当前预览。空表头、移动、缺列或改名整体失败；重复表头不重映射，未引用列不参与检查。
+- `PrepareMatchingAsync` 重新读取完整筛选候选，以 Kind/RawValue/HasTime 精确核对。成功仅返回准备结果，不执行处理也不修改 UI；失败返回错误且无部分候选；取消抛 OperationCanceledException。
+- UI 在单次受控更新中提交准备结果，并抑制筛选列 setter 的重复加载；校验期间禁用冲突操作，返回时校验来源和代次。存储不包含来源、Sheet、表头行、输出或覆盖许可。
+- Codex 与实际 Antigravity CLI 会签记录见 `handoffs/issue56-contract.md`、`handoffs/issue56-ui-handoff.md`。本增量不声称桌面 QA 已完成。

@@ -162,9 +162,100 @@
                     </Grid>
                 </Border>
                 <Border Style="{StaticResource CardBorderStyle}" Margin="0" Grid.Column="2">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel>
-                            <DockPanel LastChildFill="True">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 处理配置 两行控件 + 状态提示 -->
+                        <StackPanel Grid.Row="0">
+                            <TextBlock Text="处理配置" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,6"/>
+                            <!-- 第一行：配置下拉 -->
+                            <Grid>
+                                <ComboBox ItemsSource="{Binding Profiles}"
+                                          SelectedItem="{Binding SelectedProfile}"
+                                          DisplayMemberPath="Name"
+                                          MinHeight="32"
+                                          FontSize="13"
+                                          Padding="6,4"
+                                          IsEnabled="{Binding CanSelectProfile}"/>
+                                <TextBlock IsHitTestVisible="False" VerticalAlignment="Center" Margin="8,0,24,0" Foreground="{StaticResource TextMutedBrush}" FontSize="13">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="请选择配置…"/>
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasProfiles}" Value="False">
+                                                    <Setter Property="Text" Value="暂无保存配置"/>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding HasProfiles}" Value="True"/>
+                                                        <Condition Binding="{Binding SelectedProfile}" Value="{x:Null}"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Text" Value="请选择配置…"/>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                            <!-- 第二行：应用/保存/删除按钮 -->
+                            <Grid Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="应用" Command="{Binding ApplyProfileCommand}"
+                                        IsEnabled="{Binding CanApplyProfile}" Style="{StaticResource SecondaryButtonStyle}"
+                                        Margin="0,0,4,0" MinHeight="32" Padding="4,2"/>
+                                <Button Grid.Column="1" Content="保存配置…" Command="{Binding SaveProfileCommand}"
+                                        IsEnabled="{Binding CanSaveProfile}" Style="{StaticResource SecondaryButtonStyle}"
+                                        Margin="2,0,2,0" MinHeight="32" Padding="4,2"/>
+                                <Button Grid.Column="2" Content="删除" Command="{Binding DeleteProfileCommand}"
+                                        IsEnabled="{Binding CanDeleteProfile}" Style="{StaticResource SecondaryButtonStyle}"
+                                        Margin="4,0,0,0" MinHeight="32" Padding="4,2"/>
+                            </Grid>
+                            <!-- 状态提示 -->
+                            <ScrollViewer MaxHeight="96"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          Margin="0,6,0,0">
+                                <TextBlock Text="{Binding ProfileStatusMessage}"
+                                           TextWrapping="Wrap"
+                                           FontSize="12">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsProfileStatusError}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsProfileStatusModified}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource WarningBrush}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsProfileStatusSuccess}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </ScrollViewer>
+                        </StackPanel>
+
+                        <!-- 分割线 -->
+                        <Border Grid.Row="1" Height="1" Background="{StaticResource BorderBrush}" Margin="0,8,0,8"/>
+
+                        <!-- 原有返回字段与选项（局部滚动） -->
+                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <DockPanel LastChildFill="True">
                                 <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -226,6 +317,7 @@
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
+                    </Grid>
                 </Border>
             </Grid>
         </Grid>

@@ -50,6 +50,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     // 主表配置
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
     private string? _masterFilePath;
 
     public bool IsMasterCsv => TabularFileTypes.IsCsv(MasterFilePath);
@@ -66,9 +68,13 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     public ObservableCollection<WorksheetInfo> MasterWorksheets { get; } = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
     private WorksheetInfo? _selectedMasterWorksheet;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
     private int _masterHeaderRowNumber = 1;
 
     [ObservableProperty]
@@ -79,9 +85,14 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowMasterPreviewEmptyNotice))]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
     private bool _hasMasterPreviewData;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
+    [NotifyPropertyChangedFor(nameof(CanStart))]
     private bool _isMasterPreviewLoading;
 
     [ObservableProperty]
@@ -94,6 +105,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     private bool _useSameFileAsMaster;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
     private string? _referenceFilePath;
 
     public bool IsReferenceCsv => TabularFileTypes.IsCsv(ReferenceFilePath);
@@ -107,9 +120,13 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     public ObservableCollection<WorksheetInfo> ReferenceWorksheets { get; } = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
     private WorksheetInfo? _selectedReferenceWorksheet;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
     private int _referenceHeaderRowNumber = 1;
 
     [ObservableProperty]
@@ -120,9 +137,14 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowReferencePreviewEmptyNotice))]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
     private bool _hasReferencePreviewData;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
+    [NotifyPropertyChangedFor(nameof(CanStart))]
     private bool _isReferencePreviewLoading;
 
     [ObservableProperty]
@@ -144,18 +166,26 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     private bool _normalizeComparisonKeys = true;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
+    [NotifyPropertyChangedFor(nameof(CanStart))]
     private bool _isMasterFilterEnabled;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
+    [NotifyPropertyChangedFor(nameof(CanStart))]
     private AvailableColumnItem? _selectedMasterFilterColumn;
 
     public ObservableCollection<ColumnValueOption> MasterFilterValues { get; } = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
+    [NotifyPropertyChangedFor(nameof(CanStart))]
     private ColumnValueOption? _selectedMasterFilterValue;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSelectMasterFilterValue))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
+    [NotifyPropertyChangedFor(nameof(CanStart))]
     private bool _isMasterFilterValuesLoading;
 
     [ObservableProperty]
@@ -200,6 +230,10 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(CanUseSameFile))]
     [NotifyPropertyChangedFor(nameof(CanBrowseMaster))]
     [NotifyPropertyChangedFor(nameof(CanBrowseReference))]
+    [NotifyPropertyChangedFor(nameof(CanSelectProfile))]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
+    [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
     private bool _isProcessing;
 
     [ObservableProperty]
@@ -254,13 +288,95 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasError;
 
+    private readonly IProcessingProfileStore? _profileStore;
+    private readonly IProcessingProfileValidator? _profileValidator;
+    private readonly Func<string, string?>? _promptProfileName;
+    private readonly Func<string, bool>? _confirmOverwrite;
+    private readonly Func<string, bool>? _confirmDelete;
+
+    private string? _appliedProfileName;
+    private bool _isApplyingProfile;
+    private bool _suppressFilterColumnLoad;
+    private int _profileValidationGeneration;
+
+    public ObservableCollection<ProcessingProfile> Profiles { get; } = [];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
+    private ProcessingProfile? _selectedProfile;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsProfileStatusError))]
+    [NotifyPropertyChangedFor(nameof(IsProfileStatusModified))]
+    [NotifyPropertyChangedFor(nameof(IsProfileStatusSuccess))]
+    private string _profileStatusMessage = "暂无保存配置";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanConfigure))]
+    [NotifyPropertyChangedFor(nameof(CanStart))]
+    [NotifyPropertyChangedFor(nameof(CanSelectProfile))]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
+    [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
+    [NotifyPropertyChangedFor(nameof(CanBrowseMaster))]
+    [NotifyPropertyChangedFor(nameof(CanBrowseReference))]
+    private bool _isProfileValidating;
+
+    public bool HasProfiles => Profiles.Count > 0;
+    public bool CanSelectProfile => !IsProcessing && !IsProfileValidating;
+    public bool CanApplyProfile =>
+        !IsProcessing &&
+        !IsProfileValidating &&
+        SelectedProfile is not null &&
+        !string.IsNullOrWhiteSpace(MasterFilePath) &&
+        (IsMasterCsv || SelectedMasterWorksheet != null) &&
+        MasterHeaderRowNumber >= 1 &&
+        HasMasterPreviewData &&
+        !IsMasterPreviewLoading &&
+        !string.IsNullOrWhiteSpace(ReferenceFilePath) &&
+        (IsReferenceCsv || SelectedReferenceWorksheet != null) &&
+        ReferenceHeaderRowNumber >= 1 &&
+        HasReferencePreviewData &&
+        !IsReferencePreviewLoading;
+
+    public bool CanSaveProfile =>
+        !IsProcessing &&
+        !IsProfileValidating &&
+        !string.IsNullOrWhiteSpace(MasterFilePath) &&
+        (IsMasterCsv || SelectedMasterWorksheet != null) &&
+        MasterHeaderRowNumber >= 1 &&
+        HasMasterPreviewData &&
+        !IsMasterPreviewLoading &&
+        !string.IsNullOrWhiteSpace(ReferenceFilePath) &&
+        (IsReferenceCsv || SelectedReferenceWorksheet != null) &&
+        ReferenceHeaderRowNumber >= 1 &&
+        HasReferencePreviewData &&
+        !IsReferencePreviewLoading &&
+        Conditions.Count >= 1 &&
+        Conditions.All(c => c.SelectedMasterColumn != null &&
+                            MasterAvailableColumns.Contains(c.SelectedMasterColumn) &&
+                            c.SelectedReferenceColumn != null &&
+                            ReferenceAvailableColumns.Contains(c.SelectedReferenceColumn)) &&
+        ReturnFields.Any(f => f.IsSelected && ReferenceAvailableColumns.Any(r => r.Reference == f.Reference)) &&
+        ReturnFields.Where(f => f.IsSelected).All(f => ReferenceAvailableColumns.Any(r => r.Reference == f.Reference)) &&
+        HasValidMasterFilter &&
+        (!IsStatusColumnEnabled || !string.IsNullOrWhiteSpace(StatusColumnName));
+
+    public bool CanDeleteProfile => !IsProcessing && !IsProfileValidating && SelectedProfile is not null;
+
+    public bool IsProfileStatusError => ProfileStatusMessage.StartsWith("未应用") || ProfileStatusMessage.Contains("失败");
+    public bool IsProfileStatusModified => ProfileStatusMessage == "当前设置已修改";
+    public bool IsProfileStatusSuccess => ProfileStatusMessage.StartsWith("已应用") || ProfileStatusMessage.StartsWith("已保存");
+
     // 派生属性
-    public bool CanConfigure => !IsProcessing && State != DataMatchingPageState.Initial;
+    public bool CanConfigure => !IsProcessing && !IsProfileValidating && State != DataMatchingPageState.Initial;
 
     public bool CanStart =>
         (State is DataMatchingPageState.Ready or DataMatchingPageState.Success ||
             (State == DataMatchingPageState.Error && _errorSource == "Execute")) &&
         !IsProcessing &&
+        !IsProfileValidating &&
         HasValidMasterFilter &&
         !string.IsNullOrWhiteSpace(MasterFilePath) &&
         (IsMasterCsv || SelectedMasterWorksheet != null) &&
@@ -281,9 +397,9 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     public bool CanExecuteSuccessActions => State == DataMatchingPageState.Success && !string.IsNullOrWhiteSpace(ResultOutputFilePath);
 
-    public bool CanBrowseMaster => !IsProcessing;
+    public bool CanBrowseMaster => !IsProcessing && !IsProfileValidating;
 
-    public bool CanBrowseReference => !IsProcessing && !UseSameFileAsMaster;
+    public bool CanBrowseReference => !IsProcessing && !IsProfileValidating && !UseSameFileAsMaster;
 
     public bool ShowMasterPreviewEmptyNotice => !HasMasterPreviewData;
 
@@ -302,7 +418,12 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         Func<string, string?>? showSaveFileDialog = null,
         Func<string?>? showOpenFileDialog = null,
         IOutputDirectoryPreferenceService? outputDirectoryPreferenceService = null,
-        Func<string, string?, string?>? showSaveFileDialogWithOptions = null)
+        Func<string, string?, string?>? showSaveFileDialogWithOptions = null,
+        IProcessingProfileStore? profileStore = null,
+        IProcessingProfileValidator? profileValidator = null,
+        Func<string, string?>? promptProfileName = null,
+        Func<string, bool>? confirmOverwrite = null,
+        Func<string, bool>? confirmDelete = null)
     {
         _inspectionService = inspectionService ?? throw new ArgumentNullException(nameof(inspectionService));
         _matchingService = matchingService ?? throw new ArgumentNullException(nameof(matchingService));
@@ -311,9 +432,19 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         _showOpenFileDialog = showOpenFileDialog;
         _outputDirectoryService = outputDirectoryPreferenceService ?? new OutputDirectoryPreferenceService();
         _showSaveFileDialogWithOptions = showSaveFileDialogWithOptions;
+        _profileStore = profileStore;
+        _profileValidator = profileValidator;
+        _promptProfileName = promptProfileName;
+        _confirmOverwrite = confirmOverwrite;
+        _confirmDelete = confirmDelete;
 
         // 默认初始化 1 条匹配条件
         AddInitialCondition();
+
+        if (_profileStore != null)
+        {
+            RefreshProfiles();
+        }
     }
 
     private void AddInitialCondition()
@@ -957,6 +1088,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         ClearExecuteErrorIfPresent();
         ResetSuccess();
         UpdateReadyState();
+        MarkProfileModifiedIfApplied();
+        OnPropertyChanged(nameof(CanSaveProfile));
     }
 
     private void RemoveCondition(MatchingConditionRowViewModel row)
@@ -968,6 +1101,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             ClearExecuteErrorIfPresent();
             ResetSuccess();
             UpdateReadyState();
+            MarkProfileModifiedIfApplied();
+            OnPropertyChanged(nameof(CanSaveProfile));
         }
     }
 
@@ -987,6 +1122,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         ClearExecuteErrorIfPresent();
         ResetSuccess();
         UpdateReadyState();
+        MarkProfileModifiedIfApplied();
+        OnPropertyChanged(nameof(CanSaveProfile));
     }
 
     private void UpdateConditionMasterSelections()
@@ -999,6 +1136,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 condition.SelectedMasterColumn = matched;
             }
         }
+        OnPropertyChanged(nameof(CanSaveProfile));
     }
 
     private void UpdateConditionReferenceSelections()
@@ -1011,6 +1149,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 condition.SelectedReferenceColumn = matched;
             }
         }
+        OnPropertyChanged(nameof(CanSaveProfile));
     }
 
     partial void OnSearchReturnFieldTextChanged(string? value)
@@ -1064,6 +1203,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         OnPropertyChanged(nameof(SelectedReturnFieldsCount));
         OnPropertyChanged(nameof(TotalReturnFieldsCount));
         UpdateReadyState();
+        MarkProfileModifiedIfApplied();
+        OnPropertyChanged(nameof(CanSaveProfile));
     }
 
     partial void OnNormalizeComparisonKeysChanged(bool value)
@@ -1071,6 +1212,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         ClearExecuteErrorIfPresent();
         ResetSuccess();
         UpdateReadyState();
+        MarkProfileModifiedIfApplied();
     }
 
     partial void OnIsMasterFilterEnabledChanged(bool value)
@@ -1080,10 +1222,27 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     }
     partial void OnSelectedMasterFilterColumnChanged(AvailableColumnItem? value)
     {
+        if (_suppressFilterColumnLoad)
+        {
+            if (!_isApplyingProfile)
+            {
+                OnMasterFilterChanged();
+            }
+            return;
+        }
         MasterFilterValuesLoadTask = LoadMasterFilterValuesAsync(value);
-        OnMasterFilterChanged();
+        if (!_isApplyingProfile)
+        {
+            OnMasterFilterChanged();
+        }
     }
-    partial void OnSelectedMasterFilterValueChanged(ColumnValueOption? value) => OnMasterFilterChanged();
+    partial void OnSelectedMasterFilterValueChanged(ColumnValueOption? value)
+    {
+        if (!_isApplyingProfile)
+        {
+            OnMasterFilterChanged();
+        }
+    }
 
     private async Task LoadMasterFilterValuesAsync(AvailableColumnItem? column)
     {
@@ -1139,6 +1298,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         ResetSuccess();
         UpdateReadyState();
         OnPropertyChanged(nameof(HasValidMasterFilter));
+        MarkProfileModifiedIfApplied();
+        OnPropertyChanged(nameof(CanSaveProfile));
     }
 
     partial void OnIsStatusColumnEnabledChanged(bool value)
@@ -1146,6 +1307,8 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         ClearExecuteErrorIfPresent();
         ResetSuccess();
         UpdateReadyState();
+        MarkProfileModifiedIfApplied();
+        OnPropertyChanged(nameof(CanSaveProfile));
     }
 
     partial void OnStatusColumnNameChanged(string value)
@@ -1153,6 +1316,17 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         ClearExecuteErrorIfPresent();
         ResetSuccess();
         UpdateReadyState();
+        MarkProfileModifiedIfApplied();
+        OnPropertyChanged(nameof(CanSaveProfile));
+    }
+
+    private void MarkProfileModifiedIfApplied()
+    {
+        if (!_isApplyingProfile && _appliedProfileName is not null)
+        {
+            ProfileStatusMessage = "当前设置已修改";
+        }
+        OnPropertyChanged(nameof(CanSaveProfile));
     }
 
     #endregion
@@ -1317,7 +1491,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     public void UpdateReadyState()
     {
-        if (State == DataMatchingPageState.Processing)
+        if (State == DataMatchingPageState.Processing || _isApplyingProfile)
         {
             return;
         }
@@ -1568,6 +1742,11 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     private void ResetSuccess()
     {
+        if (_isApplyingProfile)
+        {
+            return;
+        }
+
         if (HasSuccess)
         {
             HasSuccess = false;
@@ -1577,6 +1756,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             ResultUnmatchedCount = 0;
             ResultDuplicateCount = 0;
             ResultEmptyKeyCount = 0;
+            ResultSkippedCount = 0;
             ResultElapsed = TimeSpan.Zero;
             SuccessMessage = null;
             ProgressPercent = 0;
@@ -1588,6 +1768,11 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     private void ClearExecuteErrorIfPresent()
     {
+        if (_isApplyingProfile)
+        {
+            return;
+        }
+
         if (_errorSource == "Execute")
         {
             ClearError();
@@ -1708,6 +1893,427 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         };
 
         return dlg.ShowDialog() == true ? dlg.FileName : null;
+    }
+
+    public void RefreshProfiles()
+    {
+        if (_profileStore is null) return;
+        try
+        {
+            var result = _profileStore.List(ProcessingProfileKind.DataMatching);
+            Profiles.Clear();
+            foreach (var p in result.Profiles)
+            {
+                Profiles.Add(p);
+            }
+            OnPropertyChanged(nameof(HasProfiles));
+            if (result.Errors.Count > 0)
+            {
+                ProfileStatusMessage = $"发现 {result.Errors.Count} 个损坏配置：{string.Join("；", result.Errors)}";
+            }
+            else if (Profiles.Count == 0)
+            {
+                SelectedProfile = null;
+                if (_appliedProfileName is null)
+                {
+                    ProfileStatusMessage = "暂无保存配置";
+                }
+            }
+            else if (SelectedProfile is not null)
+            {
+                SelectedProfile = Profiles.FirstOrDefault(p => string.Equals(p.Name, SelectedProfile.Name, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+        catch (Exception ex)
+        {
+            ProfileStatusMessage = $"加载配置列表失败：{ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public void SaveProfile()
+    {
+        if (!CanSaveProfile)
+        {
+            if (!HasMasterPreviewData || !HasReferencePreviewData)
+            {
+                ProfileStatusMessage = "请先加载主表与对照表预览数据后再保存配置。";
+            }
+            else if (Conditions.Count == 0 || Conditions.Any(c => c.SelectedMasterColumn == null || c.SelectedReferenceColumn == null))
+            {
+                ProfileStatusMessage = "请先配置完整的匹配条件后再保存配置。";
+            }
+            else if (!ReturnFields.Any(f => f.IsSelected))
+            {
+                ProfileStatusMessage = "请至少选择一个返回字段后再保存配置。";
+            }
+            else if (IsMasterFilterEnabled && !HasValidMasterFilter)
+            {
+                ProfileStatusMessage = "主表筛选已启用，但未选择有效的筛选列或候选值。";
+            }
+            else
+            {
+                ProfileStatusMessage = "当前匹配配置不完整，无法保存。";
+            }
+            return;
+        }
+
+        if (_profileStore is null)
+        {
+            ProfileStatusMessage = "配置存储服务未初始化。";
+            return;
+        }
+
+        if (_profileValidator is null)
+        {
+            ProfileStatusMessage = "未保存：配置校验服务未初始化。";
+            return;
+        }
+
+        string? name = _promptProfileName != null
+            ? _promptProfileName("保存当前匹配设置")
+            : DefaultPromptProfileName("保存当前匹配设置");
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return;
+        }
+
+        name = name.Trim();
+        bool exists = Profiles.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+        bool overwrite = false;
+        if (exists)
+        {
+            bool confirmed = _confirmOverwrite != null ? _confirmOverwrite(name) : DefaultConfirmOverwrite(name);
+            if (!confirmed)
+            {
+                return;
+            }
+            overwrite = true;
+        }
+
+        var conditions = Conditions.Select(c => new MatchingCondition(
+            c.SelectedMasterColumn!.Reference,
+            c.SelectedReferenceColumn!.Reference)).ToList();
+
+        var returnFields = ReturnFields.Where(f => f.IsSelected).Select(f => f.Reference).ToList();
+
+        var statusSettings = new ProfileStatusSettings(IsStatusColumnEnabled, StatusColumnName ?? "匹配状态");
+
+        ProfileFilterSettings? filterSettings = null;
+        if (IsMasterFilterEnabled && SelectedMasterFilterColumn != null && SelectedMasterFilterValue != null)
+        {
+            filterSettings = new ProfileFilterSettings(
+                SelectedMasterFilterColumn.Reference,
+                SelectedMasterFilterValue.Value.Kind,
+                SelectedMasterFilterValue.Value.RawValue,
+                SelectedMasterFilterValue.Value.HasTime);
+        }
+
+        var matchingSettings = new MatchingProfileSettings(
+            conditions,
+            returnFields,
+            NormalizeComparisonKeys,
+            statusSettings,
+            filterSettings);
+
+        var profile = new ProcessingProfile(
+            Version: 1,
+            Name: name,
+            Kind: ProcessingProfileKind.DataMatching,
+            Format: null,
+            Matching: matchingSettings);
+
+        var errors = _profileValidator.Validate(profile);
+        if (errors.Count > 0)
+        {
+            ProfileStatusMessage = $"配置验证失败：{string.Join("；", errors)}";
+            return;
+        }
+
+        var writeResult = _profileStore.Save(profile, overwrite);
+        if (writeResult.NameConflict && !overwrite)
+        {
+            bool confirmed = _confirmOverwrite != null ? _confirmOverwrite(name) : DefaultConfirmOverwrite(name);
+            if (!confirmed)
+            {
+                return;
+            }
+            writeResult = _profileStore.Save(profile, overwrite: true);
+        }
+
+        if (!writeResult.Success)
+        {
+            ProfileStatusMessage = $"保存配置失败：{writeResult.Error ?? "未知错误"}";
+            return;
+        }
+
+        RefreshProfiles();
+        SelectedProfile = Profiles.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+        _appliedProfileName = name;
+        ProfileStatusMessage = $"已保存：{name}";
+    }
+
+    [RelayCommand]
+    public async Task ApplyProfileAsync()
+    {
+        if (!CanApplyProfile || SelectedProfile is null || _profileStore is null)
+        {
+            return;
+        }
+
+        if (_profileValidator is null)
+        {
+            ProfileStatusMessage = "未应用：配置校验服务未初始化。";
+            return;
+        }
+
+        if (!HasMasterPreviewData || !HasReferencePreviewData ||
+            IsMasterPreviewLoading || IsReferencePreviewLoading ||
+            string.IsNullOrWhiteSpace(MasterFilePath) || string.IsNullOrWhiteSpace(ReferenceFilePath) ||
+            (!IsMasterCsv && SelectedMasterWorksheet == null) ||
+            (!IsReferenceCsv && SelectedReferenceWorksheet == null) ||
+            MasterHeaderRowNumber < 1 || ReferenceHeaderRowNumber < 1)
+        {
+            ProfileStatusMessage = "未应用：请先选择主表和对照表并完成预览，再应用匹配配置。";
+            return;
+        }
+
+        // Cancel in-flight filter loading and invalidate generation
+        _masterFilterValuesGeneration++;
+        _masterFilterValuesCancellation?.Cancel();
+        _masterFilterValuesCancellation?.Dispose();
+        _masterFilterValuesCancellation = null;
+        IsMasterFilterValuesLoading = false;
+
+        int currentValidationGen = ++_profileValidationGeneration;
+        string? currentMasterPath = MasterFilePath;
+        string? currentRefPath = ReferenceFilePath;
+        string? currentMasterSheet = SelectedMasterWorksheet?.Name;
+        string? currentRefSheet = SelectedReferenceWorksheet?.Name;
+        int currentMasterHeader = MasterHeaderRowNumber;
+        int currentRefHeader = ReferenceHeaderRowNumber;
+        int currentMasterPreviewGen = _masterPreviewGeneration;
+        int currentRefPreviewGen = _referencePreviewGeneration;
+
+        IsProfileValidating = true;
+        ProfileStatusMessage = "正在校验配置…";
+
+        try
+        {
+            var loadResult = _profileStore.Load(ProcessingProfileKind.DataMatching, SelectedProfile.Name);
+            if (!loadResult.Success || loadResult.Profile?.Matching is null)
+            {
+                ProfileStatusMessage = $"未应用：{loadResult.Error ?? "无法读取该配置或匹配配置为空"}";
+                return;
+            }
+
+            var profile = loadResult.Profile;
+            var errors = _profileValidator.Validate(profile);
+            if (errors.Count > 0)
+            {
+                ProfileStatusMessage = $"未应用：{string.Join("；", errors)}";
+                return;
+            }
+
+            var masterSource = new WorksheetSource(MasterFilePath, SelectedMasterWorksheet?.Name, MasterHeaderRowNumber);
+            var masterCols = MasterAvailableColumns.Select(c => c.Reference).ToList();
+            var refCols = ReferenceAvailableColumns.Select(c => c.Reference).ToList();
+
+            var prepResult = await _profileValidator.PrepareMatchingAsync(profile, masterSource, masterCols, refCols);
+
+            if (currentValidationGen != _profileValidationGeneration ||
+                currentMasterPreviewGen != _masterPreviewGeneration ||
+                currentRefPreviewGen != _referencePreviewGeneration ||
+                !string.Equals(currentMasterPath, MasterFilePath, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(currentRefPath, ReferenceFilePath, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(currentMasterSheet, SelectedMasterWorksheet?.Name, StringComparison.Ordinal) ||
+                !string.Equals(currentRefSheet, SelectedReferenceWorksheet?.Name, StringComparison.Ordinal) ||
+                currentMasterHeader != MasterHeaderRowNumber ||
+                currentRefHeader != ReferenceHeaderRowNumber)
+            {
+                if (currentValidationGen == _profileValidationGeneration)
+                {
+                    ProfileStatusMessage = "未应用：数据源已发生变更。";
+                }
+                return;
+            }
+
+            if (!prepResult.Success)
+            {
+                ProfileStatusMessage = $"未应用：{string.Join("；", prepResult.Errors)}";
+                return;
+            }
+
+            _isApplyingProfile = true;
+            _suppressFilterColumnLoad = true;
+            try
+            {
+                NormalizeComparisonKeys = profile.Matching.NormalizeComparisonKeys;
+                IsStatusColumnEnabled = profile.Matching.StatusColumn.Enabled;
+                StatusColumnName = profile.Matching.StatusColumn.ColumnName;
+
+                Conditions.Clear();
+                foreach (var cond in profile.Matching.Conditions)
+                {
+                    var masterCol = MasterAvailableColumns.FirstOrDefault(c =>
+                        c.Reference.ColumnNumber == cond.MasterColumn.ColumnNumber &&
+                        c.Reference.HeaderText == cond.MasterColumn.HeaderText);
+                    var refCol = ReferenceAvailableColumns.FirstOrDefault(c =>
+                        c.Reference.ColumnNumber == cond.ReferenceColumn.ColumnNumber &&
+                        c.Reference.HeaderText == cond.ReferenceColumn.HeaderText);
+
+                    var row = new MatchingConditionRowViewModel(
+                        MasterAvailableColumns,
+                        ReferenceAvailableColumns,
+                        onDelete: RemoveCondition,
+                        onConditionChanged: OnConditionChanged)
+                    {
+                        SelectedMasterColumn = masterCol,
+                        SelectedReferenceColumn = refCol
+                    };
+                    Conditions.Add(row);
+                }
+                UpdateConditionRowIndicesAndCanDelete();
+
+                var targetRefs = profile.Matching.ReturnFields.ToHashSet();
+                foreach (var field in ReturnFields)
+                {
+                    field.IsSelected = targetRefs.Contains(field.Reference);
+                }
+                OnPropertyChanged(nameof(SelectedReturnFieldsCount));
+                OnPropertyChanged(nameof(TotalReturnFieldsCount));
+
+                if (profile.Matching.MasterFilter == null)
+                {
+                    IsMasterFilterEnabled = false;
+                    SelectedMasterFilterColumn = null;
+                    MasterFilterValues.Clear();
+                    SelectedMasterFilterValue = null;
+                    MasterFilterValuesMessage = null;
+                }
+                else
+                {
+                    IsMasterFilterEnabled = true;
+                    var filterCol = MasterAvailableColumns.FirstOrDefault(c =>
+                        c.Reference.ColumnNumber == profile.Matching.MasterFilter.Column.ColumnNumber &&
+                        c.Reference.HeaderText == profile.Matching.MasterFilter.Column.HeaderText);
+                    SelectedMasterFilterColumn = filterCol;
+                    MasterFilterValues.Clear();
+                    foreach (var val in prepResult.FilterValues)
+                    {
+                        MasterFilterValues.Add(val);
+                    }
+                    SelectedMasterFilterValue = prepResult.SelectedFilterValue;
+                    MasterFilterValuesMessage = prepResult.FilterValues.Count == 0
+                        ? "该列没有可选择的非空值。"
+                        : $"已读取 {prepResult.FilterValues.Count} 个实际值。";
+                }
+            }
+            finally
+            {
+                _suppressFilterColumnLoad = false;
+                _isApplyingProfile = false;
+            }
+
+            // Invalidate the previous result only after the complete profile was applied.
+            ResetSuccess();
+            _appliedProfileName = profile.Name;
+            ProfileStatusMessage = $"已应用：{profile.Name}";
+            UpdateReadyState();
+            OnPropertyChanged(nameof(CanSaveProfile));
+        }
+        catch (OperationCanceledException)
+        {
+            if (currentValidationGen == _profileValidationGeneration)
+            {
+                ProfileStatusMessage = "配置校验已取消。";
+            }
+        }
+        catch (Exception ex)
+        {
+            if (currentValidationGen == _profileValidationGeneration)
+            {
+                ProfileStatusMessage = $"未应用：{ex.Message}";
+            }
+        }
+        finally
+        {
+            if (currentValidationGen == _profileValidationGeneration)
+            {
+                IsProfileValidating = false;
+            }
+        }
+    }
+
+    [RelayCommand]
+    public void DeleteProfile()
+    {
+        if (!CanDeleteProfile || SelectedProfile is null || _profileStore is null)
+        {
+            return;
+        }
+
+        string name = SelectedProfile.Name;
+        bool confirmed = _confirmDelete != null ? _confirmDelete(name) : DefaultConfirmDelete(name);
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var deleteResult = _profileStore.Delete(ProcessingProfileKind.DataMatching, name);
+        if (!deleteResult.Success)
+        {
+            ProfileStatusMessage = $"删除配置失败：{deleteResult.Error ?? "未知错误"}";
+            return;
+        }
+
+        RefreshProfiles();
+        SelectedProfile = null;
+        if (string.Equals(_appliedProfileName, name, StringComparison.OrdinalIgnoreCase))
+        {
+            ProfileStatusMessage = "当前设置已修改";
+        }
+    }
+
+    private static string? DefaultPromptProfileName(string prompt)
+    {
+        var dialog = new SaveProfileDialog(prompt);
+        if (System.Windows.Application.Current?.MainWindow is { } owner && owner.IsVisible)
+        {
+            dialog.Owner = owner;
+        }
+        return dialog.ShowDialog() == true ? dialog.ProfileName : null;
+    }
+
+    private static bool DefaultConfirmOverwrite(string profileName)
+    {
+        var dialog = new ConfirmProfileDialog(
+            title: "确认覆盖配置",
+            mainMessage: $"已存在名为“{profileName}”的配置，是否覆盖？",
+            subMessage: "覆盖后将以当前页面设置替换已保存的配置。",
+            confirmButtonText: "覆盖",
+            isDestructive: true);
+        if (System.Windows.Application.Current?.MainWindow is { } owner && owner.IsVisible)
+        {
+            dialog.Owner = owner;
+        }
+        return dialog.ShowDialog() == true;
+    }
+
+    private static bool DefaultConfirmDelete(string profileName)
+    {
+        var dialog = new ConfirmProfileDialog(
+            title: "确认删除配置",
+            mainMessage: $"确定要删除配置“{profileName}”吗？",
+            subMessage: "删除后该配置将不再可用。当前页面已应用的设置和文件保持不变。",
+            confirmButtonText: "删除",
+            isDestructive: true);
+        if (System.Windows.Application.Current?.MainWindow is { } owner && owner.IsVisible)
+        {
+            dialog.Owner = owner;
+        }
+        return dialog.ShowDialog() == true;
     }
 
     #endregion

@@ -155,21 +155,51 @@ public sealed class BatchViewResourceTests
                 if (!string.IsNullOrEmpty(renderDirectory))
                 {
                     var shellVm = new MainWindowViewModel(new WorkbookInspectionService(), new FormatStandardizationService(), new DataMatchingService());
+                    var diffTable = new DataTable();
+                    diffTable.Columns.Add("差异类型");
+                    diffTable.Columns.Add("位置 / 行号");
+                    diffTable.Columns.Add("表一取值");
+                    diffTable.Columns.Add("表二取值");
+                    diffTable.Rows.Add("单元格不一致", "第 2 行，第 3 列 (岗位)", "会计", "出纳");
+                    diffTable.Rows.Add("表二多出记录", "第 6 行", "—", "E006, 运营, 专员");
+                    shellVm.TableComparisonVm.DifferenceDataTable = diffTable;
+                    shellVm.TableComparisonVm.ResultSummary = "发现 2 处数据差异。";
+                    shellVm.TableComparisonVm.FirstFilePath = @"D:\Data\员工信息_基准.xlsx";
+                    shellVm.TableComparisonVm.SecondFilePath = @"D:\Data\员工信息_对比.xlsx";
+
                     var window = new MainWindow(shellVm);
                     var client = (FrameworkElement)window.Content;
-                    foreach (var pair in new[] { (Name: "format", Vm: (object)view.DataContext), (Name: "matching", Vm: (object)matchVm) })
+
+                    var viewPairs = new[] {
+                        (Name: "format", Vm: (object)view.DataContext),
+                        (Name: "matching", Vm: (object)matchVm),
+                        (Name: "comparison", Vm: (object)shellVm.TableComparisonVm)
+                    };
+
+                    var resolutions = new[] {
+                        (W: 960, H: 640),
+                        (W: 1280, H: 720),
+                        (W: 1600, H: 900),
+                        (W: 1920, H: 1080)
+                    };
+
+                    foreach (var res in resolutions)
                     {
-                        shellVm.CurrentViewViewModel = pair.Vm;
-                        shellVm.IsFormatStandardizationSelected = pair.Name == "format";
-                        shellVm.IsDataMatchingSelected = pair.Name == "matching";
-                        client.Width = 1264; client.Height = 681;
-                        client.Measure(new Size(1264, 681)); client.Arrange(new Rect(0, 0, 1264, 681)); client.UpdateLayout();
-                        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(1264, 681, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
-                        bitmap.Render(client);
-                        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
-                        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
-                        using var file = File.Create(Path.Combine(renderDirectory, $"shell-component-{pair.Name}.png"));
-                        encoder.Save(file);
+                        foreach (var pair in viewPairs)
+                        {
+                            shellVm.CurrentViewViewModel = pair.Vm;
+                            shellVm.IsFormatStandardizationSelected = pair.Name == "format";
+                            shellVm.IsDataMatchingSelected = pair.Name == "matching";
+                            shellVm.IsTableComparisonSelected = pair.Name == "comparison";
+                            client.Width = res.W; client.Height = res.H;
+                            client.Measure(new Size(res.W, res.H)); client.Arrange(new Rect(0, 0, res.W, res.H)); client.UpdateLayout();
+                            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(res.W, res.H, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                            bitmap.Render(client);
+                            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                            using var file = File.Create(Path.Combine(renderDirectory, $"shell-{pair.Name}-{res.W}x{res.H}.png"));
+                            encoder.Save(file);
+                        }
                     }
                 }
                 if (!string.IsNullOrEmpty(renderDirectory))

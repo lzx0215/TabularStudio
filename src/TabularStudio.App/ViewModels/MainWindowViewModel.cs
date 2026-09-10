@@ -17,6 +17,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private bool _isDataMatchingSelected;
 
     [ObservableProperty]
+    private bool _isTableComparisonSelected;
+
+    [ObservableProperty]
     private string _statusMessage = "就绪";
 
     public BatchFormatViewModel FormatStandardizationVm { get; }
@@ -24,6 +27,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public DataMatchingViewModel DataMatchingVm { get; }
 
     public DataMatchingViewModel DataMatchingPlaceholderVm => DataMatchingVm;
+
+    public TableComparisonViewModel TableComparisonVm { get; }
 
     public MainWindowViewModel(
         IWorkbookInspectionService inspectionService,
@@ -44,6 +49,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             sendToMatching: OnSendToDataMatching,
             preferences: preferenceService);
 
+        TableComparisonVm = new TableComparisonViewModel(inspectionService);
+
         // 默认显示格式统一
         CurrentViewViewModel = FormatStandardizationVm;
     }
@@ -53,6 +60,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         IsFormatStandardizationSelected = true;
         IsDataMatchingSelected = false;
+        IsTableComparisonSelected = false;
         CurrentViewViewModel = FormatStandardizationVm;
     }
 
@@ -61,7 +69,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         IsFormatStandardizationSelected = false;
         IsDataMatchingSelected = true;
+        IsTableComparisonSelected = false;
         CurrentViewViewModel = DataMatchingVm;
+    }
+
+    [RelayCommand]
+    public void SelectTableComparison()
+    {
+        IsFormatStandardizationSelected = false;
+        IsDataMatchingSelected = false;
+        IsTableComparisonSelected = true;
+        CurrentViewViewModel = TableComparisonVm;
     }
 
     private void OnSendToDataMatching(string outputPath)

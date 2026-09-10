@@ -1,0 +1,179 @@
+<UserControl x:Class="TabularStudio.App.Views.TableComparisonView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:TabularStudio.App.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:TableComparisonViewModel}"
+             Background="Transparent"
+             FontSize="13">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid Margin="20,16,20,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- 统一 Page Header + Divider -->
+            <RowDefinition Height="Auto"/> <!-- 顶部：表一 | 表二 并排配置 -->
+            <RowDefinition Height="Auto"/> <!-- 中部：操作与状态摘要栏 -->
+            <RowDefinition Height="*"/>    <!-- 主要区域：差异 DataGrid -->
+        </Grid.RowDefinitions>
+
+        <!-- 页面顶部结构: Page Header (26 DIP SemiBold Gold) + 细长水平分割线 -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+            <DockPanel LastChildFill="False">
+                <TextBlock Text="表格对比" Style="{StaticResource PageHeaderStyle}"/>
+                <TextBlock DockPanel.Dock="Right" Text="结构与数据双向比对 · 差异精确呈现"
+                           Foreground="{StaticResource TextMutedBrush}" FontSize="13" VerticalAlignment="Center"/>
+            </DockPanel>
+            <Border Height="1" Background="{StaticResource DividerBrush}" Margin="0,10,0,0" HorizontalAlignment="Stretch"/>
+        </StackPanel>
+
+        <!-- 顶部双表并排区 (表一 | 表二) -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 表一 (基准表格) -->
+            <Border Grid.Column="0" Background="{StaticResource PanelBackgroundBrush}"
+                    BorderBrush="{StaticResource DividerBrush}" BorderThickness="1"
+                    CornerRadius="4" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="28"/>
+                        <RowDefinition Height="34"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="表一 (基准表格)" FontWeight="SemiBold" FontSize="14"
+                               Foreground="{StaticResource TextHeadingBrush}" VerticalAlignment="Center" Grid.Row="0"/>
+
+                    <Grid Grid.Row="1" Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="文件:" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
+                        <TextBox Grid.Column="1" Text="{Binding FirstFilePath, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding FirstFilePath}" Margin="0,0,8,0"/>
+                        <Button Grid.Column="2" Content="选择表一…" Command="{Binding BrowseFirstFileCommand}" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanConfigure}"/>
+                    </Grid>
+
+                    <Grid Grid.Row="2" Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="68"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="工作表:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                   Visibility="{Binding HasFirstWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding FirstWorksheets}" SelectedItem="{Binding SelectedFirstWorksheet}" DisplayMemberPath="Name"
+                                  Margin="0,0,12,0" IsEnabled="{Binding CanConfigure}"
+                                  Visibility="{Binding HasFirstWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <TextBlock Grid.Column="2" Text="表头行:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                        <TextBox Grid.Column="3" Text="{Binding FirstHeaderRowNumber, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding CanConfigure}" HorizontalContentAlignment="Center"/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- 表二 (对比表格) -->
+            <Border Grid.Column="2" Background="{StaticResource PanelBackgroundBrush}"
+                    BorderBrush="{StaticResource DividerBrush}" BorderThickness="1"
+                    CornerRadius="4" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="28"/>
+                        <RowDefinition Height="34"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="表二 (对比表格)" FontWeight="SemiBold" FontSize="14"
+                               Foreground="{StaticResource TextHeadingBrush}" VerticalAlignment="Center" Grid.Row="0"/>
+
+                    <Grid Grid.Row="1" Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="文件:" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
+                        <TextBox Grid.Column="1" Text="{Binding SecondFilePath, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding SecondFilePath}" Margin="0,0,8,0"/>
+                        <Button Grid.Column="2" Content="选择表二…" Command="{Binding BrowseSecondFileCommand}" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanConfigure}"/>
+                    </Grid>
+
+                    <Grid Grid.Row="2" Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="68"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="工作表:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                   Visibility="{Binding HasSecondWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding SecondWorksheets}" SelectedItem="{Binding SelectedSecondWorksheet}" DisplayMemberPath="Name"
+                                  Margin="0,0,12,0" IsEnabled="{Binding CanConfigure}"
+                                  Visibility="{Binding HasSecondWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <TextBlock Grid.Column="2" Text="表头行:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                        <TextBox Grid.Column="3" Text="{Binding SecondHeaderRowNumber, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding CanConfigure}" HorizontalContentAlignment="Center"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 中部：操作与状态摘要栏 -->
+        <Border Grid.Row="2" Background="{StaticResource NavBackgroundBrush}"
+                BorderBrush="{StaticResource DividerBrush}" BorderThickness="1"
+                CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
+            <DockPanel LastChildFill="True">
+                <!-- 右侧操作按钮组 -->
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                    <Button Content="取消" Command="{Binding CancelCompareCommand}" IsEnabled="{Binding IsBusy}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Width="80"/>
+                    <Button Content="开始比较" Command="{Binding StartCompareCommand}" IsEnabled="{Binding CanStart}" Style="{StaticResource PrimaryButtonStyle}" MinWidth="120"/>
+                </StackPanel>
+
+                <!-- 左侧状态与结果摘要 (视觉重点：一致/不一致/差异摘要) -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <Path Data="{StaticResource IconTableComparisonGeometry}"
+                          Stroke="{StaticResource AccentGoldBrush}" StrokeThickness="1.6"
+                          Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding ResultSummary}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"
+                               FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding ErrorMessage}" FontSize="12" Foreground="{StaticResource DangerBrush}"
+                               Margin="12,0,0,0" VerticalAlignment="Center" Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- 主要区域：差异明细 DataGrid (最大化表格空间，极细网格线，暗色深底) -->
+        <Border Grid.Row="3" Background="{StaticResource PanelBackgroundBrush}"
+                BorderBrush="{StaticResource DividerBrush}" BorderThickness="1"
+                CornerRadius="4" Padding="12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="差异明细" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="两表同位置单元格及增删行差异比对" Foreground="{StaticResource TextMutedBrush}" FontSize="12" VerticalAlignment="Center"/>
+                </Grid>
+
+                <DataGrid Grid.Row="1" ItemsSource="{Binding DifferenceDataTable.DefaultView}"
+                          AutoGenerateColumns="True" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False"
+                          HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FontSize="12"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

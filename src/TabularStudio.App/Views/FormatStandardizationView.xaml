@@ -6,125 +6,118 @@
              xmlns:vm="clr-namespace:TabularStudio.App.ViewModels"
              d:DataContext="{d:DesignInstance Type=vm:FormatStandardizationViewModel}"
              mc:Ignorable="d"
-             d:DesignHeight="700" d:DesignWidth="900">
+             d:DesignHeight="700" d:DesignWidth="900"
+             FontSize="13">
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="24">
+        <Grid Margin="20,16,20,16">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" /> <!-- 0. 页面标题 -->
-                <RowDefinition Height="Auto" /> <!-- 1. 数据源选择 -->
-                <RowDefinition Height="*" MinHeight="260" /> <!-- 2 & 3. 规则 + 预览 -->
-                <RowDefinition Height="Auto" /> <!-- 4. 输出与执行 -->
+                <RowDefinition Height="Auto"/> <!-- 0. 页面标题 -->
+                <RowDefinition Height="Auto"/> <!-- 1. 数据源选择 -->
+                <RowDefinition Height="*" MinHeight="260"/> <!-- 2 & 3. 规则 + 预览 -->
+                <RowDefinition Height="Auto"/> <!-- 4. 输出与执行 -->
             </Grid.RowDefinitions>
 
             <!-- 0. 页面标题栏 -->
-            <Grid Grid.Row="0" Margin="0,0,0,16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="格式统一 (Format Normalization)"
-                           FontSize="18"
-                           FontWeight="Bold"
-                           Foreground="{StaticResource TextPrimaryBrush}"
-                           VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1"
-                           Text="完全离线 · 支持 .xlsx / .xls / .csv"
-                           FontSize="12"
-                           Foreground="{StaticResource TextMutedBrush}"
-                           VerticalAlignment="Center" />
-            </Grid>
+            <StackPanel Grid.Row="0" Margin="0,0,0,14">
+                <DockPanel LastChildFill="False">
+                    <TextBlock Text="格式统一 (单文件)" Style="{StaticResource PageHeaderStyle}"/>
+                    <TextBlock DockPanel.Dock="Right"
+                               Text="完全离线 · 支持 .xlsx / .xls / .csv"
+                               FontSize="13"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               VerticalAlignment="Center"/>
+                </DockPanel>
+                <Border Height="1" Background="{StaticResource DividerBrush}" Margin="0,10,0,0" HorizontalAlignment="Stretch"/>
+            </StackPanel>
 
             <!-- 1. 数据源选择 -->
             <Border Grid.Row="1"
                     Style="{StaticResource CardBorderStyle}"
                     AllowDrop="True"
                     DragOver="OnDragOver"
-                    Drop="OnDrop">
+                    Drop="OnDrop"
+                    Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="1. 数据源选择" Style="{StaticResource SectionHeaderStyle}" />
+                    <TextBlock Text="1. 数据源选择" Style="{StaticResource SectionHeaderStyle}"/>
 
                     <!-- Excel 文件选择行 -->
                     <Grid Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="80" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Excel 文件:"
                                    VerticalAlignment="Center"
                                    FontSize="13"
-                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
                         <TextBox Grid.Column="1"
                                  Text="{Binding InputFilePath, Mode=OneWay}"
                                  IsReadOnly="True"
-                                 Background="#F9FAFB"
-                                 BorderBrush="{StaticResource BorderBrush}"
-                                 Padding="8,6"
-                                 FontSize="12"
-                                 Margin="0,0,8,0" />
+                                 Margin="0,0,8,0"/>
                         <Button Grid.Column="2"
                                 Content="浏览 (O)..."
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Command="{Binding BrowseInputFileCommand}"
-                                IsEnabled="{Binding CanBrowseInput}" />
+                                IsEnabled="{Binding CanBrowseInput}"/>
                     </Grid>
 
                     <!-- Sheet 下拉与表头行设置行 -->
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="80" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="32" />
-                            <ColumnDefinition Width="90" />
-                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="32"/>
+                            <ColumnDefinition Width="90"/>
+                            <ColumnDefinition Width="120"/>
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Visibility="{Binding HasWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}" Text="工作表:"
                                    VerticalAlignment="Center"
                                    FontSize="13"
-                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
                         <ComboBox Grid.Column="1"
                                   Visibility="{Binding HasWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}" ItemsSource="{Binding Worksheets}"
                                   SelectedItem="{Binding SelectedWorksheet}"
                                   DisplayMemberPath="Name"
                                   IsEnabled="{Binding CanConfigure}"
-                                  Padding="6,4"
-                                  FontSize="12"
-                                  VerticalAlignment="Center" />
+                                  VerticalAlignment="Center"/>
 
                         <TextBlock Grid.Column="3"
                                    Text="表头所在行:"
                                    VerticalAlignment="Center"
                                    FontSize="13"
-                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
 
                         <Grid Grid.Column="4">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
                             </Grid.ColumnDefinitions>
                             <TextBox Text="{Binding HeaderRowNumber, UpdateSourceTrigger=PropertyChanged}"
                                      IsEnabled="{Binding CanConfigure}"
-                                     FontSize="12"
-                                     VerticalAlignment="Center"
-                                     Padding="6,4" />
+                                     HorizontalContentAlignment="Center"/>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <Button Content="▲"
-                                        FontSize="8"
-                                        Height="13"
+                                        FontSize="7"
+                                        Height="14"
                                         Padding="0"
                                         IsEnabled="{Binding CanConfigure}"
-                                        Command="{Binding IncrementHeaderRowCommand}" />
+                                        Command="{Binding IncrementHeaderRowCommand}"
+                                        MinHeight="0"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
                                 <Button Content="▼"
-                                        FontSize="8"
-                                        Height="13"
+                                        FontSize="7"
+                                        Height="14"
                                         Padding="0"
                                         IsEnabled="{Binding CanConfigure}"
-                                        Command="{Binding DecrementHeaderRowCommand}" />
+                                        Command="{Binding DecrementHeaderRowCommand}"
+                                        MinHeight="0"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
                             </StackPanel>
                         </Grid>
                     </Grid>
@@ -134,9 +127,9 @@
             <!-- 2 & 3. 规则选择与数据预览（左右双列） -->
             <Grid Grid.Row="2" Margin="0,0,0,12">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="320" />
-                    <ColumnDefinition Width="12" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="320"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- 2. 标准化规则选择区 -->
@@ -144,12 +137,12 @@
                     <DockPanel LastChildFill="True">
                         <TextBlock DockPanel.Dock="Top"
                                    Text="2. 标准化规则选择"
-                                   Style="{StaticResource SectionHeaderStyle}" />
+                                   Style="{StaticResource SectionHeaderStyle}"/>
 
                         <!-- 底部常驻说明 -->
                         <Border DockPanel.Dock="Bottom"
-                                Background="#F9FAFB"
-                                BorderBrush="{StaticResource BorderBrush}"
+                                Background="{StaticResource PanelBackgroundAltBrush}"
+                                BorderBrush="{StaticResource DividerBrush}"
                                 BorderThickness="1"
                                 CornerRadius="4"
                                 Padding="8"
@@ -158,7 +151,7 @@
                                        FontSize="11"
                                        Foreground="{StaticResource TextMutedBrush}"
                                        TextWrapping="Wrap"
-                                       LineHeight="16" />
+                                       LineHeight="16"/>
                         </Border>
 
                         <!-- 8 项规则 Checklist -->
@@ -167,27 +160,27 @@
                                 <CheckBox Content="清理前后空格"
                                           IsChecked="{Binding TrimOuterWhitespace}"
                                           Margin="0,0,0,8"
-                                          FontSize="12" />
+                                          FontSize="12"/>
                                 <CheckBox Content="清理 Tab / 换行 / 隐藏字符"
                                           IsChecked="{Binding RemoveTabsNewLinesAndHiddenCharacters}"
                                           Margin="0,0,0,8"
-                                          FontSize="12" />
+                                          FontSize="12"/>
                                 <CheckBox Content="全角 / 半角统一 (字母/数字/符号)"
                                           IsChecked="{Binding NormalizeFullWidthHalfWidth}"
                                           Margin="0,0,0,8"
-                                          FontSize="12" />
+                                          FontSize="12"/>
                                 <CheckBox Content="Unicode 标准化 (NFKC)"
                                           IsChecked="{Binding NormalizeUnicode}"
                                           Margin="0,0,0,8"
-                                          FontSize="12" />
+                                          FontSize="12"/>
                                 <CheckBox Content="普通数字安全统一"
                                           IsChecked="{Binding NormalizeSafeNumbers}"
                                           Margin="0,0,0,8"
-                                          FontSize="12" />
+                                          FontSize="12"/>
                                 <CheckBox Content="明确日期安全统一 (标准日期)"
                                           IsChecked="{Binding NormalizeUnambiguousDates}"
                                           Margin="0,0,0,8"
-                                          FontSize="12" />
+                                          FontSize="12"/>
 
                                 <!-- 底线安全保护 (默认勾选、置灰锁定、不可取消) -->
                                 <CheckBox Content="保留前导 0 编号 (始终开启的数据安全保护)"
@@ -195,13 +188,13 @@
                                           IsEnabled="False"
                                           Margin="0,0,0,8"
                                           FontSize="12"
-                                          Foreground="{StaticResource TextSecondaryBrush}" />
+                                          Foreground="{StaticResource TextSecondaryBrush}"/>
                                 <CheckBox Content="保留长数字文本 (始终开启的数据安全保护)"
                                           IsChecked="True"
                                           IsEnabled="False"
                                           Margin="0,0,0,4"
                                           FontSize="12"
-                                          Foreground="{StaticResource TextSecondaryBrush}" />
+                                          Foreground="{StaticResource TextSecondaryBrush}"/>
                             </StackPanel>
                         </ScrollViewer>
                     </DockPanel>
@@ -212,17 +205,17 @@
                     <DockPanel LastChildFill="True">
                         <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="3. 数据预览 (前 20 行)"
                                        Style="{StaticResource SectionHeaderStyle}"
-                                       Margin="0" />
+                                       Margin="0"/>
                             <TextBlock Grid.Column="1"
                                        Text="* 预览仅用于核对，不限制实际处理行数"
                                        FontSize="11"
                                        Foreground="{StaticResource TextMutedBrush}"
-                                       VerticalAlignment="Center" />
+                                       VerticalAlignment="Center"/>
                         </Grid>
 
                         <Grid>
@@ -236,19 +229,12 @@
                                       CanUserDeleteRows="False"
                                       CanUserReorderColumns="False"
                                       CanUserSortColumns="False"
-                                      SelectionMode="Extended"
                                       HorizontalScrollBarVisibility="Auto"
                                       VerticalScrollBarVisibility="Auto"
-                                      GridLinesVisibility="All"
-                                      HorizontalGridLinesBrush="#E5E7EB"
-                                      VerticalGridLinesBrush="#E5E7EB"
-                                      Background="White"
-                                      BorderBrush="{StaticResource BorderBrush}"
-                                      BorderThickness="1"
-                                      FontSize="12" />
+                                      FontSize="12"/>
 
                             <!-- 空态与加载提示浮层 -->
-                            <Border Background="White"
+                            <Border Background="{StaticResource PanelBackgroundAltBrush}"
                                     Visibility="{Binding ShowPreviewEmptyNotice, Converter={StaticResource BoolToVisibilityConverter}}"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Stretch">
@@ -256,7 +242,7 @@
                                     <TextBlock Text="{Binding PreviewEmptyMessage}"
                                                FontSize="13"
                                                Foreground="{StaticResource TextMutedBrush}"
-                                               HorizontalAlignment="Center" />
+                                               HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -267,32 +253,28 @@
             <!-- 4. 输出与执行控制区 -->
             <Border Grid.Row="3" Style="{StaticResource CardBorderStyle}" Margin="0">
                 <StackPanel>
-                    <TextBlock Text="4. 输出与执行" Style="{StaticResource SectionHeaderStyle}" />
+                    <TextBlock Text="4. 输出与执行" Style="{StaticResource SectionHeaderStyle}"/>
 
                     <!-- 输出路径行 -->
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="80" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="输出路径:"
                                    VerticalAlignment="Center"
                                    FontSize="13"
-                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
                         <TextBox Grid.Column="1"
                                  Text="{Binding OutputFilePath, Mode=OneWay}"
                                  IsReadOnly="True"
-                                 Background="#F9FAFB"
-                                 BorderBrush="{StaticResource BorderBrush}"
-                                 Padding="8,6"
-                                 FontSize="12"
-                                 Margin="0,0,8,0" />
+                                 Margin="0,0,8,0"/>
                         <Button Grid.Column="2"
                                 Content="更改保存路径 (S)..."
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Command="{Binding ChangeOutputPathCommand}"
-                                IsEnabled="{Binding CanConfigure}" />
+                                IsEnabled="{Binding CanConfigure}"/>
                     </Grid>
 
                     <!-- 输出路径与输入冲突即时红字警告 -->
@@ -301,13 +283,13 @@
                                FontSize="12"
                                FontWeight="Medium"
                                Margin="80,0,0,8"
-                               Visibility="{Binding HasOutputConflictWithInput, Converter={StaticResource BoolToVisibilityConverter}}" />
+                               Visibility="{Binding HasOutputConflictWithInput, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                     <!-- 错误展示卡片 -->
-                    <Border Background="#FEF2F2"
-                            BorderBrush="#FECACA"
+                    <Border Background="{StaticResource DangerBackgroundBrush}"
+                            BorderBrush="{StaticResource DangerBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="6"
+                            CornerRadius="4"
                             Padding="12"
                             Margin="0,0,0,12"
                             Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -316,25 +298,25 @@
                                        FontWeight="Bold"
                                        Foreground="{StaticResource DangerBrush}"
                                        FontSize="13"
-                                       Margin="0,0,0,4" />
+                                       Margin="0,0,0,4"/>
                             <TextBlock Text="{Binding ErrorMessage}"
-                                       Foreground="#991B1B"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
                                        FontSize="12"
-                                       TextWrapping="Wrap" />
+                                       TextWrapping="Wrap"/>
                             <TextBlock Text="{Binding ErrorDetail}"
-                                       Foreground="#B91C1C"
+                                       Foreground="{StaticResource TextMutedBrush}"
                                        FontSize="11"
                                        TextWrapping="Wrap"
                                        Margin="0,4,0,0"
-                                       Visibility="{Binding HasErrorDetail, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                       Visibility="{Binding HasErrorDetail, Converter={StaticResource BoolToVisibilityConverter}}"/>
                         </StackPanel>
                     </Border>
 
                     <!-- 成功信息卡片 -->
-                    <Border Background="#ECFDF5"
-                            BorderBrush="#A7F3D0"
+                    <Border Background="{StaticResource SuccessBackgroundBrush}"
+                            BorderBrush="{StaticResource SuccessBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="6"
+                            CornerRadius="4"
                             Padding="12"
                             Margin="0,0,0,12"
                             Visibility="{Binding HasSuccess, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -343,39 +325,36 @@
                                        FontWeight="Bold"
                                        Foreground="{StaticResource SuccessBrush}"
                                        FontSize="13"
-                                       Margin="0,0,0,4" />
+                                       Margin="0,0,0,4"/>
                             <TextBlock Text="{Binding ResultOutputFilePath, StringFormat='结果文件：{0}'}"
-                                       Foreground="#065F46"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
                                        FontSize="12"
-                                       TextWrapping="Wrap" />
+                                       TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
 
                     <!-- 进度指示 -->
                     <Grid Margin="0,0,0,16">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <ProgressBar Height="8"
+                        <ProgressBar Height="5"
                                      Value="{Binding ProgressPercent}"
                                      IsIndeterminate="{Binding IsProgressIndeterminate}"
-                                     Background="#E5E7EB"
-                                     Foreground="{StaticResource PrimaryBrush}"
-                                     BorderThickness="0"
-                                     Margin="0,0,0,6" />
+                                     Margin="0,0,0,6"/>
                         <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="{Binding ProgressStageText}"
                                        FontSize="12"
-                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                                       Foreground="{StaticResource TextSecondaryBrush}"/>
                             <TextBlock Grid.Column="1"
                                        Text="{Binding ProgressPercent, StringFormat={}{0}%}"
                                        FontSize="12"
-                                       Foreground="{StaticResource TextMutedBrush}" />
+                                       Foreground="{StaticResource TextMutedBrush}"/>
                         </Grid>
                     </Grid>
 
@@ -385,24 +364,24 @@
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 Command="{Binding StartCommand}"
                                 IsEnabled="{Binding CanStart}"
-                                Margin="0,0,12,0" />
+                                Margin="0,0,12,0"/>
 
                         <Button Content="打开生成文件"
                                 Style="{StaticResource SuccessButtonStyle}"
                                 Command="{Binding OpenResultFileCommand}"
                                 IsEnabled="{Binding CanExecuteSuccessActions}"
-                                Margin="0,0,12,0" />
+                                Margin="0,0,12,0"/>
 
                         <Button Content="打开所在文件夹"
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Command="{Binding OpenResultFolderCommand}"
                                 IsEnabled="{Binding CanExecuteSuccessActions}"
-                                Margin="0,0,12,0" />
+                                Margin="0,0,12,0"/>
 
                         <Button Content="作为主表送入数据匹配 ->"
                                 Style="{StaticResource SuccessButtonStyle}"
                                 Command="{Binding SendToDataMatchingCommand}"
-                                IsEnabled="{Binding CanExecuteSuccessActions}" />
+                                IsEnabled="{Binding CanExecuteSuccessActions}"/>
                     </WrapPanel>
                 </StackPanel>
             </Border>

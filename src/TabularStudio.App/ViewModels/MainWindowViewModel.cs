@@ -29,20 +29,26 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IWorkbookInspectionService inspectionService,
         IFormatStandardizationService formatService,
         IDataMatchingService matchingService,
-        IOutputDirectoryPreferenceService? outputDirectoryPreferenceService = null)
+        IOutputDirectoryPreferenceService? outputDirectoryPreferenceService = null,
+        IProcessingProfileStore? profileStore = null,
+        IProcessingProfileValidator? profileValidator = null)
     {
         var preferenceService = outputDirectoryPreferenceService ?? new OutputDirectoryPreferenceService();
 
         DataMatchingVm = new DataMatchingViewModel(
             inspectionService,
             matchingService,
-            outputDirectoryPreferenceService: preferenceService);
+            outputDirectoryPreferenceService: preferenceService,
+            profileStore: profileStore,
+            profileValidator: profileValidator);
 
         FormatStandardizationVm = new BatchFormatViewModel(
             inspectionService,
             formatService,
             sendToMatching: OnSendToDataMatching,
-            preferences: preferenceService);
+            preferences: preferenceService,
+            profileStore: profileStore,
+            profileValidator: profileValidator);
 
         // 默认显示格式统一
         CurrentViewViewModel = FormatStandardizationVm;

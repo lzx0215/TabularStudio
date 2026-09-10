@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using TabularStudio.App.Services;
 using TabularStudio.App.ViewModels;
@@ -20,15 +21,27 @@ public partial class App : Application
         IFormatStandardizationService formatService = new FormatStandardizationService();
         IDataMatchingService matchingService = new DataMatchingService();
 
-        // 创建 UI Services
+#if DEBUG
+        string? testDataDir = Environment.GetEnvironmentVariable("TABULARSTUDIO_TEST_DATA_DIRECTORY");
+        string? profileDir = !string.IsNullOrWhiteSpace(testDataDir) ? System.IO.Path.Combine(testDataDir, "processing-profiles") : null;
+        string? preferenceFilePath = !string.IsNullOrWhiteSpace(testDataDir) ? System.IO.Path.Combine(testDataDir, "preferences.json") : null;
+        IOutputDirectoryPreferenceService outputDirectoryPreferenceService = new OutputDirectoryPreferenceService(preferenceFilePath);
+#else
+        string? profileDir = null;
         IOutputDirectoryPreferenceService outputDirectoryPreferenceService = new OutputDirectoryPreferenceService();
+#endif
+
+        IProcessingProfileStore profileStore = new JsonProcessingProfileStore(profileDir);
+        IProcessingProfileValidator profileValidator = new ProcessingProfileValidator(inspectionService);
 
         // 构造 ViewModel 并注入接口
         var mainWindowViewModel = new MainWindowViewModel(
             inspectionService,
             formatService,
             matchingService,
-            outputDirectoryPreferenceService);
+            outputDirectoryPreferenceService,
+            profileStore,
+            profileValidator);
 
         // 构造并显示 MainWindow
         var mainWindow = new MainWindow(mainWindowViewModel);

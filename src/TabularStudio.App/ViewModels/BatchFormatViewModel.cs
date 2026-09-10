@@ -53,14 +53,61 @@ public sealed partial class BatchFormatViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(CanStart))]
     [NotifyPropertyChangedFor(nameof(CanUseSelectedResult))]
     [NotifyPropertyChangedFor(nameof(HasCheckedFiles))]
+    [NotifyPropertyChangedFor(nameof(CanSelectProfile))]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
+    [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
     private bool _isBusy;
     [ObservableProperty] private int _progressPercent;
     [ObservableProperty] private string _summary = "请选择一个或多个表格文件。";
-    public bool CanConfigure => !IsBusy;
+
+    private readonly IProcessingProfileStore? _profileStore;
+    private readonly IProcessingProfileValidator? _profileValidator;
+    private readonly Func<string, string?>? _promptProfileName;
+    private readonly Func<string, bool>? _confirmOverwrite;
+    private readonly Func<string, bool>? _confirmDelete;
+
+    private string? _appliedProfileName;
+    private FormatProfileSettings? _appliedFormatSettings;
+    private bool _isApplyingProfile;
+
+    public ObservableCollection<ProcessingProfile> Profiles { get; } = [];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
+    private ProcessingProfile? _selectedProfile;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsProfileStatusError))]
+    [NotifyPropertyChangedFor(nameof(IsProfileStatusModified))]
+    [NotifyPropertyChangedFor(nameof(IsProfileStatusSuccess))]
+    private string _profileStatusMessage = "暂无保存配置";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanConfigure))]
+    [NotifyPropertyChangedFor(nameof(CanStart))]
+    [NotifyPropertyChangedFor(nameof(CanSelectProfile))]
+    [NotifyPropertyChangedFor(nameof(CanApplyProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
+    [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
+    private bool _isProfileValidating;
+
+    public bool HasProfiles => Profiles.Count > 0;
+    public bool CanSelectProfile => !IsBusy && !IsProfileValidating;
+    public bool CanApplyProfile => !IsBusy && !IsProfileValidating && SelectedProfile is not null;
+    public bool CanSaveProfile => !IsBusy && !IsProfileValidating && HasSelectedRule;
+    public bool CanDeleteProfile => !IsBusy && !IsProfileValidating && SelectedProfile is not null;
+
+    public bool IsProfileStatusError => ProfileStatusMessage.StartsWith("未应用") || ProfileStatusMessage.Contains("失败");
+    public bool IsProfileStatusModified => ProfileStatusMessage == "当前设置已修改";
+    public bool IsProfileStatusSuccess => ProfileStatusMessage.StartsWith("已应用") || ProfileStatusMessage.StartsWith("已保存");
+
+    public bool CanConfigure => !IsBusy && !IsProfileValidating;
     public bool HasSelectedRule => Rules.TrimOuterWhitespace || Rules.RemoveTabsNewLinesAndHiddenCharacters ||
         Rules.NormalizeFullWidthHalfWidth || Rules.NormalizeUnicode || Rules.NormalizeSafeNumbers || Rules.NormalizeUnambiguousDates;
     public string RuleHint => HasSelectedRule ? "所选规则将应用到全部文件。" : "请至少选择一项处理规则后再开始。";
-    public bool CanStart => !IsBusy && HasSelectedRule && Files.Count > 0 && Files.All(f => !f.Editor.IsPreviewLoading);
+    public bool CanStart => !IsBusy && !IsProfileValidating && HasSelectedRule && Files.Count > 0 && Files.All(f => !f.Editor.IsPreviewLoading);
     public bool HasCheckedFiles => !IsBusy && Files.Any(f => f.IsChecked);
     public bool CanUseSelectedResult => !IsBusy && SelectedFile?.ResultPath is not null;
     partial void OnSelectedFileChanged(FormatBatchFileViewModel? value) => OnPropertyChanged(nameof(CanUseSelectedResult));
@@ -68,17 +115,49 @@ public sealed partial class BatchFormatViewModel : ObservableObject
     public BatchFormatViewModel(IWorkbookInspectionService inspection, IFormatStandardizationService single,
         IOutputDirectoryPreferenceService? preferences = null, IBatchFormatStandardizationService? batch = null,
         Func<string, ExistingOutputChoice>? confirm = null, Func<string, string?>? saveAs = null,
-        Action<string>? sendToMatching = null, Func<bool, string, string[]?>? openFiles = null)
+        Action<string>? sendToMatching = null, Func<bool, string, string[]?>? openFiles = null,
+        IProcessingProfileStore? profileStore = null, IProcessingProfileValidator? profileValidator = null,
+        Func<string, string?>? promptProfileName = null, Func<string, bool>? confirmOverwrite = null,
+        Func<string, bool>? confirmDelete = null)
     {
         this.inspection = inspection; this.single = single; this.preferences = preferences ?? new OutputDirectoryPreferenceService();
         this.batch = batch ?? new BatchFormatStandardizationService(single); this.confirm = confirm; this.saveAs = saveAs; this.sendToMatching = sendToMatching;
         this.openFiles = openFiles;
+        _profileStore = profileStore;
+        _profileValidator = profileValidator;
+        _promptProfileName = promptProfileName;
+        _confirmOverwrite = confirmOverwrite;
+        _confirmDelete = confirmDelete;
+
         Files.CollectionChanged += (_, _) => OnPropertyChanged(nameof(OutputDirectoryDisplay));
         Rules = new(inspection, single, outputDirectoryPreferenceService: this.preferences);
         Rules.PropertyChanged += (_, _) =>
         {
-            OnPropertyChanged(nameof(HasSelectedRule)); OnPropertyChanged(nameof(CanStart)); OnPropertyChanged(nameof(RuleHint));
+            OnPropertyChanged(nameof(HasSelectedRule));
+            OnPropertyChanged(nameof(CanStart));
+            OnPropertyChanged(nameof(CanSaveProfile));
+            OnPropertyChanged(nameof(RuleHint));
+
+            if (!_isApplyingProfile && _appliedProfileName is not null)
+            {
+                var current = new FormatProfileSettings(
+                    Rules.TrimOuterWhitespace,
+                    Rules.RemoveTabsNewLinesAndHiddenCharacters,
+                    Rules.NormalizeFullWidthHalfWidth,
+                    Rules.NormalizeUnicode,
+                    Rules.NormalizeSafeNumbers,
+                    Rules.NormalizeUnambiguousDates);
+                if (_appliedFormatSettings is null || current != _appliedFormatSettings)
+                {
+                    ProfileStatusMessage = "当前设置已修改";
+                }
+            }
         };
+
+        if (_profileStore != null)
+        {
+            RefreshProfiles();
+        }
     }
 
     [RelayCommand]
@@ -276,6 +355,269 @@ public sealed partial class BatchFormatViewModel : ObservableObject
         var dialog = new SaveFileDialog { Filter = TabularFileTypes.SaveFilter(path), FileName = Path.GetFileName(path), DefaultExt = Path.GetExtension(path), InitialDirectory = Path.GetDirectoryName(path), AddExtension = true };
         return dialog.ShowDialog() == true ? dialog.FileName : null;
     }
+    public void RefreshProfiles()
+    {
+        if (_profileStore is null) return;
+        try
+        {
+            var result = _profileStore.List(ProcessingProfileKind.FormatStandardization);
+            Profiles.Clear();
+            foreach (var p in result.Profiles)
+            {
+                Profiles.Add(p);
+            }
+            OnPropertyChanged(nameof(HasProfiles));
+            if (result.Errors.Count > 0)
+            {
+                ProfileStatusMessage = $"发现 {result.Errors.Count} 个损坏配置：{string.Join("；", result.Errors)}";
+            }
+            else if (Profiles.Count == 0)
+            {
+                SelectedProfile = null;
+                if (_appliedProfileName is null)
+                {
+                    ProfileStatusMessage = "暂无保存配置";
+                }
+            }
+            else if (SelectedProfile is not null)
+            {
+                SelectedProfile = Profiles.FirstOrDefault(p => string.Equals(p.Name, SelectedProfile.Name, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+        catch (Exception ex)
+        {
+            ProfileStatusMessage = $"加载配置列表失败：{ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public void SaveProfile()
+    {
+        if (!CanSaveProfile)
+        {
+            ProfileStatusMessage = "至少选择一项处理规则后方可保存配置。";
+            return;
+        }
+
+        if (_profileStore is null)
+        {
+            ProfileStatusMessage = "配置存储服务未初始化。";
+            return;
+        }
+
+        if (_profileValidator is null)
+        {
+            ProfileStatusMessage = "未保存：配置校验服务未初始化。";
+            return;
+        }
+
+        string? name = _promptProfileName != null
+            ? _promptProfileName("保存当前格式统一规则")
+            : DefaultPromptProfileName("保存当前格式统一规则");
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return;
+        }
+
+        name = name.Trim();
+        bool exists = Profiles.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+        bool overwrite = false;
+        if (exists)
+        {
+            bool confirmed = _confirmOverwrite != null ? _confirmOverwrite(name) : DefaultConfirmOverwrite(name);
+            if (!confirmed)
+            {
+                return;
+            }
+            overwrite = true;
+        }
+
+        var formatSettings = new FormatProfileSettings(
+            Rules.TrimOuterWhitespace,
+            Rules.RemoveTabsNewLinesAndHiddenCharacters,
+            Rules.NormalizeFullWidthHalfWidth,
+            Rules.NormalizeUnicode,
+            Rules.NormalizeSafeNumbers,
+            Rules.NormalizeUnambiguousDates);
+
+        var profile = new ProcessingProfile(
+            Version: 1,
+            Name: name,
+            Kind: ProcessingProfileKind.FormatStandardization,
+            Format: formatSettings,
+            Matching: null);
+
+        var errors = _profileValidator.Validate(profile);
+        if (errors.Count > 0)
+        {
+            ProfileStatusMessage = $"配置验证失败：{string.Join("；", errors)}";
+            return;
+        }
+
+        var writeResult = _profileStore.Save(profile, overwrite);
+        if (writeResult.NameConflict && !overwrite)
+        {
+            bool confirmed = _confirmOverwrite != null ? _confirmOverwrite(name) : DefaultConfirmOverwrite(name);
+            if (!confirmed)
+            {
+                return;
+            }
+            writeResult = _profileStore.Save(profile, overwrite: true);
+        }
+
+        if (!writeResult.Success)
+        {
+            ProfileStatusMessage = $"保存配置失败：{writeResult.Error ?? "未知错误"}";
+            return;
+        }
+
+        RefreshProfiles();
+        SelectedProfile = Profiles.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+        _appliedProfileName = name;
+        _appliedFormatSettings = formatSettings;
+        ProfileStatusMessage = $"已保存：{name}";
+    }
+
+    [RelayCommand]
+    public void ApplyProfile()
+    {
+        if (!CanApplyProfile || SelectedProfile is null || _profileStore is null)
+        {
+            return;
+        }
+
+        if (_profileValidator is null)
+        {
+            ProfileStatusMessage = "未应用：配置校验服务未初始化。";
+            return;
+        }
+
+        IsProfileValidating = true;
+        ProfileStatusMessage = "正在校验配置…";
+
+        try
+        {
+            var loadResult = _profileStore.Load(ProcessingProfileKind.FormatStandardization, SelectedProfile.Name);
+            if (!loadResult.Success || loadResult.Profile?.Format is null)
+            {
+                ProfileStatusMessage = $"未应用：{loadResult.Error ?? "无法读取该配置或格式配置为空"}";
+                return;
+            }
+
+            var profile = loadResult.Profile;
+            var errors = _profileValidator.Validate(profile);
+            if (errors.Count > 0)
+            {
+                ProfileStatusMessage = $"未应用：{string.Join("；", errors)}";
+                return;
+            }
+
+            if (!profile.Format.HasAnyRule)
+            {
+                ProfileStatusMessage = "未应用：配置中未包含任何有效规则。";
+                return;
+            }
+
+            _isApplyingProfile = true;
+            try
+            {
+                Rules.TrimOuterWhitespace = profile.Format.TrimOuterWhitespace;
+                Rules.RemoveTabsNewLinesAndHiddenCharacters = profile.Format.RemoveTabsNewLinesAndHiddenCharacters;
+                Rules.NormalizeFullWidthHalfWidth = profile.Format.NormalizeFullWidthHalfWidth;
+                Rules.NormalizeUnicode = profile.Format.NormalizeUnicode;
+                Rules.NormalizeSafeNumbers = profile.Format.NormalizeSafeNumbers;
+                Rules.NormalizeUnambiguousDates = profile.Format.NormalizeUnambiguousDates;
+            }
+            finally
+            {
+                _isApplyingProfile = false;
+            }
+
+            _appliedProfileName = profile.Name;
+            _appliedFormatSettings = profile.Format;
+            ProfileStatusMessage = $"已应用：{profile.Name}";
+        }
+        catch (Exception ex)
+        {
+            ProfileStatusMessage = $"未应用：{ex.Message}";
+        }
+        finally
+        {
+            IsProfileValidating = false;
+        }
+    }
+
+    [RelayCommand]
+    public void DeleteProfile()
+    {
+        if (!CanDeleteProfile || SelectedProfile is null || _profileStore is null)
+        {
+            return;
+        }
+
+        string name = SelectedProfile.Name;
+        bool confirmed = _confirmDelete != null ? _confirmDelete(name) : DefaultConfirmDelete(name);
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var deleteResult = _profileStore.Delete(ProcessingProfileKind.FormatStandardization, name);
+        if (!deleteResult.Success)
+        {
+            ProfileStatusMessage = $"删除配置失败：{deleteResult.Error ?? "未知错误"}";
+            return;
+        }
+
+        RefreshProfiles();
+        SelectedProfile = null;
+        if (string.Equals(_appliedProfileName, name, StringComparison.OrdinalIgnoreCase))
+        {
+            ProfileStatusMessage = "当前设置已修改";
+        }
+    }
+
+    private static string? DefaultPromptProfileName(string prompt)
+    {
+        var dialog = new SaveProfileDialog(prompt);
+        if (System.Windows.Application.Current?.MainWindow is { } owner && owner.IsVisible)
+        {
+            dialog.Owner = owner;
+        }
+        return dialog.ShowDialog() == true ? dialog.ProfileName : null;
+    }
+
+    private static bool DefaultConfirmOverwrite(string profileName)
+    {
+        var dialog = new ConfirmProfileDialog(
+            title: "确认覆盖配置",
+            mainMessage: $"已存在名为“{profileName}”的配置，是否覆盖？",
+            subMessage: "覆盖后将以当前页面设置替换已保存的配置。",
+            confirmButtonText: "覆盖",
+            isDestructive: true);
+        if (System.Windows.Application.Current?.MainWindow is { } owner && owner.IsVisible)
+        {
+            dialog.Owner = owner;
+        }
+        return dialog.ShowDialog() == true;
+    }
+
+    private static bool DefaultConfirmDelete(string profileName)
+    {
+        var dialog = new ConfirmProfileDialog(
+            title: "确认删除配置",
+            mainMessage: $"确定要删除配置“{profileName}”吗？",
+            subMessage: "删除后该配置将不再可用。当前页面已应用的设置和文件保持不变。",
+            confirmButtonText: "删除",
+            isDestructive: true);
+        if (System.Windows.Application.Current?.MainWindow is { } owner && owner.IsVisible)
+        {
+            dialog.Owner = owner;
+        }
+        return dialog.ShowDialog() == true;
+    }
+
     private static bool PathsEqual(string a, string b)
     {
         try { return string.Equals(Path.GetFullPath(a), Path.GetFullPath(b), StringComparison.OrdinalIgnoreCase); }

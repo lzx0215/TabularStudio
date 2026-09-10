@@ -1,5 +1,7 @@
 # UI / Core 契约
 
+2026-09-10 独立增量：`Contracts/TableComparison/TableComparisonContracts.cs` 新增 `ITableComparisonService`，不修改既有格式统一/匹配请求。`CompareAsync` 接收两份 `ComparisonSource`（文件路径和可空工作表名），返回成功状态、两个数据范围、比较位置数、完整 `CellDifference` 列表和错误。`AreEqual` 仅在成功且差异为零时为 true；取消抛出 `OperationCanceledException`。值以类型及不受文化设置影响的文本表示。`ExportAsync` 将成功结果快照写入新的 XLSX 报告，返回可空 `OperationError`，不覆盖输入或已有文件。进度复用 `OperationProgress`。此增量由 Owner 本次授权 Codex 全部完成，行为见 `positional-comparison.md`。
+
 - Status: Approved Contract Baseline
 - Owner: **Codex + Antigravity**
 - Initial draft author: Codex（Core Developer）

@@ -2,6 +2,8 @@
 
 本文档是本仓库的协作入口。Grok、Antigravity、Codex 在开始任何工作前必须先读本文，再读 `docs/requirements.md` 与 `docs/development-process.md`。
 
+2026-09-10 范围增量：Owner 已确认“表格对比”（按位置严格比较数据、忽略样式），见 `docs/requirements.md` 第 15 节和 `docs/positional-comparison.md`。该能力不受下文原“两功能”范围限制。本次授权 Codex 完成需求、Core、WPF 与验证，跳过原角色交接、Issue 和 Gate 流程；其它任务仍沿用原流程。Owner 随后确认“测试可以”，并授权本次打包、提交、推送与发布。
+
 ## 项目目标
 
 TabularStudio 是 Windows 本地桌面工具，用于离线处理表格文件。

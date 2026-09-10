@@ -1,5 +1,7 @@
 # 格式统一与数据匹配处理规则
 
+2026-09-10 表格对比独立规则：见 `positional-comparison.md`。该能力按位置比较严格数据值，不复用下文数据匹配的比较标准化，不改变既有格式统一或数据匹配处理规则。
+
 - Status: Approved Processing Baseline
 - Owner: **Codex（Core Developer）**
 - Approver: Project Owner

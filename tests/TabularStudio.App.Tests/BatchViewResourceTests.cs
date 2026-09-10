@@ -63,6 +63,7 @@ public sealed class BatchViewResourceTests
                     Assert.Equal("FirstHeader", grid.Columns[0].Header);
                 }
                 finally { Directory.Delete(directory, true); }
+                TableComparisonViewResourceCheck.Verify();
                 app.Shutdown();
             }
             catch (Exception ex) { failure = ex; }

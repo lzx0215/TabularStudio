@@ -19,6 +19,7 @@ public partial class App : Application
         IWorkbookInspectionService inspectionService = new WorkbookInspectionService();
         IFormatStandardizationService formatService = new FormatStandardizationService();
         IDataMatchingService matchingService = new DataMatchingService();
+        ITableComparisonService comparisonService = new TableComparisonService();
 
         // 创建 UI Services
         IOutputDirectoryPreferenceService outputDirectoryPreferenceService = new OutputDirectoryPreferenceService();
@@ -28,7 +29,8 @@ public partial class App : Application
             inspectionService,
             formatService,
             matchingService,
-            outputDirectoryPreferenceService);
+            outputDirectoryPreferenceService,
+            comparisonService);
 
         // 构造并显示 MainWindow
         var mainWindow = new MainWindow(mainWindowViewModel);

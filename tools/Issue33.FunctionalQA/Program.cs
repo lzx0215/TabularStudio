@@ -5,6 +5,7 @@ using NPOI.HSSF.UserModel;
 using TabularStudio.App.Dialogs;
 using TabularStudio.App.Services;
 using TabularStudio.App.ViewModels;
+using TabularStudio.Core.Contracts;
 using TabularStudio.Core.Services;
 
 // Calls real ViewModels and Core with synthetic files. No desktop GUI automation.
@@ -41,13 +42,22 @@ var matching = new DataMatchingViewModel(inspection, new DataMatchingService(), 
 await matching.LoadMasterFileAsync(sent!); await matching.LoadReferenceFileAsync(paths[1]);
 matching.Conditions[0].SelectedMasterColumn = matching.MasterAvailableColumns[0];
 matching.Conditions[0].SelectedReferenceColumn = matching.ReferenceAvailableColumns[0]; matching.ReturnFields[1].IsSelected = true;
-matching.IsMasterFilterEnabled = true; matching.SelectedMasterFilterColumn = matching.MasterAvailableColumns[0]; matching.MasterFilterValue = "001";
+matching.IsMasterFilterEnabled = true;
+matching.SelectedMasterFilterColumn = matching.MasterAvailableColumns[0];
+await matching.MasterFilterValuesLoadTask;
+Check(!matching.IsMasterFilterValuesLoading && matching.MasterFilterValues.Count > 0,
+    matching.MasterFilterValuesMessage ?? "filter candidates unavailable");
+Check(matching.SelectedMasterFilterValue is null && !matching.CanStart, "filter requires an explicit selection");
+matching.SelectedMasterFilterValue = matching.MasterFilterValues.Single(value =>
+    value.Value.Kind == ColumnValueKind.Text && value.Value.RawValue == "001");
+Check(matching.CanStart, "selected filter candidate should enable matching");
 await matching.StartAsync();
 Check(matching.HasSuccess && matching.ResultMatchedCount == 1, matching.ErrorMessage ?? "match failed");
 Check(matching.ResultOutputFilePath!.EndsWith(".csv"), "master output format");
 var result = await inspection.GetPreviewAsync(new(new(matching.ResultOutputFilePath!, null, 1)));
 Check(result.Preview!.Rows[0].Cells[2].DisplayValue == "  yes  ", "returned source value");
 await batch.StartAsync(); Check(batch.CanStart && batch.Summary.Contains("成功 3，失败 1"), "retry");
+foreach (var path in paths) Check(Hash(path) == hashes[path], "input changed after matching/retry");
 Console.WriteLine("PASS: mixed batch -> preview/output reopen -> selected CSV result -> conditional matching against XLS -> CSV output; retry and input hashes verified.");
 Console.WriteLine("WPF/WPS manual UI QA NOT RUN. No GUI automation.");
 Console.WriteLine(root);

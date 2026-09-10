@@ -17,6 +17,32 @@ public sealed class BatchFeedbackTests : IDisposable
         => new(new WorkbookInspectionService(), new FormatStandardizationService(), new OutputDirectoryPreferenceService(Path.Combine(root, "prefs.json")), batch, openFiles: open);
 
     [Fact]
+    public async Task OutputDirectorySummaryNotifiesWithoutChangingPerFilePaths()
+    {
+        var a = FilePath("summary-a"); var b = FilePath("summary-b"); var replacement = FilePath("replacement");
+        var vm = Create((_, _) => [replacement]);
+        var notifications = 0;
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.OutputDirectoryDisplay)) notifications++; };
+        Assert.Equal("按源文件所在目录", vm.OutputDirectoryDisplay);
+        await vm.LoadFilesAsync([a, b]);
+        Assert.Equal(root, vm.OutputDirectoryDisplay);
+        var original = vm.Files[0].Editor.OutputFilePath;
+        var elsewhere = Path.Combine(root, "elsewhere"); Directory.CreateDirectory(elsewhere);
+        vm.Files[1].Editor.OutputFilePath = Path.Combine(elsewhere, "custom.csv");
+        Assert.Equal("多个位置（逐文件设置）", vm.OutputDirectoryDisplay);
+        Assert.Equal(original, vm.Files[0].Editor.OutputFilePath);
+        vm.Files[1].IsChecked = true;
+        await vm.ReplaceCheckedFilesAsync();
+        Assert.Equal(root, vm.OutputDirectoryDisplay);
+        vm.SetOutputDirectory(elsewhere);
+        Assert.Equal(elsewhere, vm.OutputDirectoryDisplay);
+        foreach (var item in vm.Files) item.IsChecked = true;
+        vm.RemoveSelected();
+        Assert.Equal("按源文件所在目录", vm.OutputDirectoryDisplay);
+        Assert.True(notifications >= 6);
+    }
+
+    [Fact]
     public async Task DialogAddsMultipleFilesAndSubsequentSelectionsAppendWithoutDuplicates()
     {
         var a = FilePath("a"); var b = FilePath("b"); var c = FilePath("c");

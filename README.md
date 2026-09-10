@@ -15,9 +15,10 @@ TabularStudio 是 Windows 本地桌面工具，完全离线处理 `.xlsx`、`.xl
 
 ## 当前项目状态
 
+- 便携版本：[v0.3.0 Windows x64](https://github.com/lzx0215/TabularStudio/releases/tag/v0.3.0)。下载 ZIP 后解压运行 `TabularStudio.exe`，自包含 .NET 运行时。
 - Windows 本地桌面、C#、.NET 10、WPF；格式读写使用 ClosedXML、NPOI 和 CsvHelper。
 - 已有 Core、WPF 界面及自动化测试；表格对比为 2026-09-10 新增实现，Owner 已反馈“测试可以”并授权发布。
 - 在仓库根目录执行 `dotnet build TabularStudio.sln` 构建，`dotnet test TabularStudio.sln` 验证。
-- 执行 `dotnet run --project src/TabularStudio.App` 启动，选择左侧“表格对比”，选择两个文件及工作表后点击“开始对比”。
+- 执行 `dotnet run --project src/TabularStudio.App` 启动，选择顶部“表格对比”，选择两个文件及工作表后点击“开始对比”。
 
 协作入口见 `AGENTS.md`。产品范围见 `docs/requirements.md`。

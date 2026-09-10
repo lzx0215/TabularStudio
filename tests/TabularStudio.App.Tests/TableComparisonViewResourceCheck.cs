@@ -47,8 +47,47 @@ internal static class TableComparisonViewResourceCheck
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
             using var image = File.Create(Path.Combine(AppContext.BaseDirectory, "table-comparison-preview.png"));
             encoder.Save(image);
+
+            // Verify the comparison route in the current top-navigation shell after integration.
+            var shellVm = new MainWindowViewModel(new WorkbookInspectionService(), new FormatStandardizationService(), new DataMatchingService());
+            shellVm.SelectTableComparisonCommand.Execute(null);
+            Assert.True(shellVm.IsTableComparisonSelected);
+            Assert.False(shellVm.IsFormatStandardizationSelected);
+            Assert.False(shellVm.IsDataMatchingSelected);
+            Assert.IsType<TableComparisonViewModel>(shellVm.CurrentViewViewModel);
+            shellVm.CurrentViewViewModel = vm;
+            var shell = new MainWindow(shellVm);
+            var client = (FrameworkElement)shell.Content;
+            client.Width = 944; client.Height = 601;
+            client.Measure(new Size(944, 601)); client.Arrange(new Rect(0, 0, 944, 601)); client.UpdateLayout();
+            client.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle); client.UpdateLayout();
+            var hosted = Descendants(client).OfType<TableComparisonView>().Single();
+            var hostedGrid = (DataGrid)hosted.FindName("DifferencesGrid");
+            Assert.Single(hostedGrid.Items.Cast<object>());
+            Assert.True(hostedGrid.ActualHeight >= 80);
+            Assert.True(hostedGrid.TransformToAncestor(hosted).Transform(new Point(0, hostedGrid.ActualHeight)).Y <= hosted.ActualHeight,
+                "Comparison results must fit above the global status bar.");
+            var shellBitmap = new RenderTargetBitmap(944, 601, 96, 96, PixelFormats.Pbgra32);
+            var shellBackground = new DrawingVisual();
+            using (var drawing = shellBackground.RenderOpen())
+                drawing.DrawRectangle(shell.Background, null, new Rect(0, 0, 944, 601));
+            shellBitmap.Render(shellBackground);
+            shellBitmap.Render(client);
+            var shellEncoder = new PngBitmapEncoder(); shellEncoder.Frames.Add(BitmapFrame.Create(shellBitmap));
+            using var shellImage = File.Create(Path.Combine(AppContext.BaseDirectory, "table-comparison-shell.png"));
+            shellEncoder.Save(shellImage);
         }
         finally { Directory.Delete(directory, true); }
+    }
+
+    private static IEnumerable<DependencyObject> Descendants(DependencyObject parent)
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            yield return child;
+            foreach (var descendant in Descendants(child)) yield return descendant;
+        }
     }
 
     private static void Pump(Task task)

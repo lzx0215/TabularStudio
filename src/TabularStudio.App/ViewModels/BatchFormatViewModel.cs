@@ -35,6 +35,17 @@ public sealed partial class BatchFormatViewModel : ObservableObject
     private readonly Func<bool, string, string[]?>? openFiles;
     public ObservableCollection<FormatBatchFileViewModel> Files { get; } = [];
     public ObservableCollection<BatchFailureDetail> Failures { get; } = [];
+    // UI-only summary of current per-file output locations. Never changes paths.
+    public string OutputDirectoryDisplay
+    {
+        get
+        {
+            var directories = Files.Select(f => Path.GetDirectoryName(f.Editor.OutputFilePath ?? ""))
+                .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            return directories.Length == 0 ? "按源文件所在目录" : directories.Length == 1
+                ? directories[0] ?? "尚未设置" : "多个位置（逐文件设置）";
+        }
+    }
     public FormatStandardizationViewModel Rules { get; }
     [ObservableProperty] private FormatBatchFileViewModel? _selectedFile;
     [ObservableProperty]
@@ -62,6 +73,7 @@ public sealed partial class BatchFormatViewModel : ObservableObject
         this.inspection = inspection; this.single = single; this.preferences = preferences ?? new OutputDirectoryPreferenceService();
         this.batch = batch ?? new BatchFormatStandardizationService(single); this.confirm = confirm; this.saveAs = saveAs; this.sendToMatching = sendToMatching;
         this.openFiles = openFiles;
+        Files.CollectionChanged += (_, _) => OnPropertyChanged(nameof(OutputDirectoryDisplay));
         Rules = new(inspection, single, outputDirectoryPreferenceService: this.preferences);
         Rules.PropertyChanged += (_, _) =>
         {
@@ -138,7 +150,7 @@ public sealed partial class BatchFormatViewModel : ObservableObject
             showSaveFileDialog: saveAs, confirmExistingOutput: confirm);
         var item = new FormatBatchFileViewModel(path, editor);
         item.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(item.IsChecked)) OnPropertyChanged(nameof(HasCheckedFiles)); };
-        editor.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(editor.IsPreviewLoading)) OnPropertyChanged(nameof(CanStart)); };
+        editor.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(editor.IsPreviewLoading)) OnPropertyChanged(nameof(CanStart)); if (e.PropertyName == nameof(editor.OutputFilePath)) OnPropertyChanged(nameof(OutputDirectoryDisplay)); };
         await editor.LoadFileAsync(path);
         if (editor.HasError) item.ResultText = editor.ErrorMessage ?? "文件加载失败";
         return item;

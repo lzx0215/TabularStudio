@@ -1,6 +1,9 @@
 namespace TabularStudio.Core.Contracts;
 
-public sealed record MasterRowFilter(ColumnReference Column, string EqualsValue);
+public sealed record MasterRowFilter(ColumnReference Column, string EqualsValue)
+{
+    public ColumnFilterValue? SelectedValue { get; init; }
+}
 
 public sealed record MatchingCondition(
     ColumnReference MasterColumn,

@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Media;
 
 namespace TabularStudio.App.Dialogs;
 
@@ -20,11 +19,7 @@ public partial class ConfirmProfileDialog : Window
         MainMessageTextBlock.Text = mainMessage;
         SubMessageTextBlock.Text = subMessage;
         ConfirmButton.Content = confirmButtonText;
-
-        if (!isDestructive)
-        {
-            ConfirmButton.Background = new SolidColorBrush(Color.FromRgb(0x25, 0x63, 0xEB)); // Primary blue
-        }
+        ConfirmButton.SetResourceReference(StyleProperty, isDestructive ? "DangerButtonStyle" : "PrimaryButtonStyle");
     }
 
     private void OnConfirmClick(object sender, RoutedEventArgs e)

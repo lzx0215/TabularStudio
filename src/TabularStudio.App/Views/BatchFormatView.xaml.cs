@@ -6,7 +6,62 @@ namespace TabularStudio.App.Views;
 
 public partial class BatchFormatView : UserControl
 {
-    public BatchFormatView() => InitializeComponent();
+    private const double CompactWidth = 900;
+    private bool _compact;
+
+    public BatchFormatView()
+    {
+        InitializeComponent();
+        Loaded += (_, _) => ApplyResponsiveLayout(ActualWidth);
+    }
+
+    private void OnViewSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (e.WidthChanged || e.HeightChanged)
+            ApplyResponsiveLayout(e.NewSize.Width);
+    }
+
+    private void ApplyResponsiveLayout(double width)
+    {
+        var compact = width < CompactWidth;
+        _compact = compact;
+
+        if (compact)
+        {
+            FilesColumn.Width = new GridLength(188);
+            RulesSplitter.Width = new GridLength(0);
+            RulesColumn.Width = new GridLength(0);
+            RulesColumn.MinWidth = 0;
+            RulesRowSplitter.Height = new GridLength(0);
+            RulesRow.Height = new GridLength(1, GridUnitType.Star);
+            WorkbenchRow.Height = new GridLength(1.8, GridUnitType.Star);
+            RulesPanel.ClearValue(MaxHeightProperty);
+            Grid.SetColumn(RulesPanel, 2);
+            Grid.SetRow(RulesPanel, 2);
+            Grid.SetColumnSpan(RulesPanel, 1);
+            Grid.SetRowSpan(FilesPanel, 3);
+            RulesColumnLine.Visibility = Visibility.Collapsed;
+            RulesRowLine.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            FilesColumn.Width = new GridLength(248);
+            RulesSplitter.Width = new GridLength(20);
+            RulesColumn.Width = new GridLength(252);
+            RulesColumn.MinWidth = 220;
+            RulesRowSplitter.Height = new GridLength(0);
+            RulesRow.Height = new GridLength(0);
+            WorkbenchRow.Height = new GridLength(1, GridUnitType.Star);
+            RulesPanel.ClearValue(MaxHeightProperty);
+            Grid.SetColumn(RulesPanel, 4);
+            Grid.SetRow(RulesPanel, 0);
+            Grid.SetColumnSpan(RulesPanel, 1);
+            Grid.SetRowSpan(FilesPanel, 1);
+            RulesColumnLine.Visibility = Visibility.Visible;
+            RulesRowLine.Visibility = Visibility.Collapsed;
+        }
+    }
+
     private void OnDragOver(object sender, DragEventArgs e)
     {
         e.Effects = DataContext is BatchFormatViewModel { CanConfigure: true } && e.Data.GetDataPresent(DataFormats.FileDrop)

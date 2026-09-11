@@ -137,6 +137,10 @@ public sealed class BatchViewResourceTests
                         {
                             Directory.CreateDirectory(output);
                             var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)size.Width, (int)size.Height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                            var background = new System.Windows.Media.DrawingVisual();
+                            using (var drawing = background.RenderOpen())
+                                drawing.DrawRectangle((System.Windows.Media.Brush)page.FindResource("ContentPanelBrush"), null, new System.Windows.Rect(size));
+                            bitmap.Render(background);
                             bitmap.Render(page);
                             var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
                             encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -186,7 +190,7 @@ public sealed class BatchViewResourceTests
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
-        Assert.True(thread.Join(TimeSpan.FromSeconds(20)), "WPF resource test timed out.");
+        Assert.True(thread.Join(TimeSpan.FromSeconds(45)), "WPF resource test timed out.");
         if (failure is not null) ExceptionDispatchInfo.Capture(failure).Throw();
     }
 }

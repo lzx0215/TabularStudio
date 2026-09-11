@@ -1,44 +1,195 @@
-<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:vm="clr-namespace:TabularStudio.App.ViewModels" xmlns:views="clr-namespace:TabularStudio.App.Views" x:Class="TabularStudio.App.MainWindow" mc:Ignorable="d" Title="TabularStudio - 本地离线表格工具" Width="1280" Height="720" MinWidth="960" MinHeight="640" WindowStartupLocation="CenterScreen" Background="{StaticResource AppBackgroundBrush}" FontFamily="Segoe UI, Microsoft YaHei UI" FontSize="13">
+<Window x:Class="TabularStudio.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:TabularStudio.App.ViewModels"
+        xmlns:views="clr-namespace:TabularStudio.App.Views"
+        mc:Ignorable="d"
+        Title="TabularStudio - 本地离线表格工具"
+        Width="1280"
+        Height="720"
+        MinWidth="960"
+        MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource AppBackgroundBrush}"
+        FontFamily="{StaticResource AppFontFamily}"
+        FontSize="14"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
     <Window.Resources>
         <DataTemplate DataType="{x:Type vm:TableComparisonViewModel}">
             <views:TableComparisonView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:BatchFormatViewModel}">
-            <views:BatchFormatView/>
+            <views:BatchFormatView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:FormatStandardizationViewModel}">
-            <views:FormatStandardizationView/>
+            <views:FormatStandardizationView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:DataMatchingViewModel}">
-            <views:DataMatchingView/>
+            <views:DataMatchingView />
         </DataTemplate>
     </Window.Resources>
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="44"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="20"/>
-        </Grid.RowDefinitions>
-        <Border Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="12,4">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Left" Margin="0,0,40,0" VerticalAlignment="Center">
-                    <TextBlock Text="TabularStudio" FontSize="16" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="196" />
+            <ColumnDefinition Width="1" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
+        <!-- 侧栏 -->
+        <Grid Grid.Column="0" Background="{StaticResource SidebarBackgroundBrush}">
+            <Path Data="M -40,420 A 220,160 0 0 1 220,560"
+                  Stroke="{StaticResource DecorationBrush}"
+                  StrokeThickness="1.2"
+                  Fill="Transparent"
+                  Opacity="0.05"
+                  Stretch="Fill"
+                  Margin="-30,0,-20,-40"
+                  VerticalAlignment="Bottom"
+                  Height="220"
+                  IsHitTestVisible="False" />
+            <Path Data="M 20,20 A 80,80 0 0 0 160,8"
+                  Stroke="{StaticResource DecorationBrush}"
+                  StrokeThickness="1"
+                  Fill="Transparent"
+                  Opacity="0.04"
+                  Margin="8,8,8,0"
+                  VerticalAlignment="Top"
+                  Height="36"
+                  IsHitTestVisible="False" />
+            <Grid Margin="0,20,0,16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Margin="18,0,16,16">
+                    <TextBlock Text="TabularStudio"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}" />
+                    <TextBlock Text="本地离线表格工具"
+                               Style="{StaticResource CaptionStyle}"
+                               Margin="0,4,0,0" />
                 </StackPanel>
+                <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" Margin="16,0,16,16" />
+                <StackPanel Grid.Row="2">
+                    <RadioButton Style="{StaticResource NavButtonStyle}"
+                                 IsChecked="{Binding IsFormatStandardizationSelected, Mode=TwoWay}"
+                                 Command="{Binding SelectFormatStandardizationCommand}"
+                                 AutomationProperties.Name="格式统一">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource NavGlyphStyle}" Data="{StaticResource IconFormat}" />
+                            <TextBlock Text="格式统一" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavButtonStyle}"
+                                 IsChecked="{Binding IsDataMatchingSelected, Mode=TwoWay}"
+                                 Command="{Binding SelectDataMatchingCommand}"
+                                 AutomationProperties.Name="数据匹配">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource NavGlyphStyle}" Data="{StaticResource IconMatch}" />
+                            <TextBlock Text="数据匹配" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavButtonStyle}"
+                                 IsChecked="{Binding IsTableComparisonSelected, Mode=TwoWay}"
+                                 Command="{Binding SelectTableComparisonCommand}"
+                                 AutomationProperties.Name="表格对比">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource NavGlyphStyle}" Data="{StaticResource IconCompare}" />
+                            <TextBlock Text="表格对比" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+                </StackPanel>
+                <StackPanel Grid.Row="3" Margin="18,12,16,4">
+                    <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,0,0,12" />
+                    <StackPanel Orientation="Horizontal">
+                        <Path Width="14" Height="14" Stretch="Uniform" Fill="Transparent"
+                              Stroke="{StaticResource SuccessBrush}" StrokeThickness="1.4"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                              Data="{StaticResource IconOffline}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <TextBlock Text="完全离线" Style="{StaticResource CaptionStyle}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="不连接网络或云服务" Style="{StaticResource CaptionStyle}" Margin="22,4,0,0" />
+                </StackPanel>
+            </Grid>
+        </Grid>
 
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <RadioButton Content="格式统一" Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsFormatStandardizationSelected, Mode=TwoWay}" Command="{Binding SelectFormatStandardizationCommand}" Margin="0,0,8,0"/>
-                    <RadioButton Content="数据匹配" Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsDataMatchingSelected, Mode=TwoWay}" Command="{Binding SelectDataMatchingCommand}"/>
-                    <RadioButton Content="表格对比" Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsTableComparisonSelected, Mode=TwoWay}" Command="{Binding SelectTableComparisonCommand}" Margin="8,0,0,0"/>
+        <!-- 贯穿竖线 -->
+        <Border Grid.Column="1" Style="{StaticResource VerticalHairlineStyle}" />
+
+        <!-- 工作区 -->
+        <Grid Grid.Column="2" Background="{StaticResource ContentPanelBrush}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="1" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="1" />
+                <RowDefinition Height="28" />
+            </Grid.RowDefinitions>
+
+            <Grid Margin="24,16,24,8">
+                <StackPanel>
+                    <TextBlock>
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource PageTitleStyle}">
+                                <Setter Property="Text" Value="格式统一" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsDataMatchingSelected}" Value="True">
+                                        <Setter Property="Text" Value="数据匹配" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsTableComparisonSelected}" Value="True">
+                                        <Setter Property="Text" Value="表格对比" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock>
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource PageSubtitleStyle}">
+                                <Setter Property="Text" Value="按文件整理表格格式，分别生成结果。" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsDataMatchingSelected}" Value="True">
+                                        <Setter Property="Text" Value="用多条件精确匹配主表与对照表，并带回字段。" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsTableComparisonSelected}" Value="True">
+                                        <Setter Property="Text" Value="从 A1 开始按相同位置比较数据，忽略样式。" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="1" Style="{StaticResource HairlineStyle}" />
+            <Path Grid.Row="1" Style="{StaticResource JunctionNodeStyle}"
+                  HorizontalAlignment="Left" VerticalAlignment="Center" Margin="-3,0,0,0" />
+
+            <ContentControl Grid.Row="2" Content="{Binding CurrentViewViewModel}" Margin="24,16,24,8" />
+
+            <Border Grid.Row="3" Style="{StaticResource HairlineStyle}" />
+            <Path Grid.Row="3" Style="{StaticResource JunctionNodeStyle}"
+                  HorizontalAlignment="Left" VerticalAlignment="Center" Margin="-3,0,0,0" />
+
+            <DockPanel Grid.Row="4" Margin="24,0">
+                <TextBlock DockPanel.Dock="Right"
+                           Text="离线环境已就绪"
+                           Foreground="{StaticResource SuccessBrush}"
+                           FontSize="12"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="{Binding StatusMessage}"
+                           FontSize="12"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" />
             </DockPanel>
-        </Border>
-        <ContentControl Grid.Row="1" Content="{Binding CurrentViewViewModel}"/>
-        <Border Grid.Row="2" Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="20,0">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Right" Text="离线环境已就绪" Foreground="#047857" FontSize="11" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
-            </DockPanel>
-        </Border>
+        </Grid>
     </Grid>
 </Window>

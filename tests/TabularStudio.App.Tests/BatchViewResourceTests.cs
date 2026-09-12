@@ -153,8 +153,31 @@ public sealed class BatchViewResourceTests
                 var referenceGrid = (DataGrid)matching.FindName("ReferencePreviewDataGrid");
                 var masterOrigin = masterGrid.TranslatePoint(new Point(), matching);
                 var referenceOrigin = referenceGrid.TranslatePoint(new Point(), matching);
-                Assert.Equal(masterOrigin.Y, referenceOrigin.Y, precision: 1);
-                Assert.True(referenceOrigin.X > masterOrigin.X + masterGrid.ActualWidth);
+                Assert.Equal(masterOrigin.X, referenceOrigin.X, precision: 1);
+                Assert.True(referenceOrigin.Y > masterOrigin.Y + masterGrid.ActualHeight);
+
+                // Scheme B: Styles and responsive breakpoint assertions
+                Assert.NotNull(view.FindResource("TopNavTabStyle"));
+                Assert.NotNull(view.FindResource("WorkbenchExpanderStyle"));
+
+                // BatchFormatView breakpoint at 1000 DIP
+                view.Width = 1100; view.Measure(new Size(1100, 700)); view.Arrange(new Rect(0, 0, 1100, 700)); view.UpdateLayout();
+                var rulesCol = (ColumnDefinition)view.FindName("RulesColumn");
+                var filesCol = (ColumnDefinition)view.FindName("FilesColumn");
+                Assert.Equal(260, rulesCol.Width.Value);
+                Assert.Equal(220, filesCol.Width.Value);
+
+                view.Width = 960; view.Measure(new Size(960, 700)); view.Arrange(new Rect(0, 0, 960, 700)); view.UpdateLayout();
+                Assert.Equal(0, rulesCol.Width.Value);
+                Assert.Equal(188, filesCol.Width.Value);
+
+                // DataMatchingView breakpoint at 1040 DIP
+                matching.Width = 1100; matching.Measure(new Size(1100, 700)); matching.Arrange(new Rect(0, 0, 1100, 700)); matching.UpdateLayout();
+                var settingsCol = (ColumnDefinition)matching.FindName("SettingsColumn");
+                Assert.Equal(340, settingsCol.Width.Value);
+
+                matching.Width = 980; matching.Measure(new Size(980, 700)); matching.Arrange(new Rect(0, 0, 980, 700)); matching.UpdateLayout();
+                Assert.Equal(300, settingsCol.Width.Value);
                 // Render the complete real WPF shell (offscreen component evidence, not desktop QA).
                 var renderDirectory = Environment.GetEnvironmentVariable("TABULAR_UI_RENDER_DIR");
                 if (!string.IsNullOrEmpty(renderDirectory))

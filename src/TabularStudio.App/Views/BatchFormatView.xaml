@@ -8,234 +8,64 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     </UserControl.Resources>
-    <Grid x:Name="RootGrid">
+    <Grid Margin="24,14,24,10">
         <Grid.RowDefinitions>
-            <RowDefinition x:Name="WorkbenchRow" Height="*" />
-            <RowDefinition x:Name="RulesRowSplitter" Height="0" />
-            <RowDefinition x:Name="RulesRow" Height="0" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="FilesColumn" Width="248" MinWidth="176" />
-            <ColumnDefinition x:Name="FilesSplitter" Width="20" />
-            <ColumnDefinition x:Name="PreviewColumn" Width="*" MinWidth="240" />
-            <ColumnDefinition x:Name="RulesSplitter" Width="20" />
-            <ColumnDefinition x:Name="RulesColumn" Width="252" MinWidth="220" />
-        </Grid.ColumnDefinitions>
 
-        <!-- 文件列表 -->
-        <Grid x:Name="FilesPanel" Grid.Column="0" AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <TextBlock Text="{Binding Files.Count, StringFormat='文件列表（{0}）'}" Style="{StaticResource SectionHeaderStyle}" Margin="0" />
-            <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" />
-            <WrapPanel Grid.Row="2" IsEnabled="{Binding CanConfigure}" Margin="0,0,0,12">
-                <Button Command="{Binding BrowseFilesCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,6" Padding="10,6"
-                        ToolTip="添加一个或多个表格文件" AutomationProperties.Name="添加文件">
-                    <StackPanel Orientation="Horizontal">
-                        <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPlus}" />
-                        <TextBlock Text="添加" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding ReplaceCheckedFilesCommand}" IsEnabled="{Binding HasCheckedFiles}" Style="{StaticResource SecondaryButtonStyle}"
-                        Margin="0,0,8,6" Padding="10,6" ToolTip="替换勾选的文件" AutomationProperties.Name="修改文件">
-                    <StackPanel Orientation="Horizontal">
-                        <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPencil}" />
-                        <TextBlock Text="修改" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding RemoveSelectedCommand}" IsEnabled="{Binding HasCheckedFiles}" Style="{StaticResource SecondaryButtonStyle}"
-                        Margin="0,0,0,6" Padding="10,6" ToolTip="移除勾选的文件" AutomationProperties.Name="移除文件">
-                    <StackPanel Orientation="Horizontal">
-                        <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconTrash}" />
-                        <TextBlock Text="移除" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-            </WrapPanel>
-            <Grid Grid.Row="3">
-                <ListBox ItemsSource="{Binding Files}" SelectedItem="{Binding SelectedFile, Mode=TwoWay}" MinHeight="0"
-                         IsEnabled="{Binding CanConfigure}" HorizontalContentAlignment="Stretch" BorderThickness="0"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <DockPanel Margin="10,8,10,8">
-                                <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsChecked}" VerticalAlignment="Center" Margin="0,0,10,0"
-                                          ToolTip="勾选后可修改或移除" AutomationProperties.Name="勾选用于修改或移除" />
-                                <StackPanel>
-                                    <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FilePath}" FontSize="14" />
-                                    <DockPanel Margin="0,2,0,0">
-                                        <TextBlock DockPanel.Dock="Right" Text="当前预览" FontSize="12" Foreground="{StaticResource AccentBrush}" Margin="8,0,0,0">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Visibility" Value="Collapsed" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                                                            <Setter Property="Visibility" Value="Visible" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                        <TextBlock Text="{Binding ResultText}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
-                                                   TextTrimming="CharacterEllipsis" ToolTip="{Binding ResultText}" />
-                                    </DockPanel>
-                                </StackPanel>
-                            </DockPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-                <TextBlock Text="拖拽或添加 .xlsx / .xls / .csv 文件"
-                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12"
-                           IsHitTestVisible="False">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionStyle}">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Files.Count}" Value="0">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </Grid>
-            <TextBlock Grid.Row="4" Text="勾选用于修改或移除；单击文件名作为当前预览。" Style="{StaticResource CaptionStyle}" Margin="0,8,0,0" />
-        </Grid>
+        <!-- 页头：标题 + 配置条 -->
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="200" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-        <Border x:Name="FilesColumnLine" Grid.Column="1" Style="{StaticResource VerticalHairlineStyle}" HorizontalAlignment="Center" Width="1" />
+            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                <TextBlock Text="格式统一" Style="{StaticResource PageTitleStyle}" />
+                <TextBlock Text="按文件整理表格格式，分别生成结果。" Style="{StaticResource PageSubtitleStyle}" Margin="0,4,0,0" />
+            </StackPanel>
 
-        <!-- 当前文件与预览 -->
-        <Grid Grid.Column="2" IsEnabled="{Binding CanConfigure}">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <DockPanel>
-                <ComboBox x:Name="PreviewFileSelector" DockPanel.Dock="Right" ItemsSource="{Binding Files}"
-                          SelectedItem="{Binding SelectedFile, Mode=TwoWay}" DisplayMemberPath="FileName"
-                          MinWidth="140" MaxWidth="280" Margin="12,0,0,0" ToolTip="{Binding SelectedFile.FilePath}" />
-                <TextBlock Text="当前文件与预览" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center" />
-            </DockPanel>
-            <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" />
-            <TextBox Grid.Row="2" Text="{Binding SelectedFile.FilePath, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}"
-                     Foreground="{StaticResource TextSecondaryBrush}" IsReadOnly="True" FontSize="12" Margin="0,0,0,8"
-                     TextWrapping="NoWrap" ToolTip="{Binding SelectedFile.FilePath}" />
-            <Grid Grid.Row="3" DataContext="{Binding SelectedFile.Editor}">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <WrapPanel Margin="0,0,0,10">
-                    <DockPanel Visibility="{Binding HasWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}"
-                               Margin="0,0,16,6" LastChildFill="True" MinWidth="160">
-                        <TextBlock Text="工作表" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                        <ComboBox ItemsSource="{Binding Worksheets}" SelectedItem="{Binding SelectedWorksheet}"
-                                  DisplayMemberPath="Name" MinWidth="88" ToolTip="选择要处理的工作表" />
-                    </DockPanel>
-                    <DockPanel Margin="0,0,16,6">
-                        <TextBlock Text="表头行" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                        <TextBox Text="{Binding HeaderRowNumber, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"
-                                 Width="56" ToolTip="表头所在行，从 1 开始" />
-                    </DockPanel>
-                    <Button Command="{Binding RefreshPreviewCommand}" Style="{StaticResource SecondaryButtonStyle}"
-                            Padding="10,6" Margin="0,0,0,6" ToolTip="重新读取预览" AutomationProperties.Name="刷新预览">
-                        <StackPanel Orientation="Horizontal">
-                            <Path Style="{StaticResource StrokeButtonGlyphStyle}" Data="{StaticResource IconRefresh}" />
-                            <TextBlock Text="刷新预览" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                </WrapPanel>
-                <Grid Grid.Row="1">
-                    <DataGrid x:Name="FilePreviewGrid"
-                              ItemsSource="{Binding PreviewDataTable.DefaultView}"
-                              AutoGeneratingColumn="OnPreviewAutoGeneratingColumn"
-                              IsReadOnly="True"
-                              AutoGenerateColumns="True"
-                              CanUserAddRows="False"
-                              EnableRowVirtualization="True"
-                              EnableColumnVirtualization="True"
-                              MinHeight="80" />
-                    <Border Style="{StaticResource EmptyOverlayStyle}"
-                            Visibility="{Binding ShowPreviewEmptyNotice, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock Text="{Binding PreviewEmptyMessage}" Style="{StaticResource CaptionStyle}"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16" />
-                    </Border>
-                </Grid>
-            </Grid>
-            <DockPanel Grid.Row="4" Margin="0,10,0,0" DataContext="{Binding SelectedFile.Editor}">
-                <TextBlock DockPanel.Dock="Left" Text="此文件输出" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                <Button DockPanel.Dock="Right" Command="{Binding ChangeOutputPathCommand}" Style="{StaticResource SecondaryButtonStyle}"
-                        Margin="8,0,0,0" Padding="10,6" AutomationProperties.Name="此文件输出路径">
-                    <StackPanel Orientation="Horizontal">
-                        <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
-                        <TextBlock Text="此文件输出…" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-                <TextBox Text="{Binding OutputFilePath, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding OutputFilePath}" />
-            </DockPanel>
-        </Grid>
-
-        <Border x:Name="RulesColumnLine" Grid.Column="3" Style="{StaticResource VerticalHairlineStyle}" HorizontalAlignment="Center" Width="1" />
-
-        <!-- 处理配置与规则 -->
-        <ScrollViewer x:Name="RulesPanel" Grid.Column="4" VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled" IsEnabled="{Binding CanConfigure}">
-            <StackPanel>
-            <TextBlock Text="处理配置" Style="{StaticResource SectionHeaderStyle}" Margin="0" />
-            <Border Style="{StaticResource HorizontalHairlineStyle}" />
-            <StackPanel>
-                <Grid>
-                    <ComboBox ItemsSource="{Binding Profiles}"
-                              SelectedItem="{Binding SelectedProfile}"
-                              DisplayMemberPath="Name"
-                              IsEnabled="{Binding CanSelectProfile}"
-                              AutomationProperties.Name="处理配置" />
-                    <TextBlock IsHitTestVisible="False" VerticalAlignment="Center" Margin="10,0,28,0" Foreground="{StaticResource TextMutedBrush}" FontSize="14">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Text" Value="请选择配置…" />
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasProfiles}" Value="False">
-                                        <Setter Property="Text" Value="暂无保存配置" />
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding HasProfiles}" Value="True" />
-                                            <Condition Binding="{Binding SelectedProfile}" Value="{x:Null}" />
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter Property="Text" Value="请选择配置…" />
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </MultiDataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </Grid>
-                <Grid Margin="0,8,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Button Content="应用" Command="{Binding ApplyProfileCommand}" IsEnabled="{Binding CanApplyProfile}" />
-                    <Button Grid.Column="2" Content="保存配置…" Command="{Binding SaveProfileCommand}" IsEnabled="{Binding CanSaveProfile}" />
-                    <Button Grid.Column="4" Content="删除" Command="{Binding DeleteProfileCommand}" IsEnabled="{Binding CanDeleteProfile}" />
-                </Grid>
-                <ScrollViewer MaxHeight="72" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,8,0,0">
-                    <TextBlock Text="{Binding ProfileStatusMessage}" TextWrapping="Wrap" FontSize="12">
+            <!-- 处理配置条 -->
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="处理配置" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <Grid Width="150" Margin="0,0,8,0">
+                        <ComboBox ItemsSource="{Binding Profiles}"
+                                  SelectedItem="{Binding SelectedProfile}"
+                                  DisplayMemberPath="Name"
+                                  IsEnabled="{Binding CanSelectProfile}"
+                                  AutomationProperties.Name="处理配置" />
+                        <TextBlock IsHitTestVisible="False" VerticalAlignment="Center" Margin="10,0,28,0" Foreground="{StaticResource TextMutedBrush}" FontSize="13">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="请选择配置…" />
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasProfiles}" Value="False">
+                                            <Setter Property="Text" Value="暂无保存配置" />
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding HasProfiles}" Value="True" />
+                                                <Condition Binding="{Binding SelectedProfile}" Value="{x:Null}" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Text" Value="请选择配置…" />
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                    <Button Content="应用" Command="{Binding ApplyProfileCommand}" IsEnabled="{Binding CanApplyProfile}" Margin="0,0,6,0" Padding="12,5" />
+                    <Button Content="保存配置…" Command="{Binding SaveProfileCommand}" IsEnabled="{Binding CanSaveProfile}" Margin="0,0,6,0" Padding="12,5" />
+                    <Button Content="删除" Command="{Binding DeleteProfileCommand}" IsEnabled="{Binding CanDeleteProfile}" Padding="12,5" />
+                </StackPanel>
+                <ScrollViewer MaxHeight="48" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,4,0,0">
+                    <TextBlock Text="{Binding ProfileStatusMessage}" TextWrapping="Wrap" FontSize="12" HorizontalAlignment="Right">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
@@ -255,121 +85,309 @@
                     </TextBlock>
                 </ScrollViewer>
             </StackPanel>
-            <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,12,0,12" />
-            <TextBlock Text="整批共用规则" Style="{StaticResource SectionHeaderStyle}" />
-            <CheckBox Content="清理前后空格" IsChecked="{Binding Rules.TrimOuterWhitespace}" Margin="0,0,0,10" ToolTip="清理前后空格" />
-            <CheckBox Content="清理隐藏字符 / Tab / 换行" IsChecked="{Binding Rules.RemoveTabsNewLinesAndHiddenCharacters}" Margin="0,0,0,10" ToolTip="清理 Tab / 换行 / 隐藏字符" />
-            <CheckBox Content="全角 / 半角统一" IsChecked="{Binding Rules.NormalizeFullWidthHalfWidth}" Margin="0,0,0,10" ToolTip="全角 / 半角统一" />
-            <CheckBox Content="Unicode 标准化" IsChecked="{Binding Rules.NormalizeUnicode}" Margin="0,0,0,10" ToolTip="Unicode 标准化" />
-            <CheckBox Content="普通数字安全统一" IsChecked="{Binding Rules.NormalizeSafeNumbers}" Margin="0,0,0,10" ToolTip="普通数字安全统一" />
-            <CheckBox Content="明确日期安全统一" IsChecked="{Binding Rules.NormalizeUnambiguousDates}" Margin="0,0,0,12" ToolTip="明确日期安全统一" />
-            <Border Style="{StaticResource WarningBannerStyle}" Padding="10,8" Margin="0,0,0,8">
-                <DockPanel>
-                    <Path DockPanel.Dock="Left" Width="14" Height="14" Stretch="Uniform" Fill="Transparent"
-                          Stroke="{StaticResource WarningBrush}" StrokeThickness="1.4"
-                          Data="{StaticResource IconLock}" Margin="0,2,8,0" VerticalAlignment="Top" />
-                    <TextBlock Text="前导 0、长数字始终保护；公式保持不变。以上保护不可关闭。可选规则默认不启用。"
-                               FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" />
-                </DockPanel>
-            </Border>
-            <TextBlock Text="{Binding RuleHint}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" FontSize="12" />
-            </StackPanel>
-        </ScrollViewer>
+        </Grid>
 
-        <Border x:Name="RulesRowLine" Grid.Row="1" Grid.Column="2" Style="{StaticResource HorizontalHairlineStyle}"
-                Margin="0,8,0,8" Visibility="Collapsed" />
+        <Border Grid.Row="1" Style="{StaticResource HairlineStyle}" Margin="0,0,0,12" />
 
-        <!-- 错误 -->
-        <ScrollViewer Grid.Row="3" Grid.ColumnSpan="5" VerticalScrollBarVisibility="Auto" MaxHeight="96" Margin="0,8,0,0">
-            <StackPanel>
-                <TextBlock Text="{Binding SelectedFile.Editor.ErrorMessage}" TextWrapping="Wrap" Foreground="{StaticResource DangerBrush}" Margin="0,0,0,6" />
-                <ItemsControl ItemsSource="{Binding Failures}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Style="{StaticResource ErrorBannerStyle}" Margin="0,0,0,8">
-                                <StackPanel>
-                                    <TextBox Text="{Binding FilePath, Mode=OneWay, StringFormat='失败文件：{0}'}" Style="{StaticResource BareTextBoxStyle}"
-                                             TextWrapping="Wrap" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}" IsReadOnly="True" />
-                                    <TextBox Text="{Binding Reason, Mode=OneWay, StringFormat='原因：{0}'}" Style="{StaticResource BareTextBoxStyle}"
-                                             TextWrapping="Wrap" Margin="0,4,0,0" IsReadOnly="True" />
-                                    <TextBox Text="{Binding Context, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}"
-                                             TextWrapping="Wrap" Margin="0,4,0,0" IsReadOnly="True" />
-                                    <TextBox Text="{Binding Detail, Mode=OneWay, StringFormat='详情：{0}'}" Style="{StaticResource BareTextBoxStyle}"
-                                             TextWrapping="Wrap" Margin="0,4,0,0" IsReadOnly="True" />
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
-            <ScrollViewer.Style>
-                <Style TargetType="ScrollViewer">
-                    <Style.Triggers>
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding Failures.Count}" Value="0" />
-                                <Condition Binding="{Binding SelectedFile.Editor.HasError, TargetNullValue=False, FallbackValue=False}" Value="False" />
-                            </MultiDataTrigger.Conditions>
-                            <Setter Property="Visibility" Value="Collapsed" />
-                        </MultiDataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </ScrollViewer.Style>
-        </ScrollViewer>
+        <!-- 主工作区 -->
+        <Grid x:Name="RootGrid" Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition x:Name="WorkbenchRow" Height="*" />
+                <RowDefinition x:Name="RulesRowSplitter" Height="0" />
+                <RowDefinition x:Name="RulesRow" Height="0" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="FilesColumn" Width="220" MinWidth="176" />
+                <ColumnDefinition x:Name="FilesSplitter" Width="16" />
+                <ColumnDefinition x:Name="PreviewColumn" Width="*" MinWidth="320" />
+                <ColumnDefinition x:Name="RulesSplitter" Width="16" />
+                <ColumnDefinition x:Name="RulesColumn" Width="260" MinWidth="220" />
+            </Grid.ColumnDefinitions>
 
-        <Border x:Name="FixedFooter" Grid.Row="4" Grid.ColumnSpan="5" Style="{StaticResource FooterBarStyle}">
-            <Grid>
+            <!-- 文件列表 -->
+            <Grid x:Name="FilesPanel" Grid.Column="0" AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <DockPanel>
-                        <TextBlock Text="整批输出" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                        <Button DockPanel.Dock="Right" Command="{Binding ChooseOutputDirectoryCommand}" IsEnabled="{Binding CanConfigure}"
-                                Margin="8,0,0,0" AutomationProperties.Name="更改输出目录">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
-                                <TextBlock Text="更改目录" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
-                        <TextBox Text="{Binding OutputDirectoryDisplay, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding OutputDirectoryDisplay}" />
-                    </DockPanel>
-                    <Button x:Name="StartButton" Grid.Column="2" Command="{Binding StartCommand}" IsEnabled="{Binding CanStart}"
-                            Style="{StaticResource PrimaryButtonStyle}" MinWidth="148" AutomationProperties.Name="开始处理">
+                <TextBlock Text="{Binding Files.Count, StringFormat='文件列表（{0}）'}" Style="{StaticResource SectionHeaderStyle}" Margin="0" />
+                <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" />
+                <WrapPanel Grid.Row="2" IsEnabled="{Binding CanConfigure}" Margin="0,0,0,12">
+                    <Button Command="{Binding BrowseFilesCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,6" Padding="10,6"
+                            ToolTip="添加一个或多个表格文件" AutomationProperties.Name="添加文件">
                         <StackPanel Orientation="Horizontal">
-                            <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPlay}" Fill="{StaticResource OnAccentBrush}" />
-                            <TextBlock Text="开始处理" VerticalAlignment="Center" />
+                            <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPlus}" />
+                            <TextBlock Text="添加" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <Button Command="{Binding ReplaceCheckedFilesCommand}" IsEnabled="{Binding HasCheckedFiles}" Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,8,6" Padding="10,6" ToolTip="替换勾选的文件" AutomationProperties.Name="修改文件">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPencil}" />
+                            <TextBlock Text="修改" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding RemoveSelectedCommand}" IsEnabled="{Binding HasCheckedFiles}" Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,0,6" Padding="10,6" ToolTip="移除勾选的文件" AutomationProperties.Name="移除文件">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconTrash}" />
+                            <TextBlock Text="移除" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+                <Grid Grid.Row="3">
+                    <ListBox ItemsSource="{Binding Files}" SelectedItem="{Binding SelectedFile, Mode=TwoWay}" MinHeight="0"
+                             IsEnabled="{Binding CanConfigure}" HorizontalContentAlignment="Stretch" BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="10,8,10,8">
+                                    <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsChecked}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                              ToolTip="勾选后可修改或移除" AutomationProperties.Name="勾选用于修改或移除" />
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FilePath}" FontSize="14" />
+                                        <DockPanel Margin="0,2,0,0">
+                                            <TextBlock DockPanel.Dock="Right" Text="当前预览" FontSize="12" Foreground="{StaticResource AccentBrush}" Margin="8,0,0,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding ResultText}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding ResultText}" />
+                                        </DockPanel>
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <TextBlock Text="拖拽或添加 .xlsx / .xls / .csv 文件"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12"
+                               IsHitTestVisible="False">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionStyle}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Files.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </Grid>
-                <DockPanel Grid.Row="1" Margin="0,10,0,0">
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                        <Button Content="所选结果用于匹配" Command="{Binding SendSelectedToMatchingCommand}" IsEnabled="{Binding CanUseSelectedResult}" Margin="0,0,8,0" />
-                        <Button Command="{Binding OpenSelectedResultCommand}" IsEnabled="{Binding CanUseSelectedResult}" Margin="0,0,8,0">
+                <TextBlock Grid.Row="4" Text="勾选用于修改或移除；单击文件名作为当前预览。" Style="{StaticResource CaptionStyle}" Margin="0,8,0,0" />
+            </Grid>
+
+            <Border x:Name="FilesColumnLine" Grid.Column="1" Style="{StaticResource VerticalHairlineStyle}" HorizontalAlignment="Center" Width="1" />
+
+            <!-- 当前文件与预览 -->
+            <Grid Grid.Column="2" IsEnabled="{Binding CanConfigure}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <DockPanel>
+                    <ComboBox x:Name="PreviewFileSelector" DockPanel.Dock="Right" ItemsSource="{Binding Files}"
+                              SelectedItem="{Binding SelectedFile, Mode=TwoWay}" DisplayMemberPath="FileName"
+                              MinWidth="140" MaxWidth="280" Margin="12,0,0,0" ToolTip="{Binding SelectedFile.FilePath}" />
+                    <TextBlock Text="当前文件与预览" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center" />
+                </DockPanel>
+                <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" />
+                <TextBox Grid.Row="2" Text="{Binding SelectedFile.FilePath, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}"
+                         Foreground="{StaticResource TextSecondaryBrush}" IsReadOnly="True" FontSize="12" Margin="0,0,0,8"
+                         TextWrapping="NoWrap" ToolTip="{Binding SelectedFile.FilePath}" />
+                <Grid Grid.Row="3" DataContext="{Binding SelectedFile.Editor}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <WrapPanel Margin="0,0,0,10">
+                        <DockPanel Visibility="{Binding HasWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}"
+                                   Margin="0,0,16,6" LastChildFill="True" MinWidth="160">
+                            <TextBlock Text="工作表" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
+                            <ComboBox ItemsSource="{Binding Worksheets}" SelectedItem="{Binding SelectedWorksheet}"
+                                      DisplayMemberPath="Name" MinWidth="88" ToolTip="选择要处理的工作表" />
+                        </DockPanel>
+                        <DockPanel Margin="0,0,16,6">
+                            <TextBlock Text="表头行" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
+                            <TextBox Text="{Binding HeaderRowNumber, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"
+                                     Width="56" ToolTip="表头所在行，从 1 开始" />
+                        </DockPanel>
+                        <Button Command="{Binding RefreshPreviewCommand}" Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="10,6" Margin="0,0,0,6" ToolTip="重新读取预览" AutomationProperties.Name="刷新预览">
                             <StackPanel Orientation="Horizontal">
-                                <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFile}" Margin="0,0,6,0" />
-                                <TextBlock Text="打开结果" VerticalAlignment="Center" />
+                                <Path Style="{StaticResource StrokeButtonGlyphStyle}" Data="{StaticResource IconRefresh}" />
+                                <TextBlock Text="刷新预览" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button Command="{Binding OpenSelectedDirectoryCommand}" IsEnabled="{Binding CanUseSelectedResult}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
-                                <TextBlock Text="打开目录" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-                    <StackPanel Margin="0,0,16,0">
-                        <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
-                        <ProgressBar Value="{Binding ProgressPercent}" Margin="0,6,0,0" />
-                    </StackPanel>
+                    </WrapPanel>
+                    <Grid Grid.Row="1">
+                        <DataGrid x:Name="FilePreviewGrid"
+                                  ItemsSource="{Binding PreviewDataTable.DefaultView}"
+                                  AutoGeneratingColumn="OnPreviewAutoGeneratingColumn"
+                                  IsReadOnly="True"
+                                  AutoGenerateColumns="True"
+                                  CanUserAddRows="False"
+                                  EnableRowVirtualization="True"
+                                  EnableColumnVirtualization="True"
+                                  MinHeight="80" />
+                        <Border Style="{StaticResource EmptyOverlayStyle}"
+                                Visibility="{Binding ShowPreviewEmptyNotice, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="{Binding PreviewEmptyMessage}" Style="{StaticResource CaptionStyle}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16" />
+                        </Border>
+                    </Grid>
+                </Grid>
+                <DockPanel Grid.Row="4" Margin="0,10,0,0" DataContext="{Binding SelectedFile.Editor}">
+                    <TextBlock DockPanel.Dock="Left" Text="此文件输出" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
+                    <Button DockPanel.Dock="Right" Command="{Binding ChangeOutputPathCommand}" Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="8,0,0,0" Padding="10,6" AutomationProperties.Name="此文件输出路径">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
+                            <TextBlock Text="此文件输出…" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <TextBox Text="{Binding OutputFilePath, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding OutputFilePath}" />
                 </DockPanel>
             </Grid>
-        </Border>
+
+            <Border x:Name="RulesColumnLine" Grid.Column="3" Style="{StaticResource VerticalHairlineStyle}" HorizontalAlignment="Center" Width="1" />
+
+            <!-- 整批共用规则 -->
+            <ScrollViewer x:Name="RulesPanel" Grid.Column="4" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled" IsEnabled="{Binding CanConfigure}">
+                <StackPanel>
+                    <TextBlock Text="整批共用规则" Style="{StaticResource SectionHeaderStyle}" Margin="0" />
+                    <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,0,0,12" />
+                    <CheckBox Content="清理前后空格" IsChecked="{Binding Rules.TrimOuterWhitespace}" Margin="0,0,0,10" ToolTip="清理前后空格" />
+                    <CheckBox Content="清理隐藏字符 / Tab / 换行" IsChecked="{Binding Rules.RemoveTabsNewLinesAndHiddenCharacters}" Margin="0,0,0,10" ToolTip="清理 Tab / 换行 / 隐藏字符" />
+                    <CheckBox Content="全角 / 半角统一" IsChecked="{Binding Rules.NormalizeFullWidthHalfWidth}" Margin="0,0,0,10" ToolTip="全角 / 半角统一" />
+                    <CheckBox Content="Unicode 标准化" IsChecked="{Binding Rules.NormalizeUnicode}" Margin="0,0,0,10" ToolTip="Unicode 标准化" />
+                    <CheckBox Content="普通数字安全统一" IsChecked="{Binding Rules.NormalizeSafeNumbers}" Margin="0,0,0,10" ToolTip="普通数字安全统一" />
+                    <CheckBox Content="明确日期安全统一" IsChecked="{Binding Rules.NormalizeUnambiguousDates}" Margin="0,0,0,12" ToolTip="明确日期安全统一" />
+                    <Border Style="{StaticResource WarningBannerStyle}" Padding="10,8" Margin="0,0,0,8">
+                        <DockPanel>
+                            <Path DockPanel.Dock="Left" Width="14" Height="14" Stretch="Uniform" Fill="Transparent"
+                                  Stroke="{StaticResource WarningBrush}" StrokeThickness="1.4"
+                                  Data="{StaticResource IconLock}" Margin="0,2,8,0" VerticalAlignment="Top" />
+                            <TextBlock Text="前导 0、长数字始终保护；公式保持不变。以上保护不可关闭。可选规则默认不启用。"
+                                       FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" />
+                        </DockPanel>
+                    </Border>
+                    <TextBlock Text="{Binding RuleHint}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" FontSize="12" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border x:Name="RulesRowLine" Grid.Row="1" Grid.Column="2" Style="{StaticResource HorizontalHairlineStyle}"
+                    Margin="0,8,0,8" Visibility="Collapsed" />
+
+            <!-- 错误 -->
+            <ScrollViewer Grid.Row="3" Grid.ColumnSpan="5" VerticalScrollBarVisibility="Auto" MaxHeight="96" Margin="0,8,0,0">
+                <StackPanel>
+                    <TextBlock Text="{Binding SelectedFile.Editor.ErrorMessage}" TextWrapping="Wrap" Foreground="{StaticResource DangerBrush}" Margin="0,0,0,6" />
+                    <ItemsControl ItemsSource="{Binding Failures}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource ErrorBannerStyle}" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBox Text="{Binding FilePath, Mode=OneWay, StringFormat='失败文件：{0}'}" Style="{StaticResource BareTextBoxStyle}"
+                                                 TextWrapping="Wrap" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}" IsReadOnly="True" />
+                                        <TextBox Text="{Binding Reason, Mode=OneWay, StringFormat='原因：{0}'}" Style="{StaticResource BareTextBoxStyle}"
+                                                 TextWrapping="Wrap" Margin="0,4,0,0" IsReadOnly="True" />
+                                        <TextBox Text="{Binding Context, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}"
+                                                 TextWrapping="Wrap" Margin="0,4,0,0" IsReadOnly="True" />
+                                        <TextBox Text="{Binding Detail, Mode=OneWay, StringFormat='详情：{0}'}" Style="{StaticResource BareTextBoxStyle}"
+                                                 TextWrapping="Wrap" Margin="0,4,0,0" IsReadOnly="True" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer">
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Failures.Count}" Value="0" />
+                                    <Condition Binding="{Binding SelectedFile.Editor.HasError, TargetNullValue=False, FallbackValue=False}" Value="False" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ScrollViewer.Style>
+            </ScrollViewer>
+
+            <Border x:Name="FixedFooter" Grid.Row="4" Grid.ColumnSpan="5" Style="{StaticResource FooterBarStyle}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <DockPanel>
+                            <TextBlock Text="整批输出" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
+                            <Button DockPanel.Dock="Right" Command="{Binding ChooseOutputDirectoryCommand}" IsEnabled="{Binding CanConfigure}"
+                                    Margin="8,0,0,0" AutomationProperties.Name="更改输出目录">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
+                                    <TextBlock Text="更改目录" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <TextBox Text="{Binding OutputDirectoryDisplay, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding OutputDirectoryDisplay}" />
+                        </DockPanel>
+                        <Button x:Name="StartButton" Grid.Column="2" Command="{Binding StartCommand}" IsEnabled="{Binding CanStart}"
+                                Style="{StaticResource PrimaryButtonStyle}" MinWidth="148" AutomationProperties.Name="开始处理">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPlay}" Fill="{StaticResource OnAccentBrush}" />
+                                <TextBlock Text="开始处理" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    <DockPanel Grid.Row="1" Margin="0,10,0,0">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Content="所选结果用于匹配" Command="{Binding SendSelectedToMatchingCommand}" IsEnabled="{Binding CanUseSelectedResult}" Margin="0,0,8,0" />
+                            <Button Command="{Binding OpenSelectedResultCommand}" IsEnabled="{Binding CanUseSelectedResult}" Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFile}" Margin="0,0,6,0" />
+                                    <TextBlock Text="打开结果" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding OpenSelectedDirectoryCommand}" IsEnabled="{Binding CanUseSelectedResult}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
+                                    <TextBlock Text="打开目录" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                            <ProgressBar Value="{Binding ProgressPercent}" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </DockPanel>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

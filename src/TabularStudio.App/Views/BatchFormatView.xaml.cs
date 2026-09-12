@@ -6,7 +6,7 @@ namespace TabularStudio.App.Views;
 
 public partial class BatchFormatView : UserControl
 {
-    private const double CompactWidth = 900;
+    private const double CompactWidth = 1000;
     private bool _compact;
 
     public BatchFormatView()
@@ -33,21 +33,22 @@ public partial class BatchFormatView : UserControl
             RulesColumn.Width = new GridLength(0);
             RulesColumn.MinWidth = 0;
             RulesRowSplitter.Height = new GridLength(0);
-            RulesRow.Height = new GridLength(1, GridUnitType.Star);
-            WorkbenchRow.Height = new GridLength(1.8, GridUnitType.Star);
+            RulesRow.Height = new GridLength(2, GridUnitType.Star);
+            WorkbenchRow.Height = new GridLength(3, GridUnitType.Star);
             RulesPanel.ClearValue(MaxHeightProperty);
             Grid.SetColumn(RulesPanel, 2);
             Grid.SetRow(RulesPanel, 2);
             Grid.SetColumnSpan(RulesPanel, 1);
             Grid.SetRowSpan(FilesPanel, 3);
+            Grid.SetRowSpan(FilesColumnLine, 3);
             RulesColumnLine.Visibility = Visibility.Collapsed;
             RulesRowLine.Visibility = Visibility.Visible;
         }
         else
         {
-            FilesColumn.Width = new GridLength(248);
-            RulesSplitter.Width = new GridLength(20);
-            RulesColumn.Width = new GridLength(252);
+            FilesColumn.Width = new GridLength(220);
+            RulesSplitter.Width = new GridLength(16);
+            RulesColumn.Width = new GridLength(260);
             RulesColumn.MinWidth = 220;
             RulesRowSplitter.Height = new GridLength(0);
             RulesRow.Height = new GridLength(0);
@@ -57,6 +58,7 @@ public partial class BatchFormatView : UserControl
             Grid.SetRow(RulesPanel, 0);
             Grid.SetColumnSpan(RulesPanel, 1);
             Grid.SetRowSpan(FilesPanel, 1);
+            Grid.SetRowSpan(FilesColumnLine, 1);
             RulesColumnLine.Visibility = Visibility.Visible;
             RulesRowLine.Visibility = Visibility.Collapsed;
         }

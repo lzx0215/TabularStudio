@@ -6,9 +6,28 @@ namespace TabularStudio.App.Views;
 
 public partial class DataMatchingView : UserControl
 {
+    private const double CompactWidth = 1040;
+
     public DataMatchingView()
     {
         InitializeComponent();
+        Loaded += (_, _) => ApplyResponsiveLayout(ActualWidth);
+    }
+
+    private void OnViewSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (e.WidthChanged)
+        {
+            ApplyResponsiveLayout(e.NewSize.Width);
+        }
+    }
+
+    private void ApplyResponsiveLayout(double width)
+    {
+        if (SettingsColumn != null)
+        {
+            SettingsColumn.Width = width < CompactWidth ? new GridLength(300) : new GridLength(340);
+        }
     }
 
     private void OnMasterPreviewAutoGeneratingColumn(object? sender, DataGridAutoGeneratingColumnEventArgs e)

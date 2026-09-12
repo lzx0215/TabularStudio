@@ -163,16 +163,35 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     // 匹配选项
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(OptionsSummary))]
     private bool _normalizeComparisonKeys = true;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
     [NotifyPropertyChangedFor(nameof(CanStart))]
+    [NotifyPropertyChangedFor(nameof(FilterSummary))]
     private bool _isMasterFilterEnabled;
+
+    [ObservableProperty]
+    private bool _isFilterExpanded;
+
+    public string FilterSummary
+    {
+        get
+        {
+            if (!IsMasterFilterEnabled) return "未启用";
+            if (SelectedMasterFilterColumn != null && SelectedMasterFilterValue != null)
+                return $"{SelectedMasterFilterColumn.DisplayName} = {SelectedMasterFilterValue.DisplayText}";
+            if (SelectedMasterFilterColumn != null)
+                return $"{SelectedMasterFilterColumn.DisplayName} = 待选择";
+            return "待选择";
+        }
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
     [NotifyPropertyChangedFor(nameof(CanStart))]
+    [NotifyPropertyChangedFor(nameof(FilterSummary))]
     private AvailableColumnItem? _selectedMasterFilterColumn;
 
     public ObservableCollection<ColumnValueOption> MasterFilterValues { get; } = [];
@@ -180,6 +199,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSaveProfile))]
     [NotifyPropertyChangedFor(nameof(CanStart))]
+    [NotifyPropertyChangedFor(nameof(FilterSummary))]
     private ColumnValueOption? _selectedMasterFilterValue;
 
     [ObservableProperty]
@@ -205,10 +225,30 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     private int _resultSkippedCount;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(OptionsSummary))]
     private bool _isStatusColumnEnabled = true;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(OptionsSummary))]
     private string _statusColumnName = "匹配状态";
+
+    [ObservableProperty]
+    private bool _isOptionsExpanded;
+
+    public string OptionsSummary
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (NormalizeComparisonKeys) parts.Add("自动修复差异");
+            if (IsStatusColumnEnabled)
+            {
+                var name = string.IsNullOrWhiteSpace(StatusColumnName) ? "匹配状态" : StatusColumnName.Trim();
+                parts.Add($"状态列: {name}");
+            }
+            return parts.Count > 0 ? string.Join(" · ", parts) : "默认设置";
+        }
+    }
 
     // 输出路径
     [ObservableProperty]
@@ -1217,7 +1257,15 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     partial void OnIsMasterFilterEnabledChanged(bool value)
     {
-        if (!value) SelectedMasterFilterColumn = null;
+        if (value)
+        {
+            IsFilterExpanded = true;
+        }
+        else
+        {
+            SelectedMasterFilterColumn = null;
+        }
+        OnPropertyChanged(nameof(FilterSummary));
         OnMasterFilterChanged();
     }
     partial void OnSelectedMasterFilterColumnChanged(AvailableColumnItem? value)
@@ -1267,6 +1315,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             if (generation != _masterFilterValuesGeneration) return;
             if (!result.Success)
             {
+                IsFilterExpanded = true;
                 MasterFilterValuesMessage = string.Join("\n", new[] { result.Error?.Message ?? "读取筛选值失败。", result.Error?.Detail }
                     .Where(text => !string.IsNullOrWhiteSpace(text)));
                 return;
@@ -1280,7 +1329,11 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            if (generation == _masterFilterValuesGeneration) MasterFilterValuesMessage = $"读取筛选值失败：{ex.Message}";
+            if (generation == _masterFilterValuesGeneration)
+            {
+                IsFilterExpanded = true;
+                MasterFilterValuesMessage = $"读取筛选值失败：{ex.Message}";
+            }
         }
         finally
         {
@@ -2141,6 +2194,10 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
             if (!prepResult.Success)
             {
+                if (prepResult.Errors.Any(e => e.Contains("筛选")))
+                {
+                    IsFilterExpanded = true;
+                }
                 ProfileStatusMessage = $"未应用：{string.Join("；", prepResult.Errors)}";
                 return;
             }

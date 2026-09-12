@@ -11,178 +11,198 @@
             <Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}" />
         </Style>
     </UserControl.Resources>
-    <Grid>
+    <Grid Margin="16,8,16,8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Grid IsEnabled="{Binding CanConfigure}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="20" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <DockPanel>
-                    <Button DockPanel.Dock="Right" Command="{Binding BrowseLeftCommand}" Style="{StaticResource SecondaryButtonStyle}"
-                            Padding="10,6" AutomationProperties.Name="选择表一文件">
-                        <StackPanel Orientation="Horizontal">
-                            <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
-                            <TextBlock Text="选择文件…" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <TextBlock Text="表一" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center" />
-                </DockPanel>
-                <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" />
-                <TextBox x:Name="LeftFileName" Grid.Row="2" Text="{Binding Left.FileName, Mode=OneWay}" IsReadOnly="True"
-                         ToolTip="{Binding Left.FilePath}" Margin="0,0,0,8" />
-                <DockPanel Grid.Row="3">
-                    <TextBlock Text="工作表" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                    <ComboBox ItemsSource="{Binding Left.Worksheets}" SelectedItem="{Binding Left.SelectedWorksheet}"
-                              DisplayMemberPath="Name" IsEnabled="{Binding Left.CanSelectSheet}"
-                              ToolTip="CSV 无需选择工作表" />
-                </DockPanel>
-                <StackPanel Grid.Row="4" Margin="0,6,0,0">
-                    <TextBlock Text="CSV 无需选择工作表。" Style="{StaticResource CaptionStyle}"
-                               Visibility="{Binding Left.IsCsv, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <TextBlock Text="{Binding Left.ErrorMessage}" TextWrapping="Wrap" Foreground="{StaticResource DangerBrush}" />
-                </StackPanel>
-            </Grid>
-            <Border Grid.Column="1" Style="{StaticResource VerticalHairlineStyle}" HorizontalAlignment="Center" Width="1" />
-            <Grid Grid.Column="2">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <DockPanel>
-                    <Button DockPanel.Dock="Right" Command="{Binding BrowseRightCommand}" Style="{StaticResource SecondaryButtonStyle}"
-                            Padding="10,6" AutomationProperties.Name="选择表二文件">
-                        <StackPanel Orientation="Horizontal">
-                            <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
-                            <TextBlock Text="选择文件…" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <TextBlock Text="表二" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center" />
-                </DockPanel>
-                <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" />
-                <TextBox x:Name="RightFileName" Grid.Row="2" Text="{Binding Right.FileName, Mode=OneWay}" IsReadOnly="True"
-                         ToolTip="{Binding Right.FilePath}" Margin="0,0,0,8" />
-                <DockPanel Grid.Row="3">
-                    <TextBlock Text="工作表" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                    <ComboBox ItemsSource="{Binding Right.Worksheets}" SelectedItem="{Binding Right.SelectedWorksheet}"
-                              DisplayMemberPath="Name" IsEnabled="{Binding Right.CanSelectSheet}"
-                              ToolTip="CSV 无需选择工作表" />
-                </DockPanel>
-                <StackPanel Grid.Row="4" Margin="0,6,0,0">
-                    <TextBlock Text="CSV 无需选择工作表。" Style="{StaticResource CaptionStyle}"
-                               Visibility="{Binding Right.IsCsv, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <TextBlock Text="{Binding Right.ErrorMessage}" TextWrapping="Wrap" Foreground="{StaticResource DangerBrush}" />
-                </StackPanel>
-            </Grid>
-        </Grid>
+        <!-- 页头：标题 + 副标题 -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,6">
+            <TextBlock Text="表格对比" Style="{StaticResource PageTitleStyle}" VerticalAlignment="Center" />
+            <TextBlock Text="按位置严格比较两个表格数据，展示差异明细。" Style="{StaticResource PageSubtitleStyle}" Margin="12,0,0,0" VerticalAlignment="Center" />
+        </DockPanel>
 
-        <Border Grid.Row="1" Style="{StaticResource WarningBannerStyle}" Margin="0,10,0,8" Padding="10,6">
-            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}">
-                从 A1 开始按相同行列位置比较，包含表头。忽略样式，但保留数据类型、空格和大小写差异。公式使用文件中已保存的计算结果，请先重新计算并保存。末尾纯空行列不计入数据范围。
-            </TextBlock>
-        </Border>
+        <Border Grid.Row="1" Style="{StaticResource HairlineStyle}" Margin="0,0,0,6" />
 
-        <Grid Grid.Row="2" Margin="0,0,0,8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <StackPanel>
-                <TextBlock x:Name="ResultSummary" Text="{Binding Summary}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Result.AreEqual}" Value="True">
-                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Result.AreEqual}" Value="False">
-                                    <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-                <TextBlock Text="{Binding ExtentHint}" Style="{StaticResource CaptionStyle}" Margin="0,4,0,0" />
-                <TextBlock Text="{Binding DifferenceHint}" Style="{StaticResource CaptionStyle}" Margin="0,2,0,0" />
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
-            </StackPanel>
-        </Grid>
+        <!-- 主工作区 -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-        <DataGrid x:Name="DifferencesGrid" Grid.Row="3" ItemsSource="{Binding Differences}" AutoGenerateColumns="False" IsReadOnly="True"
-                  CanUserAddRows="False" CanUserDeleteRows="False" HeadersVisibility="Column"
-                  EnableRowVirtualization="True" EnableColumnVirtualization="True" MinHeight="120"
-                  ToolTipService.ShowDuration="20000">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="位置" Binding="{Binding Address}" Width="88" />
-                <DataGridTextColumn Header="表一类型" Binding="{Binding LeftType}" Width="78" />
-                <DataGridTextColumn Header="表一值" Binding="{Binding LeftValue}" Width="*" ElementStyle="{StaticResource ComparisonValueTextStyle}" />
-                <DataGridTextColumn Header="表二类型" Binding="{Binding RightType}" Width="78" />
-                <DataGridTextColumn Header="表二值" Binding="{Binding RightValue}" Width="*" ElementStyle="{StaticResource ComparisonValueTextStyle}" />
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <Border Grid.Row="4" Style="{StaticResource FooterBarStyle}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <DockPanel>
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                        <Button Content="取消" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" />
-                        <Button Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0"
-                                AutomationProperties.Name="导出全部差异">
+            <!-- 顶部双表源选择区 -->
+            <Grid IsEnabled="{Binding CanConfigure}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Command="{Binding BrowseLeftCommand}" Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="10,6" AutomationProperties.Name="选择表一文件">
                             <StackPanel Orientation="Horizontal">
-                                <Path Style="{StaticResource StrokeButtonGlyphStyle}" Data="{StaticResource IconExport}" />
-                                <TextBlock Text="导出全部差异…" VerticalAlignment="Center" />
+                                <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
+                                <TextBlock Text="选择文件…" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button Command="{Binding StartCommand}" Style="{StaticResource PrimaryButtonStyle}" MinWidth="148"
-                                AutomationProperties.Name="开始对比">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPlay}" Fill="{StaticResource OnAccentBrush}" />
-                                <TextBlock Text="开始对比" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
+                        <TextBlock Text="表一" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" />
+                    <TextBox x:Name="LeftFileName" Grid.Row="2" Text="{Binding Left.FileName, Mode=OneWay}" IsReadOnly="True"
+                             ToolTip="{Binding Left.FilePath}" Margin="0,0,0,6" />
+                    <DockPanel Grid.Row="3">
+                        <TextBlock Text="工作表" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
+                        <ComboBox ItemsSource="{Binding Left.Worksheets}" SelectedItem="{Binding Left.SelectedWorksheet}"
+                                  DisplayMemberPath="Name" IsEnabled="{Binding Left.CanSelectSheet}"
+                                  ToolTip="CSV 无需选择工作表" />
+                    </DockPanel>
+                    <StackPanel Grid.Row="4" Margin="0,4,0,0">
+                        <TextBlock Text="CSV 无需选择工作表。" Style="{StaticResource CaptionStyle}"
+                                   Visibility="{Binding Left.IsCsv, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <TextBlock Text="{Binding Left.ErrorMessage}" TextWrapping="Wrap" Foreground="{StaticResource DangerBrush}" />
                     </StackPanel>
-                    <ProgressBar Value="{Binding ProgressPercent}" IsIndeterminate="{Binding IsBusy}" Margin="0,0,16,0" VerticalAlignment="Center">
-                        <ProgressBar.Style>
-                            <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
-                                <Setter Property="Visibility" Value="Collapsed" />
+                </Grid>
+                <Border Grid.Column="1" Style="{StaticResource VerticalHairlineStyle}" HorizontalAlignment="Center" Width="1" />
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Command="{Binding BrowseRightCommand}" Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="10,6" AutomationProperties.Name="选择表二文件">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
+                                <TextBlock Text="选择文件…" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <TextBlock Text="表二" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" />
+                    <TextBox x:Name="RightFileName" Grid.Row="2" Text="{Binding Right.FileName, Mode=OneWay}" IsReadOnly="True"
+                             ToolTip="{Binding Right.FilePath}" Margin="0,0,0,6" />
+                    <DockPanel Grid.Row="3">
+                        <TextBlock Text="工作表" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
+                        <ComboBox ItemsSource="{Binding Right.Worksheets}" SelectedItem="{Binding Right.SelectedWorksheet}"
+                                  DisplayMemberPath="Name" IsEnabled="{Binding Right.CanSelectSheet}"
+                                  ToolTip="CSV 无需选择工作表" />
+                    </DockPanel>
+                    <StackPanel Grid.Row="4" Margin="0,4,0,0">
+                        <TextBlock Text="CSV 无需选择工作表。" Style="{StaticResource CaptionStyle}"
+                                   Visibility="{Binding Right.IsCsv, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <TextBlock Text="{Binding Right.ErrorMessage}" TextWrapping="Wrap" Foreground="{StaticResource DangerBrush}" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+
+            <Border Grid.Row="1" Style="{StaticResource WarningBannerStyle}" Margin="0,6,0,6" Padding="8,4">
+                <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}">
+                    从 A1 开始按相同行列位置比较，包含表头。忽略样式，但保留数据类型、空格和大小写差异。公式使用文件中已保存的计算结果，请先重新计算并保存。末尾纯空行列不计入数据范围。
+                </TextBlock>
+            </Border>
+
+            <Grid Grid.Row="2" Margin="0,0,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock x:Name="ResultSummary" Text="{Binding Summary}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible" />
+                                    <DataTrigger Binding="{Binding Result.AreEqual}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Result.AreEqual}" Value="False">
+                                        <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </ProgressBar.Style>
-                    </ProgressBar>
-                </DockPanel>
-                <TextBox Grid.Row="1" Text="{Binding ReportPath, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}"
-                         IsReadOnly="True" TextWrapping="Wrap" Margin="0,8,0,0"
-                         Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
-                         ToolTip="报告已保存的位置（可复制）" />
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="{Binding ExtentHint}" Style="{StaticResource CaptionStyle}" Margin="0,2,0,0" />
+                    <TextBlock Text="{Binding DifferenceHint}" Style="{StaticResource CaptionStyle}" Margin="0,2,0,0" />
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                </StackPanel>
             </Grid>
-        </Border>
+
+            <!-- 全宽差异明细表 -->
+            <DataGrid x:Name="DifferencesGrid" Grid.Row="3" ItemsSource="{Binding Differences}" AutoGenerateColumns="False" IsReadOnly="True"
+                      CanUserAddRows="False" CanUserDeleteRows="False" HeadersVisibility="Column"
+                      EnableRowVirtualization="True" EnableColumnVirtualization="True" MinHeight="80"
+                      ToolTipService.ShowDuration="20000">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="位置" Binding="{Binding Address}" Width="88" />
+                    <DataGridTextColumn Header="表一类型" Binding="{Binding LeftType}" Width="88" />
+                    <DataGridTextColumn Header="表一值" Binding="{Binding LeftValue}" Width="*" ElementStyle="{StaticResource ComparisonValueTextStyle}" />
+                    <DataGridTextColumn Header="表二类型" Binding="{Binding RightType}" Width="88" />
+                    <DataGridTextColumn Header="表二值" Binding="{Binding RightValue}" Width="*" ElementStyle="{StaticResource ComparisonValueTextStyle}" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- 固定执行底栏 -->
+            <Border Grid.Row="4" Style="{StaticResource FooterBarStyle}" Margin="0,6,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Content="取消" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" />
+                            <Button Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0"
+                                    AutomationProperties.Name="导出全部差异">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource StrokeButtonGlyphStyle}" Data="{StaticResource IconExport}" />
+                                    <TextBlock Text="导出全部差异…" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding StartCommand}" Style="{StaticResource PrimaryButtonStyle}" MinWidth="148"
+                                    AutomationProperties.Name="开始对比">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPlay}" Fill="{StaticResource OnAccentBrush}" />
+                                    <TextBlock Text="开始对比" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                        <ProgressBar Value="{Binding ProgressPercent}" IsIndeterminate="{Binding IsBusy}" Margin="0,0,16,0" VerticalAlignment="Center">
+                            <ProgressBar.Style>
+                                <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ProgressBar.Style>
+                        </ProgressBar>
+                    </DockPanel>
+                    <TextBox Grid.Row="1" Text="{Binding ReportPath, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}"
+                             IsReadOnly="True" TextWrapping="Wrap" Margin="0,4,0,0"
+                             Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                             ToolTip="报告已保存的位置（可复制）" />
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

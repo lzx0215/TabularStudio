@@ -7,25 +7,22 @@
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        Background="#F5F6F8"
-        FontFamily="Segoe UI, Microsoft YaHei UI">
+        Background="{StaticResource AppBackgroundBrush}"
+        FontFamily="{StaticResource AppFontFamily}"
+        FontSize="14"
+        UseLayoutRounding="True">
     <Border Padding="20">
         <StackPanel>
             <TextBlock x:Name="PromptTextBlock"
                        Text="保存当前配置"
-                       FontSize="15"
-                       FontWeight="SemiBold"
-                       Foreground="#111827"
+                       Style="{StaticResource SectionHeaderStyle}"
                        Margin="0,0,0,8" />
 
             <TextBlock Text="请输入配置名称（去除首尾空格后不可为空）："
-                       FontSize="12"
-                       Foreground="#4B5563"
+                       Style="{StaticResource CaptionStyle}"
                        Margin="0,0,0,8" />
 
             <TextBox x:Name="NameTextBox"
-                     FontSize="13"
-                     Padding="8,6"
                      Margin="0,0,0,6"
                      Loaded="OnNameTextBoxLoaded"
                      KeyDown="OnNameTextBoxKeyDown" />
@@ -33,7 +30,7 @@
             <TextBlock x:Name="ErrorTextBlock"
                        Text="配置名称不能为空。"
                        FontSize="12"
-                       Foreground="#DC2626"
+                       Foreground="{StaticResource DangerBrush}"
                        Visibility="Collapsed"
                        Margin="0,0,0,12" />
 
@@ -46,27 +43,16 @@
 
                 <Button Grid.Column="1"
                         Content="保存"
-                        MinHeight="32"
-                        MinWidth="72"
-                        Padding="12,4"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        MinWidth="84"
                         Margin="0,0,8,0"
-                        Background="#2563EB"
-                        Foreground="White"
-                        FontWeight="Medium"
-                        BorderThickness="0"
-                        Cursor="Hand"
                         IsDefault="True"
                         Click="OnSaveClick" />
 
                 <Button Grid.Column="2"
                         Content="取消"
-                        MinHeight="32"
-                        MinWidth="72"
-                        Padding="12,4"
-                        Background="#E5E7EB"
-                        Foreground="#374151"
-                        BorderThickness="0"
-                        Cursor="Hand"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        MinWidth="84"
                         IsCancel="True"
                         Click="OnCancelClick" />
             </Grid>

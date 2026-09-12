@@ -7,8 +7,10 @@
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        Background="#F5F6F8"
-        FontFamily="Segoe UI, Microsoft YaHei UI">
+        Background="{StaticResource AppBackgroundBrush}"
+        FontFamily="{StaticResource AppFontFamily}"
+        FontSize="14"
+        UseLayoutRounding="True">
     <Border Padding="20">
         <Grid>
             <Grid.RowDefinitions>
@@ -20,9 +22,7 @@
             <TextBlock x:Name="TitleTextBlock"
                        Grid.Row="0"
                        Text="确认操作"
-                       FontSize="15"
-                       FontWeight="SemiBold"
-                       Foreground="#111827"
+                       Style="{StaticResource SectionHeaderStyle}"
                        Margin="0,0,0,8" />
 
             <ScrollViewer Grid.Row="1"
@@ -33,17 +33,15 @@
                 <StackPanel>
                     <TextBlock x:Name="MainMessageTextBlock"
                                Text="确定要执行此操作吗？"
-                               FontSize="13"
+                               FontSize="14"
                                FontWeight="Medium"
-                               Foreground="#1F2937"
+                               Foreground="{StaticResource TextPrimaryBrush}"
                                TextWrapping="Wrap"
                                Margin="0,0,0,6" />
 
                     <TextBlock x:Name="SubMessageTextBlock"
                                Text="此操作无法撤销。"
-                               FontSize="12"
-                               Foreground="#6B7280"
-                               TextWrapping="Wrap" />
+                               Style="{StaticResource CaptionStyle}" />
                 </StackPanel>
             </ScrollViewer>
 
@@ -57,27 +55,16 @@
                 <Button x:Name="ConfirmButton"
                         Grid.Column="1"
                         Content="确认"
-                        MinHeight="32"
-                        MinWidth="72"
-                        Padding="12,4"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        MinWidth="84"
                         Margin="0,0,8,0"
-                        Background="#DC2626"
-                        Foreground="White"
-                        FontWeight="Medium"
-                        BorderThickness="0"
-                        Cursor="Hand"
                         IsDefault="True"
                         Click="OnConfirmClick" />
 
                 <Button Grid.Column="2"
                         Content="取消"
-                        MinHeight="32"
-                        MinWidth="72"
-                        Padding="12,4"
-                        Background="#E5E7EB"
-                        Foreground="#374151"
-                        BorderThickness="0"
-                        Cursor="Hand"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        MinWidth="84"
                         IsCancel="True"
                         Click="OnCancelClick" />
             </Grid>

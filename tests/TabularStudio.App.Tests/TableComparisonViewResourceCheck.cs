@@ -59,7 +59,7 @@ internal static class TableComparisonViewResourceCheck
             using var image = File.Create(Path.Combine(AppContext.BaseDirectory, "table-comparison-preview.png"));
             encoder.Save(image);
 
-            // Verify the comparison route in the current top-navigation shell after integration.
+            // Verify the comparison route in the current left-navigation shell after integration.
             shellVm.SelectTableComparisonCommand.Execute(null);
             Assert.True(shellVm.IsTableComparisonSelected);
             Assert.False(shellVm.IsFormatStandardizationSelected);
@@ -97,6 +97,20 @@ internal static class TableComparisonViewResourceCheck
             matching.SelectedProfile = matching.Profiles[0];
             Pump(matching.ApplyProfileAsync());
             Assert.Equal("已应用：匹配配置", matching.ProfileStatusMessage);
+            var idleVm = new MainWindowViewModel(inspection, new FormatStandardizationService(), new DataMatchingService(),
+                new OutputDirectoryPreferenceService(Path.Combine(directory, "idle-preferences.json")),
+                comparisonService: new TableComparisonService());
+            var idleShell = new MainWindow(idleVm);
+            var idleClient = (FrameworkElement)idleShell.Content;
+            LayoutAndRender(idleClient, new Size(1264, 681), "empty-format");
+            idleVm.SelectDataMatching();
+            LayoutAndRender(idleClient, new Size(1264, 681), "empty-matching");
+            idleVm.SelectTableComparison();
+            LayoutAndRender(idleClient, new Size(1264, 681), "empty-comparison");
+            idleVm.TableComparisonVm.ErrorMessage = "比较失败，请检查文件后重试。";
+            idleVm.TableComparisonVm.Summary = "比较未完成，无法判断是否一致。";
+            LayoutAndRender(idleClient, new Size(1264, 681), "error-comparison");
+
             foreach (var size in new[] { new Size(944, 601), new Size(1264, 681) })
             {
                 shellVm.SelectFormatStandardization();

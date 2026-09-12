@@ -61,7 +61,7 @@
                         <TextBox Grid.Column="1"
                                  Text="{Binding InputFilePath, Mode=OneWay}"
                                  IsReadOnly="True"
-                                 Background="#F9FAFB"
+                                 Background="{StaticResource ContentPanelBrush}"
                                  BorderBrush="{StaticResource BorderBrush}"
                                  Padding="8,6"
                                  FontSize="12"
@@ -148,7 +148,7 @@
 
                         <!-- 底部常驻说明 -->
                         <Border DockPanel.Dock="Bottom"
-                                Background="#F9FAFB"
+                                Background="{StaticResource ContentPanelBrush}"
                                 BorderBrush="{StaticResource BorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="4"
@@ -240,15 +240,15 @@
                                       HorizontalScrollBarVisibility="Auto"
                                       VerticalScrollBarVisibility="Auto"
                                       GridLinesVisibility="All"
-                                      HorizontalGridLinesBrush="#E5E7EB"
-                                      VerticalGridLinesBrush="#E5E7EB"
-                                      Background="White"
+                                      HorizontalGridLinesBrush="{StaticResource GridLineBrush}"
+                                      VerticalGridLinesBrush="{StaticResource GridLineBrush}"
+                                      Background="{StaticResource InputSurfaceBrush}"
                                       BorderBrush="{StaticResource BorderBrush}"
                                       BorderThickness="1"
                                       FontSize="12" />
 
                             <!-- 空态与加载提示浮层 -->
-                            <Border Background="White"
+                            <Border Background="{StaticResource InputSurfaceBrush}"
                                     Visibility="{Binding ShowPreviewEmptyNotice, Converter={StaticResource BoolToVisibilityConverter}}"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Stretch">
@@ -283,7 +283,7 @@
                         <TextBox Grid.Column="1"
                                  Text="{Binding OutputFilePath, Mode=OneWay}"
                                  IsReadOnly="True"
-                                 Background="#F9FAFB"
+                                 Background="{StaticResource ContentPanelBrush}"
                                  BorderBrush="{StaticResource BorderBrush}"
                                  Padding="8,6"
                                  FontSize="12"
@@ -304,11 +304,7 @@
                                Visibility="{Binding HasOutputConflictWithInput, Converter={StaticResource BoolToVisibilityConverter}}" />
 
                     <!-- 错误展示卡片 -->
-                    <Border Background="#FEF2F2"
-                            BorderBrush="#FECACA"
-                            BorderThickness="1"
-                            CornerRadius="6"
-                            Padding="12"
+                    <Border Style="{StaticResource ErrorBannerStyle}"
                             Margin="0,0,0,12"
                             Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
                         <StackPanel>
@@ -318,11 +314,11 @@
                                        FontSize="13"
                                        Margin="0,0,0,4" />
                             <TextBlock Text="{Binding ErrorMessage}"
-                                       Foreground="#991B1B"
+                                       Foreground="{StaticResource DangerBrush}"
                                        FontSize="12"
                                        TextWrapping="Wrap" />
                             <TextBlock Text="{Binding ErrorDetail}"
-                                       Foreground="#B91C1C"
+                                       Foreground="{StaticResource DangerBrush}"
                                        FontSize="11"
                                        TextWrapping="Wrap"
                                        Margin="0,4,0,0"
@@ -331,10 +327,10 @@
                     </Border>
 
                     <!-- 成功信息卡片 -->
-                    <Border Background="#ECFDF5"
-                            BorderBrush="#A7F3D0"
+                    <Border Background="{StaticResource SuccessBannerBackgroundBrush}"
+                            BorderBrush="{StaticResource SuccessBannerBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="6"
+                            CornerRadius="4"
                             Padding="12"
                             Margin="0,0,0,12"
                             Visibility="{Binding HasSuccess, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -345,7 +341,7 @@
                                        FontSize="13"
                                        Margin="0,0,0,4" />
                             <TextBlock Text="{Binding ResultOutputFilePath, StringFormat='结果文件：{0}'}"
-                                       Foreground="#065F46"
+                                       Foreground="{StaticResource SuccessBrush}"
                                        FontSize="12"
                                        TextWrapping="Wrap" />
                         </StackPanel>
@@ -360,9 +356,6 @@
                         <ProgressBar Height="8"
                                      Value="{Binding ProgressPercent}"
                                      IsIndeterminate="{Binding IsProgressIndeterminate}"
-                                     Background="#E5E7EB"
-                                     Foreground="{StaticResource PrimaryBrush}"
-                                     BorderThickness="0"
                                      Margin="0,0,0,6" />
                         <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>

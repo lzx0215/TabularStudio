@@ -7,35 +7,31 @@
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        Background="#F5F6F8"
-        FontFamily="Segoe UI, Microsoft YaHei UI">
+        Background="{StaticResource AppBackgroundBrush}"
+        FontFamily="{StaticResource AppFontFamily}"
+        FontSize="14"
+        UseLayoutRounding="True">
     <Border Padding="24">
         <StackPanel>
             <TextBlock Text="目标输出文件已存在"
-                       FontSize="16"
-                       FontWeight="SemiBold"
-                       Foreground="#1F2937"
+                       Style="{StaticResource SectionHeaderStyle}"
                        Margin="0,0,0,12" />
 
             <TextBlock Text="以下路径的文件已经存在，请选择如何处理："
-                       FontSize="13"
-                       Foreground="#4B5563"
-                       Margin="0,0,0,8" />
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       Margin="0,0,0,8"
+                       TextWrapping="Wrap" />
 
-            <Border Background="#E5E7EB"
-                    Padding="10,8"
-                    CornerRadius="4"
-                    Margin="0,0,0,16">
+            <Border Style="{StaticResource InsetPanelStyle}" Padding="10,8" Margin="0,0,0,16">
                 <TextBlock x:Name="FilePathTextBlock"
                            TextTrimming="CharacterEllipsis"
                            TextWrapping="Wrap"
                            FontSize="12"
-                           Foreground="#111827" />
+                           Foreground="{StaticResource TextPrimaryBrush}" />
             </Border>
 
             <TextBlock Text="• 覆盖：使用新生成的表格替换现有文件&#x0a;• 另存为：指定新的文件名或保存路径&#x0a;• 取消：放弃本次操作并返回配置界面"
-                       FontSize="12"
-                       Foreground="#6B7280"
+                       Style="{StaticResource CaptionStyle}"
                        LineHeight="20"
                        Margin="0,0,0,24" />
 
@@ -49,33 +45,22 @@
 
                 <Button Grid.Column="1"
                         Content="覆盖"
-                        Padding="16,6"
+                        Style="{StaticResource DangerButtonStyle}"
+                        MinWidth="84"
                         Margin="0,0,8,0"
-                        Background="#DC2626"
-                        Foreground="White"
-                        FontWeight="Medium"
-                        BorderThickness="0"
-                        Cursor="Hand"
                         Click="OnOverwriteClick" />
 
                 <Button Grid.Column="2"
                         Content="另存为..."
-                        Padding="16,6"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        MinWidth="96"
                         Margin="0,0,8,0"
-                        Background="#2563EB"
-                        Foreground="White"
-                        FontWeight="Medium"
-                        BorderThickness="0"
-                        Cursor="Hand"
                         Click="OnSaveAsClick" />
 
                 <Button Grid.Column="3"
                         Content="取消"
-                        Padding="16,6"
-                        Background="#E5E7EB"
-                        Foreground="#374151"
-                        BorderThickness="0"
-                        Cursor="Hand"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        MinWidth="84"
                         IsCancel="True"
                         Click="OnCancelClick" />
             </Grid>

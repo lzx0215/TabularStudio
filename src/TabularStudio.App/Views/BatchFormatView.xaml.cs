@@ -28,7 +28,7 @@ public partial class BatchFormatView : UserControl
 
         if (compact)
         {
-            FilesColumn.Width = new GridLength(188);
+            FilesColumn.Width = new GridLength(220);
             RulesSplitter.Width = new GridLength(0);
             RulesColumn.Width = new GridLength(0);
             RulesColumn.MinWidth = 0;
@@ -48,8 +48,8 @@ public partial class BatchFormatView : UserControl
         {
             FilesColumn.Width = new GridLength(220);
             RulesSplitter.Width = new GridLength(16);
-            RulesColumn.Width = new GridLength(260);
-            RulesColumn.MinWidth = 220;
+            RulesColumn.Width = new GridLength(216);
+            RulesColumn.MinWidth = 200;
             RulesRowSplitter.Height = new GridLength(0);
             RulesRow.Height = new GridLength(0);
             WorkbenchRow.Height = new GridLength(1, GridUnitType.Star);

@@ -1,0 +1,6 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Layout merges Controls, which merges Tokens. Icons remain in the existing Theme. -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="DesktopLayout.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+</ResourceDictionary>

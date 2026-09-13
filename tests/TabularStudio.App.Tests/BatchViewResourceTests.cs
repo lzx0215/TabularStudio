@@ -24,6 +24,8 @@ public sealed class BatchViewResourceTests
                 var app = new Application();
                 app.Resources.MergedDictionaries.Add(new ResourceDictionary
                 { Source = new Uri("/TabularStudio.App;component/Styles/Theme.xaml", UriKind.Relative) });
+                app.Resources.MergedDictionaries.Add(new ResourceDictionary
+                { Source = new Uri("/TabularStudio.App;component/Styles/DesktopTheme.xaml", UriKind.Relative) });
                 var view = new BatchFormatView
                 {
                     DataContext = new BatchFormatViewModel(new WorkbookInspectionService(), new FormatStandardizationService()),
@@ -123,6 +125,12 @@ public sealed class BatchViewResourceTests
                         Assert.True(position.Y >= 0 && position.Y + startButton.ActualHeight <= size.Height);
                         Assert.True(position.X >= 0 && position.X + startButton.ActualWidth <= size.Width);
                         var footerY = footer.TranslatePoint(new Point(), page).Y;
+                        if (page is DataMatchingView)
+                        {
+                            var preview = (DataGrid)page.FindName("MasterPreviewDataGrid");
+                            Assert.True(preview.ActualHeight >= 60,
+                                "A short workspace must retain a header and a readable data row; source panels may scroll.");
+                        }
                         if (page.DataContext is BatchFormatViewModel batchVm)
                         {
                             for (var index = 0; index < 20; index++)
@@ -164,12 +172,25 @@ public sealed class BatchViewResourceTests
                 view.Width = 1100; view.Measure(new Size(1100, 700)); view.Arrange(new Rect(0, 0, 1100, 700)); view.UpdateLayout();
                 var rulesCol = (ColumnDefinition)view.FindName("RulesColumn");
                 var filesCol = (ColumnDefinition)view.FindName("FilesColumn");
-                Assert.Equal(260, rulesCol.Width.Value);
+                Assert.Equal(216, rulesCol.Width.Value);
                 Assert.Equal(220, filesCol.Width.Value);
 
                 view.Width = 960; view.Measure(new Size(960, 700)); view.Arrange(new Rect(0, 0, 960, 700)); view.UpdateLayout();
                 Assert.Equal(0, rulesCol.Width.Value);
-                Assert.Equal(188, filesCol.Width.Value);
+                Assert.Equal(220, filesCol.Width.Value);
+
+                // Moving the per-file output row must retain the batch processing guard.
+                var guardVm = (BatchFormatViewModel)view.DataContext;
+                var outputRow = (DockPanel)view.FindName("SelectedOutputRow");
+                guardVm.IsBusy = true;
+                view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.DataBind);
+                Assert.False(outputRow.IsEnabled);
+                guardVm.IsBusy = false;
+                view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.DataBind);
+                Assert.Equal(guardVm.CanConfigure, outputRow.IsEnabled);
+                Assert.Equal(32, ((Button)view.FindName("StartButton")).ActualHeight);
+                Assert.Equal(32, ((DataGrid)view.FindName("FilePreviewGrid")).ColumnHeaderHeight);
+                Assert.Equal(28, ((DataGrid)view.FindName("FilePreviewGrid")).RowHeight);
 
                 // DataMatchingView breakpoint at 1040 DIP
                 matching.Width = 1100; matching.Measure(new Size(1100, 700)); matching.Arrange(new Rect(0, 0, 1100, 700)); matching.UpdateLayout();

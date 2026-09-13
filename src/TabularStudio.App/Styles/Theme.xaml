@@ -8,26 +8,26 @@
     <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
     <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
-    <!-- 色板：浅色雾面、暖灰绿、古铜金 -->
-    <Color x:Key="AppBackgroundColor">#F5F5F0</Color>
-    <Color x:Key="AppBackgroundTintColor">#F1F3EC</Color>
-    <Color x:Key="SidebarBackgroundColor">#ECEFE8</Color>
-    <Color x:Key="ContentPanelColor">#FCFCF9</Color>
+    <!-- 校对工作台：纸白数据区、灰蓝辅助区、校对蓝选择状态。 -->
+    <Color x:Key="AppBackgroundColor">#EDF2F5</Color>
+    <Color x:Key="AppBackgroundTintColor">#EDF2F5</Color>
+    <Color x:Key="SidebarBackgroundColor">#EDF2F5</Color>
+    <Color x:Key="ContentPanelColor">#FFFFFF</Color>
     <Color x:Key="InputSurfaceColor">#FFFFFF</Color>
-    <Color x:Key="DividerColor">#D5D9D1</Color>
-    <Color x:Key="TextPrimaryColor">#2D3631</Color>
-    <Color x:Key="TextSecondaryColor">#626B65</Color>
-    <Color x:Key="TextMutedColor">#7A847D</Color>
-    <Color x:Key="AccentColor">#826B40</Color>
-    <Color x:Key="AccentHoverColor">#715B34</Color>
-    <Color x:Key="NavSelectedColor">#ECE6D9</Color>
-    <Color x:Key="TableSelectedColor">#EEF2EC</Color>
-    <Color x:Key="SuccessColor">#3F705B</Color>
-    <Color x:Key="WarningColor">#94631C</Color>
-    <Color x:Key="DangerColor">#A84842</Color>
-    <Color x:Key="HeaderFillColor">#E8EDE6</Color>
-    <Color x:Key="GridLineColor">#E4E8E1</Color>
-    <Color x:Key="FocusRingColor">#826B40</Color>
+    <Color x:Key="DividerColor">#CFDAE3</Color>
+    <Color x:Key="TextPrimaryColor">#243746</Color>
+    <Color x:Key="TextSecondaryColor">#526779</Color>
+    <Color x:Key="TextMutedColor">#617587</Color>
+    <Color x:Key="AccentColor">#245EA8</Color>
+    <Color x:Key="AccentHoverColor">#1D4F91</Color>
+    <Color x:Key="NavSelectedColor">#E8F0FC</Color>
+    <Color x:Key="TableSelectedColor">#E8F0FC</Color>
+    <Color x:Key="SuccessColor">#216E43</Color>
+    <Color x:Key="WarningColor">#925B12</Color>
+    <Color x:Key="DangerColor">#B42318</Color>
+    <Color x:Key="HeaderFillColor">#EAF0F5</Color>
+    <Color x:Key="GridLineColor">#E0E8EF</Color>
+    <Color x:Key="FocusRingColor">#245EA8</Color>
 
     <LinearGradientBrush x:Key="AppBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="{StaticResource AppBackgroundColor}" Offset="0" />
@@ -46,7 +46,7 @@
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
     <SolidColorBrush x:Key="PrimaryHoverBrush" Color="{StaticResource AccentHoverColor}" />
     <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHoverColor}" />
-    <SolidColorBrush x:Key="PrimaryDisabledBrush" Color="#C9C1B0" />
+    <SolidColorBrush x:Key="PrimaryDisabledBrush" Color="#A4B7CE" />
     <SolidColorBrush x:Key="NavSelectedBrush" Color="{StaticResource NavSelectedColor}" />
     <SolidColorBrush x:Key="TableSelectionBrush" Color="{StaticResource TableSelectedColor}" />
     <SolidColorBrush x:Key="HeaderFillBrush" Color="{StaticResource HeaderFillColor}" />
@@ -54,19 +54,19 @@
     <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
     <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
     <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
-    <SolidColorBrush x:Key="OnAccentBrush" Color="#FCFCF9" />
-    <SolidColorBrush x:Key="HoverFillBrush" Color="#E4E8E0" />
+    <SolidColorBrush x:Key="OnAccentBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="HoverFillBrush" Color="#EDF2F8" />
     <SolidColorBrush x:Key="ErrorBannerBackgroundBrush" Color="#F7EEEE" />
     <SolidColorBrush x:Key="ErrorBannerBorderBrush" Color="#D9B4B1" />
     <SolidColorBrush x:Key="WarningBannerBackgroundBrush" Color="#F6F0E4" />
     <SolidColorBrush x:Key="WarningBannerBorderBrush" Color="#D9C7A4" />
     <SolidColorBrush x:Key="SuccessBannerBackgroundBrush" Color="#E8F0EC" />
     <SolidColorBrush x:Key="SuccessBannerBorderBrush" Color="#B7C9BF" />
-    <SolidColorBrush x:Key="ScrollThumbBrush" Color="#C5CBC3" />
-    <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="#A8B0A7" />
-    <SolidColorBrush x:Key="DecorationBrush" Color="#826B40" />
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="#BECCD8" />
+    <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="#94A9BA" />
+    <SolidColorBrush x:Key="DecorationBrush" Color="#245EA8" />
 
-    <FontFamily x:Key="AppFontFamily">Segoe UI, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
+    <FontFamily x:Key="AppFontFamily">DengXian, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
 
     <Style x:Key="AppFocusVisual">
         <Setter Property="Control.Template">
@@ -85,7 +85,7 @@
     </Style>
 
     <Style x:Key="PageTitleStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontSize" Value="24" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
@@ -236,11 +236,11 @@
                             <Setter TargetName="border" Property="Background" Value="{StaticResource AccentHoverBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#5F4C2B" />
+                            <Setter TargetName="border" Property="Background" Value="#173F75" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryDisabledBrush}" />
-                            <Setter Property="Foreground" Value="#F4F1EA" />
+                            <Setter Property="Foreground" Value="#FFFFFF" />
                             <Setter Property="Cursor" Value="Arrow" />
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -273,17 +273,17 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="border" Property="Background" Value="{StaticResource HoverFillBrush}" />
-                            <Setter TargetName="border" Property="BorderBrush" Value="#C3C9BE" />
+                            <Setter TargetName="border" Property="BorderBrush" Value="#9BAFC0" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#DDE2D8" />
+                            <Setter TargetName="border" Property="Background" Value="#DCE7F2" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
                             <Setter TargetName="border" Property="BorderThickness" Value="1.5" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="border" Property="Background" Value="#F3F4F0" />
+                            <Setter TargetName="border" Property="Background" Value="#F0F3F6" />
                             <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
                             <Setter Property="Cursor" Value="Arrow" />
                         </Trigger>
@@ -340,7 +340,7 @@
         <Setter Property="Foreground" Value="#5B675F" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Height" Value="44" />
-        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="MinHeight" Value="32" />
         <Setter Property="Padding" Value="10,0" />
         <Setter Property="Margin" Value="10,2" />
         <Setter Property="Cursor" Value="Hand" />
@@ -449,7 +449,7 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="4"
-                            Padding="{TemplateBinding Padding}"
+                            Padding="0"
                             SnapsToDevicePixels="True">
                         <ScrollViewer x:Name="PART_ContentHost" Margin="0" />
                     </Border>
@@ -466,7 +466,7 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
-                            <Setter TargetName="Frame" Property="Background" Value="#F3F4F0" />
+                            <Setter TargetName="Frame" Property="Background" Value="#F0F3F6" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -602,7 +602,7 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
-                            <Setter TargetName="Frame" Property="Background" Value="#F3F4F0" />
+                            <Setter TargetName="Frame" Property="Background" Value="#F0F3F6" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -664,7 +664,7 @@
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
                             <Setter TargetName="Box" Property="Background" Value="#EEF0EA" />
-                            <Setter TargetName="Box" Property="BorderBrush" Value="#C5CBC3" />
+                            <Setter TargetName="Box" Property="BorderBrush" Value="#BECCD8" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -899,24 +899,10 @@
 
     <Style TargetType="ProgressBar">
         <Setter Property="Height" Value="6" />
-        <Setter Property="Foreground" Value="#6F7F73" />
-        <Setter Property="Background" Value="#E4E8E1" />
+        <Setter Property="Foreground" Value="#245EA8" />
+        <Setter Property="Background" Value="#E0E8EF" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ProgressBar">
-                    <Border x:Name="PART_Track"
-                            Background="{TemplateBinding Background}"
-                            CornerRadius="3"
-                            ClipToBounds="True">
-                        <Border x:Name="PART_Indicator"
-                                HorizontalAlignment="Left"
-                                Background="{TemplateBinding Foreground}"
-                                CornerRadius="3" />
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
+
     </Style>
 
     <Style TargetType="ToolTip">

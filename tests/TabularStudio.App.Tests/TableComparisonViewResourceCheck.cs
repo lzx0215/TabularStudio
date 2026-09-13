@@ -123,8 +123,8 @@ internal static class TableComparisonViewResourceCheck
                 LayoutAndRender(client, size, "profiles-matching");
                 var matchingView = Descendants(client).OfType<DataMatchingView>().Single();
                 Assert.Same(matching, matchingView.DataContext);
-                Assert.Single(Descendants(matchingView).OfType<ComboBox>()
-                    .Single(c => ReferenceEquals(c.ItemsSource, matching.Profiles)).Items);
+                Assert.DoesNotContain(Descendants(matchingView).OfType<ComboBox>(),
+                    c => ReferenceEquals(c.ItemsSource, matching.Profiles));
                 shellVm.SelectTableComparison();
                 LayoutAndRender(client, size, "profiles-comparison");
                 Assert.Contains("不一致", Descendants(client).OfType<TableComparisonView>()

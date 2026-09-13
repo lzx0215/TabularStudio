@@ -1,445 +1,270 @@
-<UserControl x:Class="TabularStudio.App.Views.DataMatchingView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:vm="clr-namespace:TabularStudio.App.ViewModels"
-             Background="Transparent"
-             d:DataContext="{d:DesignInstance Type=vm:DataMatchingViewModel}"
-             mc:Ignorable="d"
-              FontFamily="{StaticResource AppFontFamily}"
-              FontSize="14"
-              SizeChanged="OnViewSizeChanged">
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:vm="clr-namespace:TabularStudio.App.ViewModels" x:Class="TabularStudio.App.Views.DataMatchingView" Background="Transparent" d:DataContext="{d:DesignInstance Type=vm:DataMatchingViewModel}" mc:Ignorable="d" FontFamily="{StaticResource AppFontFamily}" FontSize="14" SizeChanged="OnViewSizeChanged">
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </UserControl.Resources>
-    <Grid Margin="24,14,24,10">
+    <Grid Margin="16,6,16,12">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 页头：标题 + 配置条 -->
-        <Grid Grid.Row="0" Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" MinWidth="200" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
-                <TextBlock Text="数据匹配" Style="{StaticResource PageTitleStyle}" />
-                <TextBlock Text="基于共同字段关联两表数据，将对照表字段带回主表。" Style="{StaticResource PageSubtitleStyle}" Margin="0,4,0,0" />
-            </StackPanel>
-
-            <!-- 处理配置条 -->
-            <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="处理配置" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" VerticalAlignment="Center" />
-                    <Grid Width="150" Margin="0,0,8,0">
-                        <ComboBox ItemsSource="{Binding Profiles}"
-                                  SelectedItem="{Binding SelectedProfile}"
-                                  DisplayMemberPath="Name"
-                                  IsEnabled="{Binding CanSelectProfile}"
-                                  AutomationProperties.Name="匹配配置" />
-                        <TextBlock IsHitTestVisible="False" VerticalAlignment="Center" Margin="10,0,28,0" Foreground="{StaticResource TextMutedBrush}" FontSize="13">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="请选择配置…" />
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasProfiles}" Value="False">
-                                            <Setter Property="Text" Value="暂无保存配置" />
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                        <MultiDataTrigger>
-                                            <MultiDataTrigger.Conditions>
-                                                <Condition Binding="{Binding HasProfiles}" Value="True" />
-                                                <Condition Binding="{Binding SelectedProfile}" Value="{x:Null}" />
-                                            </MultiDataTrigger.Conditions>
-                                            <Setter Property="Text" Value="请选择配置…" />
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </MultiDataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
-                    <Button Content="应用" Command="{Binding ApplyProfileCommand}" IsEnabled="{Binding CanApplyProfile}" Margin="0,0,6,0" Padding="12,5" />
-                    <Button Content="保存配置…" Command="{Binding SaveProfileCommand}" IsEnabled="{Binding CanSaveProfile}" Margin="0,0,6,0" Padding="12,5" />
-                    <Button Content="删除" Command="{Binding DeleteProfileCommand}" IsEnabled="{Binding CanDeleteProfile}" Padding="12,5" />
-                </StackPanel>
-                <ScrollViewer MaxHeight="48" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,4,0,0">
-                    <TextBlock Text="{Binding ProfileStatusMessage}" TextWrapping="Wrap" FontSize="12" HorizontalAlignment="Right">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsProfileStatusError}" Value="True">
-                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsProfileStatusModified}" Value="True">
-                                        <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsProfileStatusSuccess}" Value="True">
-                                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </ScrollViewer>
-            </StackPanel>
-        </Grid>
-
-        <Border Grid.Row="1" Style="{StaticResource HairlineStyle}" Margin="0,0,0,12" />
-
-        <!-- 主工作区 -->
-        <Grid Grid.Row="2">
+        <!-- 主工作区：导航已承担页面定位，工作区从两张表直接开始。 -->
+        <Grid Grid.Row="0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- 上下双表（左） + 匹配设置（右） -->
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" MinWidth="360" />
-                    <ColumnDefinition Width="16" />
-                    <ColumnDefinition x:Name="SettingsColumn" Width="340" MinWidth="280" />
+                    <ColumnDefinition Width="*" MinWidth="360"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition x:Name="SettingsColumn" Width="340" MinWidth="280"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- 左列：上下双表预览 -->
-                <Grid Grid.Column="0">
+                <!-- 左列：两张表使用同一组列宽，配置控件各占一行，预览表格获得剩余高度。 -->
+                <ScrollViewer x:Name="SourceScroll" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <Grid MinHeight="360">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*" MinHeight="140" />
-                        <RowDefinition Height="16" />
-                        <RowDefinition Height="*" MinHeight="140" />
+                        <RowDefinition Height="*" MinHeight="140"/>
+                        <RowDefinition Height="16"/>
+                        <RowDefinition Height="*" MinHeight="140"/>
                     </Grid.RowDefinitions>
 
-                    <!-- 主表 -->
+                    <!-- 主表：文件、工作表和表头行同一行。 -->
                     <Grid Grid.Row="0" AllowDrop="True" DragOver="OnMasterDragOver" Drop="OnMasterDrop">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="主表" Style="{StaticResource SectionHeaderStyle}" Margin="0" />
-                        <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" />
-                        <Grid Grid.Row="2" Margin="0,0,0,8">
+                        <Grid Grid.Row="0" Margin="0,0,0,6" Height="34">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="64"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="64"/>
+                                <ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="56"/>
+                                <ColumnDefinition Width="80"/>
+                                <!-- 与对照表共享同宽的保留列，确保两行前置控件严格对齐。 -->
+                                <ColumnDefinition Width="160"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="文件" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                            <TextBox Grid.Column="1" Text="{Binding MasterFilePath, Mode=OneWay}" IsReadOnly="True"
-                                     ToolTip="{Binding MasterFilePath, Mode=OneWay}" Margin="0,0,8,0" />
-                            <Button Grid.Column="2" Command="{Binding BrowseMasterFileCommand}" IsEnabled="{Binding CanBrowseMaster}"
-                                    Style="{StaticResource SecondaryButtonStyle}" Padding="10,6" ToolTip="选择主表文件" AutomationProperties.Name="选择主表文件">
+                            <TextBlock Text="主表" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" Text="{Binding MasterFilePath, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding MasterFilePath, Mode=OneWay}" Margin="0,0,8,0"/>
+                            <Button Grid.Column="2" Command="{Binding BrowseMasterFileCommand}" IsEnabled="{Binding CanBrowseMaster}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,6" ToolTip="选择主表文件" AutomationProperties.Name="选择主表文件">
                                 <StackPanel Orientation="Horizontal">
-                                    <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
-                                    <TextBlock Text="选择…" VerticalAlignment="Center" />
+                                    <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0"/>
+                                    <TextBlock Text="选择…" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
+                            <TextBlock Grid.Column="3" Text="工作表" Style="{StaticResource FieldLabelStyle}" Margin="8,0,4,0" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Column="4" ItemsSource="{Binding MasterWorksheets}" SelectedItem="{Binding SelectedMasterWorksheet}" DisplayMemberPath="Name" IsEnabled="{Binding CanConfigure}" MinWidth="0"/>
+                            <TextBlock Grid.Column="5" Text="表头行" Style="{StaticResource FieldLabelStyle}" Margin="4,0,4,0" VerticalAlignment="Center"/>
+                            <Border Grid.Column="6" Style="{StaticResource InsetPanelStyle}" Width="80" Height="32">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,4,0">
+                                        <Button Style="{StaticResource SpinnerButtonStyle}" IsEnabled="{Binding CanConfigure}" Command="{Binding IncrementMasterHeaderRowCommand}" AutomationProperties.Name="主表表头行加一">
+                                            <Path Width="8" Height="5" Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Data="{StaticResource IconChevronUp}"/>
+                                        </Button>
+                                        <Button Style="{StaticResource SpinnerButtonStyle}" IsEnabled="{Binding CanConfigure}" Command="{Binding DecrementMasterHeaderRowCommand}" AutomationProperties.Name="主表表头行减一">
+                                            <Path Width="8" Height="5" Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Data="{StaticResource IconChevronDown}"/>
+                                        </Button>
+                                    </StackPanel>
+                                    <TextBox Text="{Binding MasterHeaderRowNumber, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanConfigure}" BorderThickness="0" Background="Transparent" MinHeight="0" Padding="8,0" VerticalContentAlignment="Center" ToolTip="{Binding MasterHeaderRowNumber, UpdateSourceTrigger=PropertyChanged}"/>
+                                </DockPanel>
+                            </Border>
                         </Grid>
-                        <Grid Grid.Row="3" Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="16" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <DockPanel Visibility="{Binding HasMasterWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <TextBlock Text="工作表" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                                <ComboBox ItemsSource="{Binding MasterWorksheets}" SelectedItem="{Binding SelectedMasterWorksheet}"
-                                          DisplayMemberPath="Name" IsEnabled="{Binding CanConfigure}" />
-                            </DockPanel>
-                            <DockPanel Grid.Column="2">
-                                <TextBlock Text="表头行" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                                <Border Style="{StaticResource InsetPanelStyle}" Width="72" Height="34">
-                                    <DockPanel>
-                                        <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,4,0">
-                                            <Button Style="{StaticResource SpinnerButtonStyle}" IsEnabled="{Binding CanConfigure}"
-                                                    Command="{Binding IncrementMasterHeaderRowCommand}" AutomationProperties.Name="主表表头行加一">
-                                                <Path Width="8" Height="5" Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                      Data="{StaticResource IconChevronUp}" />
-                                            </Button>
-                                            <Button Style="{StaticResource SpinnerButtonStyle}" IsEnabled="{Binding CanConfigure}"
-                                                    Command="{Binding DecrementMasterHeaderRowCommand}" AutomationProperties.Name="主表表头行减一">
-                                                <Path Width="8" Height="5" Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                      Data="{StaticResource IconChevronDown}" />
-                                            </Button>
-                                        </StackPanel>
-                                        <TextBox Text="{Binding MasterHeaderRowNumber, UpdateSourceTrigger=PropertyChanged}"
-                                                 IsEnabled="{Binding CanConfigure}" BorderThickness="0" Background="Transparent"
-                                                 MinHeight="0" Padding="8,0" VerticalContentAlignment="Center"
-                                                 ToolTip="{Binding MasterHeaderRowNumber, UpdateSourceTrigger=PropertyChanged}" />
-                                    </DockPanel>
-                                </Border>
-                            </DockPanel>
-                        </Grid>
-                        <Grid Grid.Row="4">
-                            <DataGrid x:Name="MasterPreviewDataGrid"
-                                      ItemsSource="{Binding MasterPreviewDataTable.DefaultView}"
-                                      AutoGenerateColumns="True"
-                                      AutoGeneratingColumn="OnMasterPreviewAutoGeneratingColumn"
-                                      IsReadOnly="True"
-                                      CanUserAddRows="False"
-                                      CanUserDeleteRows="False"
-                                      CanUserReorderColumns="False"
-                                      CanUserSortColumns="False"
-                                      EnableRowVirtualization="True"
-                                      EnableColumnVirtualization="True"
-                                      MinHeight="80" />
-                            <Border Style="{StaticResource EmptyOverlayStyle}"
-                                    Visibility="{Binding ShowMasterPreviewEmptyNotice, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <TextBlock Text="{Binding MasterPreviewEmptyMessage}" Style="{StaticResource CaptionStyle}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16" />
+                        <Grid Grid.Row="1">
+                            <DataGrid x:Name="MasterPreviewDataGrid" ItemsSource="{Binding MasterPreviewDataTable.DefaultView}" AutoGenerateColumns="True" AutoGeneratingColumn="OnMasterPreviewAutoGeneratingColumn" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserSortColumns="False" EnableRowVirtualization="True" EnableColumnVirtualization="True" MinHeight="80"/>
+                            <Border Style="{StaticResource EmptyOverlayStyle}" Visibility="{Binding ShowMasterPreviewEmptyNotice, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="{Binding MasterPreviewEmptyMessage}" Style="{StaticResource CaptionStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16"/>
                             </Border>
                         </Grid>
                     </Grid>
 
-                    <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" VerticalAlignment="Center" />
+                    <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" VerticalAlignment="Center"/>
 
-                    <!-- 对照表 -->
+                    <!-- 对照表：与主表完全相同的列结构，同文件开关位于最右侧。 -->
                     <Grid Grid.Row="2" AllowDrop="True" DragOver="OnReferenceDragOver" Drop="OnReferenceDrop">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <DockPanel LastChildFill="False">
-                            <TextBlock Text="对照表" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center" />
-                            <CheckBox DockPanel.Dock="Right" Content="与主表使用同一个文件" IsChecked="{Binding UseSameFileAsMaster}"
-                                      IsEnabled="{Binding CanUseSameFile}" VerticalAlignment="Center" Margin="12,0,0,0" />
-                        </DockPanel>
-                        <Border Grid.Row="1" Style="{StaticResource HorizontalHairlineStyle}" />
-                        <Grid Grid.Row="2" Margin="0,0,0,8">
+                        <Grid Grid.Row="0" Margin="0,0,0,6" Height="34">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="64"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="64"/>
+                                <ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="56"/>
+                                <ColumnDefinition Width="80"/>
+                                <!-- 与主表保持相同宽度；复选框仅在此列显示。 -->
+                                <ColumnDefinition Width="160"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="文件" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                            <TextBox Grid.Column="1" Text="{Binding ReferenceFilePath, Mode=OneWay}" IsReadOnly="True"
-                                     ToolTip="{Binding ReferenceFilePath, Mode=OneWay}" Margin="0,0,8,0" />
-                            <Button Grid.Column="2" Command="{Binding BrowseReferenceFileCommand}" IsEnabled="{Binding CanBrowseReference}"
-                                    Style="{StaticResource SecondaryButtonStyle}" Padding="10,6" ToolTip="选择对照表文件" AutomationProperties.Name="选择对照表文件">
+                            <TextBlock Text="对照表" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" Text="{Binding ReferenceFilePath, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding ReferenceFilePath, Mode=OneWay}" Margin="0,0,8,0"/>
+                            <Button Grid.Column="2" Command="{Binding BrowseReferenceFileCommand}" IsEnabled="{Binding CanBrowseReference}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,6" ToolTip="选择对照表文件" AutomationProperties.Name="选择对照表文件">
                                 <StackPanel Orientation="Horizontal">
-                                    <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
-                                    <TextBlock Text="选择…" VerticalAlignment="Center" />
+                                    <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0"/>
+                                    <TextBlock Text="选择…" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
+                            <TextBlock Grid.Column="3" Text="工作表" Style="{StaticResource FieldLabelStyle}" Margin="8,0,4,0" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Column="4" ItemsSource="{Binding ReferenceWorksheets}" SelectedItem="{Binding SelectedReferenceWorksheet}" DisplayMemberPath="Name" IsEnabled="{Binding CanConfigure}" MinWidth="0"/>
+                            <TextBlock Grid.Column="5" Text="表头行" Style="{StaticResource FieldLabelStyle}" Margin="4,0,4,0" VerticalAlignment="Center"/>
+                            <Border Grid.Column="6" Style="{StaticResource InsetPanelStyle}" Width="80" Height="32">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,4,0">
+                                        <Button Style="{StaticResource SpinnerButtonStyle}" IsEnabled="{Binding CanConfigure}" Command="{Binding IncrementReferenceHeaderRowCommand}" AutomationProperties.Name="对照表表头行加一">
+                                            <Path Width="8" Height="5" Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Data="{StaticResource IconChevronUp}"/>
+                                        </Button>
+                                        <Button Style="{StaticResource SpinnerButtonStyle}" IsEnabled="{Binding CanConfigure}" Command="{Binding DecrementReferenceHeaderRowCommand}" AutomationProperties.Name="对照表表头行减一">
+                                            <Path Width="8" Height="5" Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Data="{StaticResource IconChevronDown}"/>
+                                        </Button>
+                                    </StackPanel>
+                                    <TextBox Text="{Binding ReferenceHeaderRowNumber, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanConfigure}" BorderThickness="0" Background="Transparent" MinHeight="0" Padding="8,0" VerticalContentAlignment="Center" ToolTip="{Binding ReferenceHeaderRowNumber, UpdateSourceTrigger=PropertyChanged}"/>
+                                </DockPanel>
+                            </Border>
+                            <CheckBox Grid.Column="7" Content="与主表使用同一个文件" IsChecked="{Binding UseSameFileAsMaster}" IsEnabled="{Binding CanUseSameFile}" VerticalAlignment="Center" Margin="12,0,0,0" FontSize="12"/>
                         </Grid>
-                        <Grid Grid.Row="3" Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="16" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <DockPanel Visibility="{Binding HasReferenceWorksheetSelector, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <TextBlock Text="工作表" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                                <ComboBox ItemsSource="{Binding ReferenceWorksheets}" SelectedItem="{Binding SelectedReferenceWorksheet}"
-                                          DisplayMemberPath="Name" IsEnabled="{Binding CanConfigure}" />
-                            </DockPanel>
-                            <DockPanel Grid.Column="2">
-                                <TextBlock Text="表头行" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                                <Border Style="{StaticResource InsetPanelStyle}" Width="72" Height="34">
-                                    <DockPanel>
-                                        <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,4,0">
-                                            <Button Style="{StaticResource SpinnerButtonStyle}" IsEnabled="{Binding CanConfigure}"
-                                                    Command="{Binding IncrementReferenceHeaderRowCommand}" AutomationProperties.Name="对照表表头行加一">
-                                                <Path Width="8" Height="5" Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                      Data="{StaticResource IconChevronUp}" />
-                                            </Button>
-                                            <Button Style="{StaticResource SpinnerButtonStyle}" IsEnabled="{Binding CanConfigure}"
-                                                    Command="{Binding DecrementReferenceHeaderRowCommand}" AutomationProperties.Name="对照表表头行减一">
-                                                <Path Width="8" Height="5" Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                      Data="{StaticResource IconChevronDown}" />
-                                            </Button>
-                                        </StackPanel>
-                                        <TextBox Text="{Binding ReferenceHeaderRowNumber, UpdateSourceTrigger=PropertyChanged}"
-                                                 IsEnabled="{Binding CanConfigure}" BorderThickness="0" Background="Transparent"
-                                                 MinHeight="0" Padding="8,0" VerticalContentAlignment="Center"
-                                                 ToolTip="{Binding ReferenceHeaderRowNumber, UpdateSourceTrigger=PropertyChanged}" />
-                                    </DockPanel>
-                                </Border>
-                            </DockPanel>
-                        </Grid>
-                        <Grid Grid.Row="4">
-                            <DataGrid x:Name="ReferencePreviewDataGrid"
-                                      ItemsSource="{Binding ReferencePreviewDataTable.DefaultView}"
-                                      AutoGenerateColumns="True"
-                                      AutoGeneratingColumn="OnReferencePreviewAutoGeneratingColumn"
-                                      IsReadOnly="True"
-                                      CanUserAddRows="False"
-                                      CanUserDeleteRows="False"
-                                      CanUserReorderColumns="False"
-                                      CanUserSortColumns="False"
-                                      EnableRowVirtualization="True"
-                                      EnableColumnVirtualization="True"
-                                      MinHeight="80" />
-                            <Border Style="{StaticResource EmptyOverlayStyle}"
-                                    Visibility="{Binding ShowReferencePreviewEmptyNotice, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <TextBlock Text="{Binding ReferencePreviewEmptyMessage}" Style="{StaticResource CaptionStyle}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16" />
+                        <Grid Grid.Row="1">
+                            <DataGrid x:Name="ReferencePreviewDataGrid" ItemsSource="{Binding ReferencePreviewDataTable.DefaultView}" AutoGenerateColumns="True" AutoGeneratingColumn="OnReferencePreviewAutoGeneratingColumn" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserSortColumns="False" EnableRowVirtualization="True" EnableColumnVirtualization="True" MinHeight="80"/>
+                            <Border Style="{StaticResource EmptyOverlayStyle}" Visibility="{Binding ShowReferencePreviewEmptyNotice, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="{Binding ReferencePreviewEmptyMessage}" Style="{StaticResource CaptionStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16"/>
                             </Border>
                         </Grid>
                     </Grid>
                 </Grid>
 
+                </ScrollViewer>
+
                 <!-- 分割线 -->
-                <Border Grid.Column="1" Style="{StaticResource VerticalHairlineStyle}" HorizontalAlignment="Center" Width="1" />
+                <Border Grid.Column="1" Style="{StaticResource VerticalHairlineStyle}" HorizontalAlignment="Center" Width="1"/>
 
                 <!-- 右列：匹配设置 -->
-                <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                              IsEnabled="{Binding CanConfigure}">
+                <ScrollViewer Grid.Column="2" Background="{StaticResource HeaderFillBrush}" Padding="12,10" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" IsEnabled="{Binding CanConfigure}">
                     <StackPanel Margin="0,0,4,0">
                         <!-- 匹配条件 -->
                         <DockPanel LastChildFill="False">
-                            <TextBlock Text="匹配条件" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center" />
-                            <TextBlock DockPanel.Dock="Right" Text="全部同时满足 (AND)" FontSize="12" Foreground="{StaticResource AccentBrush}"
-                                       FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <TextBlock Text="匹配条件" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
+                            <TextBlock DockPanel.Dock="Right" Text="全部同时满足 (AND)" FontSize="12" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </DockPanel>
-                        <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,4,0,8" />
+                        <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,4,0,8"/>
                         <ItemsControl ItemsSource="{Binding Conditions}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type vm:MatchingConditionRowViewModel}">
-                                    <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="1" CornerRadius="4"
-                                            Background="{StaticResource ContentPanelBrush}" Padding="10,8" Margin="0,0,0,8">
+                                    <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="1" CornerRadius="4" Background="{StaticResource ContentPanelBrush}" Padding="10,8" Margin="0,0,0,8">
                                         <StackPanel>
                                             <DockPanel LastChildFill="False" Margin="0,0,0,6">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock Text="且 " FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"
-                                                               Visibility="{Binding ShowAndSeparator, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                                    <TextBlock Text="{Binding Index, StringFormat='条件 {0}'}" Style="{StaticResource FieldLabelStyle}" Margin="0" />
+                                                    <TextBlock Text="且 " FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" Visibility="{Binding ShowAndSeparator, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                    <TextBlock Text="{Binding Index, StringFormat='条件 {0}'}" Style="{StaticResource FieldLabelStyle}" Margin="0"/>
                                                 </StackPanel>
-                                                <Button DockPanel.Dock="Right" Command="{Binding DeleteCommand}" IsEnabled="{Binding CanDelete}"
-                                                        Style="{StaticResource SecondaryButtonStyle}" Padding="8,4"
-                                                        ToolTip="删除此条件" AutomationProperties.Name="删除匹配条件">
+                                                <Button DockPanel.Dock="Right" Command="{Binding DeleteCommand}" IsEnabled="{Binding CanDelete}" Style="{StaticResource SecondaryButtonStyle}" Padding="8,4" ToolTip="删除此条件" AutomationProperties.Name="删除匹配条件">
                                                     <StackPanel Orientation="Horizontal">
-                                                        <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconTrash}" Width="12" Height="12" />
-                                                        <TextBlock Text="删除" VerticalAlignment="Center" Margin="4,0,0,0" FontSize="12" />
+                                                        <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconTrash}" Width="12" Height="12"/>
+                                                        <TextBlock Text="删除" VerticalAlignment="Center" Margin="4,0,0,0" FontSize="12"/>
                                                     </StackPanel>
                                                 </Button>
                                             </DockPanel>
                                             <DockPanel Margin="0,0,0,6" LastChildFill="True">
-                                                <TextBlock Text="主表" Style="{StaticResource FieldLabelStyle}" Width="36" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                                <ComboBox ItemsSource="{Binding MasterColumns}" SelectedItem="{Binding SelectedMasterColumn}"
-                                                          DisplayMemberPath="DisplayName" ToolTip="主表字段" />
+                                                <TextBlock Text="主表" Style="{StaticResource FieldLabelStyle}" Width="36" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                <ComboBox ItemsSource="{Binding MasterColumns}" SelectedItem="{Binding SelectedMasterColumn}" DisplayMemberPath="DisplayName" ToolTip="主表字段"/>
                                             </DockPanel>
                                             <DockPanel LastChildFill="True">
-                                                <TextBlock Text="等于" Style="{StaticResource FieldLabelStyle}" Width="36" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                                <ComboBox ItemsSource="{Binding ReferenceColumns}" SelectedItem="{Binding SelectedReferenceColumn}"
-                                                          DisplayMemberPath="DisplayName" ToolTip="对照表字段" />
+                                                <TextBlock Text="等于" Style="{StaticResource FieldLabelStyle}" Width="36" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                <ComboBox ItemsSource="{Binding ReferenceColumns}" SelectedItem="{Binding SelectedReferenceColumn}" DisplayMemberPath="DisplayName" ToolTip="对照表字段"/>
                                             </DockPanel>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <Button HorizontalAlignment="Left" Command="{Binding AddConditionCommand}" IsEnabled="{Binding CanConfigure}"
-                                Margin="0,0,0,6" AutomationProperties.Name="添加匹配条件">
+                        <Button HorizontalAlignment="Left" Command="{Binding AddConditionCommand}" IsEnabled="{Binding CanConfigure}" Margin="0,0,0,6" AutomationProperties.Name="添加匹配条件">
                             <StackPanel Orientation="Horizontal">
-                                <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPlus}" />
-                                <TextBlock Text="添加匹配条件" VerticalAlignment="Center" />
+                                <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPlus}"/>
+                                <TextBlock Text="添加匹配条件" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
-                        <TextBlock Text="支持 1～N 条条件。所有条件必须同时满足；空表头列不参与匹配。" Style="{StaticResource CaptionStyle}" Margin="0,0,0,12" />
+                        <TextBlock Text="支持 1～N 条条件。所有条件必须同时满足；空表头列不参与匹配。" Style="{StaticResource CaptionStyle}" Margin="0,0,0,12"/>
 
-                        <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,0,0,12" />
+                        <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,0,0,12"/>
 
                         <!-- 带回字段 -->
                         <DockPanel LastChildFill="False">
-                            <TextBlock Text="带回字段" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center" />
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding SelectedReturnFieldsCount, StringFormat='已选 {0} 项'}"
-                                       FontSize="12" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <TextBlock Text="带回字段" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding SelectedReturnFieldsCount, StringFormat='已选 {0} 项'}" FontSize="12" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </DockPanel>
-                        <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,4,0,8" />
+                        <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,4,0,8"/>
                         <Grid Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox Text="{Binding SearchReturnFieldText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0" />
-                            <Button Grid.Column="1" Content="全选" Command="{Binding SelectAllReturnFieldsCommand}" Margin="0,0,6,0" Padding="10,4" />
-                            <Button Grid.Column="2" Content="反选" Command="{Binding InvertReturnFieldsCommand}" Padding="10,4" />
+                            <TextBox Text="{Binding SearchReturnFieldText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
+                            <Button Grid.Column="1" Content="全选" Command="{Binding SelectAllReturnFieldsCommand}" Margin="0,0,6,0" Padding="10,4"/>
+                            <Button Grid.Column="2" Content="反选" Command="{Binding InvertReturnFieldsCommand}" Padding="10,4"/>
                         </Grid>
                         <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="140" MinHeight="48" Margin="0,0,0,12">
                             <ItemsControl ItemsSource="{Binding ReturnFields}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <WrapPanel />
+                                        <WrapPanel/>
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:ReturnFieldItemViewModel}">
-                                        <CheckBox Content="{Binding DisplayName}" IsChecked="{Binding IsSelected}"
-                                                  Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                  Margin="0,0,12,6" ToolTip="{Binding DisplayName}" />
+                                        <CheckBox Content="{Binding DisplayName}" IsChecked="{Binding IsSelected}" Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,0,12,6" ToolTip="{Binding DisplayName}"/>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </ScrollViewer>
 
-                        <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,0,0,8" />
+                        <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,0,0,8"/>
 
                         <!-- 主表筛选 (可折叠) -->
                         <Expander Style="{StaticResource WorkbenchExpanderStyle}" IsExpanded="{Binding IsFilterExpanded, Mode=TwoWay}" Margin="0,0,0,8">
                             <Expander.Header>
                                 <DockPanel LastChildFill="True">
-                                    <TextBlock Text="主表筛选" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding FilterSummary}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
-                                               HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="主表筛选" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding FilterSummary}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis"/>
                                 </DockPanel>
                             </Expander.Header>
                             <StackPanel Margin="0,8,0,4">
-                                <CheckBox Content="仅匹配满足条件的主表行" IsChecked="{Binding IsMasterFilterEnabled}" Margin="0,0,0,8" />
+                                <CheckBox Content="仅匹配满足条件的主表行" IsChecked="{Binding IsMasterFilterEnabled}" Margin="0,0,0,8"/>
                                 <StackPanel IsEnabled="{Binding IsMasterFilterEnabled}">
                                     <DockPanel Margin="0,0,0,6" LastChildFill="True">
-                                        <TextBlock Text="主表列" Style="{StaticResource FieldLabelStyle}" Width="48" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                        <ComboBox ItemsSource="{Binding MasterAvailableColumns}" SelectedItem="{Binding SelectedMasterFilterColumn}"
-                                                  DisplayMemberPath="DisplayName" ToolTip="选择用于筛选主表行的列" />
+                                        <TextBlock Text="主表列" Style="{StaticResource FieldLabelStyle}" Width="48" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <ComboBox ItemsSource="{Binding MasterAvailableColumns}" SelectedItem="{Binding SelectedMasterFilterColumn}" DisplayMemberPath="DisplayName" ToolTip="选择用于筛选主表行的列"/>
                                     </DockPanel>
                                     <DockPanel Margin="0,0,0,6" LastChildFill="True">
-                                        <TextBlock Text="等于值" Style="{StaticResource FieldLabelStyle}" Width="48" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                        <ComboBox x:Name="MasterFilterValueSelector" ItemsSource="{Binding MasterFilterValues}"
-                                                  SelectedItem="{Binding SelectedMasterFilterValue}" DisplayMemberPath="DisplayText"
-                                                  IsEditable="False" IsEnabled="{Binding CanSelectMasterFilterValue}"
-                                                  MaxDropDownHeight="240" ToolTip="从所选主表列的完整数据中选择实际值" />
+                                        <TextBlock Text="等于值" Style="{StaticResource FieldLabelStyle}" Width="48" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <ComboBox x:Name="MasterFilterValueSelector" ItemsSource="{Binding MasterFilterValues}" SelectedItem="{Binding SelectedMasterFilterValue}" DisplayMemberPath="DisplayText" IsEditable="False" IsEnabled="{Binding CanSelectMasterFilterValue}" MaxDropDownHeight="240" ToolTip="从所选主表列的完整数据中选择实际值"/>
                                     </DockPanel>
-                                    <TextBox Text="{Binding MasterFilterValuesMessage, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}"
-                                             IsReadOnly="True" TextWrapping="Wrap" MaxHeight="56" FontSize="12"
-                                             VerticalScrollBarVisibility="Auto"
-                                             Visibility="{Binding IsMasterFilterEnabled, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <TextBox Text="{Binding MasterFilterValuesMessage, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}" IsReadOnly="True" TextWrapping="Wrap" MaxHeight="56" FontSize="12" VerticalScrollBarVisibility="Auto" Visibility="{Binding IsMasterFilterEnabled, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                 </StackPanel>
                             </StackPanel>
                         </Expander>
 
-                        <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,0,0,8" />
+                        <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,0,0,8"/>
 
                         <!-- 比较与状态列 (可折叠) -->
                         <Expander Style="{StaticResource WorkbenchExpanderStyle}" IsExpanded="{Binding IsOptionsExpanded, Mode=TwoWay}" Margin="0,0,0,8">
                             <Expander.Header>
                                 <DockPanel LastChildFill="True">
-                                    <TextBlock Text="比较与状态列" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding OptionsSummary}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
-                                               HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="比较与状态列" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding OptionsSummary}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis"/>
                                 </DockPanel>
                             </Expander.Header>
                             <StackPanel Margin="0,8,0,4">
-                                <CheckBox Content="自动修复常见匹配差异（仅用于比较）" IsChecked="{Binding NormalizeComparisonKeys}"
-                                          Margin="0,0,0,8" ToolTip="自动修复常见匹配差异 (空格/全半角/文本数字/日期统一，仅用于比较，不改源数据)" />
-                                <CheckBox Content="生成匹配状态列" IsChecked="{Binding IsStatusColumnEnabled}" Margin="0,0,6,0" />
+                                <CheckBox Content="自动修复常见匹配差异（仅用于比较）" IsChecked="{Binding NormalizeComparisonKeys}" Margin="0,0,0,8" ToolTip="自动修复常见匹配差异 (空格/全半角/文本数字/日期统一，仅用于比较，不改源数据)"/>
+                                <CheckBox Content="生成匹配状态列" IsChecked="{Binding IsStatusColumnEnabled}" Margin="0,0,6,0"/>
                                 <DockPanel IsEnabled="{Binding IsStatusColumnEnabled}" LastChildFill="True" Margin="20,0,0,0">
-                                    <TextBlock Text="列名" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" VerticalAlignment="Center" />
-                                    <TextBox Text="{Binding StatusColumnName, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="列名" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding StatusColumnName, UpdateSourceTrigger=PropertyChanged}"/>
                                 </DockPanel>
                             </StackPanel>
                         </Expander>
@@ -450,22 +275,12 @@
             <!-- 按需错误区 -->
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="96" Margin="0,8,0,0">
                 <StackPanel>
-                    <TextBox Text="{Binding OutputConflictMessage, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}"
-                             Foreground="{StaticResource DangerBrush}" FontWeight="Medium" Margin="0,0,0,8"
-                             Visibility="{Binding HasOutputConflictWithInput, Converter={StaticResource BoolToVisibilityConverter}}"
-                             TextWrapping="Wrap" IsReadOnly="True" />
-                    <Border Style="{StaticResource ErrorBannerStyle}" Margin="0,0,0,8"
-                            Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBox Text="{Binding OutputConflictMessage, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}" Foreground="{StaticResource DangerBrush}" FontWeight="Medium" Margin="0,0,0,8" Visibility="{Binding HasOutputConflictWithInput, Converter={StaticResource BoolToVisibilityConverter}}" TextWrapping="Wrap" IsReadOnly="True"/>
+                    <Border Style="{StaticResource ErrorBannerStyle}" Margin="0,0,0,8" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
                         <StackPanel>
-                            <TextBox Text="{Binding ErrorTitle, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}"
-                                     FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}" Margin="0,0,0,4"
-                                     TextWrapping="Wrap" IsReadOnly="True" />
-                            <TextBox Text="{Binding ErrorMessage, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}"
-                                     Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" IsReadOnly="True" />
-                            <TextBox Text="{Binding ErrorDetail, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}"
-                                     Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" Margin="0,4,0,0"
-                                     Visibility="{Binding HasErrorDetail, Converter={StaticResource BoolToVisibilityConverter}}"
-                                     IsReadOnly="True" />
+                            <TextBox Text="{Binding ErrorTitle, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}" Margin="0,0,0,4" TextWrapping="Wrap" IsReadOnly="True"/>
+                            <TextBox Text="{Binding ErrorMessage, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" IsReadOnly="True"/>
+                            <TextBox Text="{Binding ErrorDetail, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="{Binding HasErrorDetail, Converter={StaticResource BoolToVisibilityConverter}}" IsReadOnly="True"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -475,55 +290,53 @@
             <Border x:Name="FixedFooter" Grid.Row="2" Style="{StaticResource FooterBarStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <DockPanel>
-                            <TextBlock Text="结果文件" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" />
-                            <Button DockPanel.Dock="Right" Content="更改保存位置" Command="{Binding ChangeOutputPathCommand}"
-                                    IsEnabled="{Binding CanConfigure}" Margin="8,0,0,0" />
-                            <TextBox Text="{Binding OutputFilePath, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding OutputFilePath}" />
+                            <TextBlock Text="结果文件" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0"/>
+                            <Button DockPanel.Dock="Right" Content="更改保存位置" Command="{Binding ChangeOutputPathCommand}" IsEnabled="{Binding CanConfigure}" Margin="8,0,0,0"/>
+                            <TextBox Text="{Binding OutputFilePath, Mode=OneWay}" IsReadOnly="True" ToolTip="{Binding OutputFilePath}"/>
                         </DockPanel>
-                        <Button x:Name="StartButton" Grid.Column="2" Command="{Binding StartCommand}" IsEnabled="{Binding CanStart}"
-                                Style="{StaticResource PrimaryButtonStyle}" MinWidth="148" AutomationProperties.Name="开始匹配">
+                        <StackPanel Orientation="Horizontal" Grid.Column="2">
+                            <Button Command="{Binding OpenResultFileCommand}" IsEnabled="{Binding CanExecuteSuccessActions}" Margin="0,0,8,0" Style="{StaticResource Desktop.SecondaryButtonStyle}" Height="32">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFile}" Margin="0,0,6,0"/>
+                                    <TextBlock Text="打开结果" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding OpenResultFolderCommand}" IsEnabled="{Binding CanExecuteSuccessActions}" Style="{StaticResource Desktop.SecondaryButtonStyle}" Height="32">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0"/>
+                                    <TextBlock Text="打开目录" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        <Button x:Name="StartButton" Command="{Binding StartCommand}" IsEnabled="{Binding CanStart}" Style="{StaticResource Desktop.PrimaryButtonStyle}" MinWidth="112" AutomationProperties.Name="开始匹配" Margin="8,0,0,0" Height="32">
                             <StackPanel Orientation="Horizontal">
-                                <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPlay}" Fill="{StaticResource OnAccentBrush}" />
-                                <TextBlock Text="开始匹配" VerticalAlignment="Center" />
+                                <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPlay}" Fill="{StaticResource OnAccentBrush}"/>
+                                <TextBlock Text="开始匹配" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
-                    </Grid>
-                    <DockPanel Grid.Row="1" Margin="0,10,0,0">
-                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                            <Button Command="{Binding OpenResultFileCommand}" IsEnabled="{Binding CanExecuteSuccessActions}" Margin="0,0,8,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFile}" Margin="0,0,6,0" />
-                                    <TextBlock Text="打开结果" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding OpenResultFolderCommand}" IsEnabled="{Binding CanExecuteSuccessActions}">
-                                <StackPanel Orientation="Horizontal">
-                                    <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconFolder}" Margin="0,0,6,0" />
-                                    <TextBlock Text="打开目录" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
+                    </StackPanel>
+                        </Grid>
+                    <DockPanel Grid.Row="1" Margin="0,4,0,0">
                         <StackPanel Margin="0,0,16,0">
                             <WrapPanel Visibility="{Binding HasSuccess, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <TextBlock Text="{Binding ResultTotalMasterDataRowCount, StringFormat='总计 {0}  ·  '}" />
-                                <TextBlock Text="{Binding ResultMatchedCount, StringFormat='成功 {0}  ·  '}" />
-                                <TextBlock Text="{Binding ResultUnmatchedCount, StringFormat='未匹配 {0}  ·  '}" />
-                                <TextBlock Text="{Binding ResultDuplicateCount, StringFormat='重复 {0}  ·  '}" />
-                                <TextBlock Text="{Binding ResultEmptyKeyCount, StringFormat='空键 {0}  ·  '}" />
-                                <TextBlock Text="{Binding ResultSkippedCount, StringFormat='未参与 {0}'}" />
+                                <TextBlock Text="{Binding ResultTotalMasterDataRowCount, StringFormat='总计 {0}  ·  '}"/>
+                                <TextBlock Text="{Binding ResultMatchedCount, StringFormat='成功 {0}  ·  '}"/>
+                                <TextBlock Text="{Binding ResultUnmatchedCount, StringFormat='未匹配 {0}  ·  '}"/>
+                                <TextBlock Text="{Binding ResultDuplicateCount, StringFormat='重复 {0}  ·  '}"/>
+                                <TextBlock Text="{Binding ResultEmptyKeyCount, StringFormat='空键 {0}  ·  '}"/>
+                                <TextBlock Text="{Binding ResultSkippedCount, StringFormat='未参与 {0}'}"/>
                             </WrapPanel>
-                            <TextBlock Text="{Binding ProgressStageText}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
-                            <ProgressBar Value="{Binding ProgressPercent}" IsIndeterminate="{Binding IsProgressIndeterminate}" Margin="0,6,0,0" />
+                            <TextBlock Text="{Binding ProgressStageText}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <ProgressBar Value="{Binding ProgressPercent}" IsIndeterminate="{Binding IsProgressIndeterminate}" Margin="0,6,0,0"/>
                         </StackPanel>
                     </DockPanel>
                 </Grid>

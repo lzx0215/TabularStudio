@@ -36,6 +36,7 @@
                     <Grid Grid.Row="0" AllowDrop="True" DragOver="OnMasterDragOver" Drop="OnMasterDrop">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <Grid Grid.Row="0" Margin="0,0,0,6" Height="34">
@@ -75,7 +76,8 @@
                                 </DockPanel>
                             </Border>
                         </Grid>
-                        <Grid Grid.Row="1">
+                        <TextBlock Grid.Row="1" Text="主表：需要被补充信息的表格，匹配后会保留原有行。" Style="{StaticResource CaptionStyle}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                        <Grid Grid.Row="2">
                             <DataGrid x:Name="MasterPreviewDataGrid" ItemsSource="{Binding MasterPreviewDataTable.DefaultView}" AutoGenerateColumns="True" AutoGeneratingColumn="OnMasterPreviewAutoGeneratingColumn" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserSortColumns="False" EnableRowVirtualization="True" EnableColumnVirtualization="True" MinHeight="80"/>
                             <Border Style="{StaticResource EmptyOverlayStyle}" Visibility="{Binding ShowMasterPreviewEmptyNotice, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <TextBlock Text="{Binding MasterPreviewEmptyMessage}" Style="{StaticResource CaptionStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16"/>
@@ -88,6 +90,7 @@
                     <!-- 对照表：与主表完全相同的列结构，同文件开关位于最右侧。 -->
                     <Grid Grid.Row="2" AllowDrop="True" DragOver="OnReferenceDragOver" Drop="OnReferenceDrop">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
@@ -129,7 +132,8 @@
                             </Border>
                             <CheckBox Grid.Column="7" Content="与主表使用同一个文件" IsChecked="{Binding UseSameFileAsMaster}" IsEnabled="{Binding CanUseSameFile}" VerticalAlignment="Center" Margin="12,0,0,0" FontSize="12"/>
                         </Grid>
-                        <Grid Grid.Row="1">
+                        <TextBlock Grid.Row="1" Text="对照表：用来查找对应信息，并提供要添加到主表的列。" Style="{StaticResource CaptionStyle}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                        <Grid Grid.Row="2">
                             <DataGrid x:Name="ReferencePreviewDataGrid" ItemsSource="{Binding ReferencePreviewDataTable.DefaultView}" AutoGenerateColumns="True" AutoGeneratingColumn="OnReferencePreviewAutoGeneratingColumn" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserSortColumns="False" EnableRowVirtualization="True" EnableColumnVirtualization="True" MinHeight="80"/>
                             <Border Style="{StaticResource EmptyOverlayStyle}" Visibility="{Binding ShowReferencePreviewEmptyNotice, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <TextBlock Text="{Binding ReferencePreviewEmptyMessage}" Style="{StaticResource CaptionStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16"/>
@@ -146,10 +150,10 @@
                 <!-- 右列：匹配设置 -->
                 <ScrollViewer Grid.Column="2" Background="{StaticResource HeaderFillBrush}" Padding="12,10" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" IsEnabled="{Binding CanConfigure}">
                     <StackPanel Margin="0,0,4,0">
-                        <!-- 匹配条件 -->
+                        <!-- 匹配规则 -->
                         <DockPanel LastChildFill="False">
-                            <TextBlock Text="匹配条件" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
-                            <TextBlock DockPanel.Dock="Right" Text="全部同时满足 (AND)" FontSize="12" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="匹配规则" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
+                            <TextBlock DockPanel.Dock="Right" Text="每条规则都要满足" FontSize="12" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </DockPanel>
                         <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,4,0,8"/>
                         <ItemsControl ItemsSource="{Binding Conditions}">
@@ -159,10 +163,10 @@
                                         <StackPanel>
                                             <DockPanel LastChildFill="False" Margin="0,0,0,6">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock Text="且 " FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" Visibility="{Binding ShowAndSeparator, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                                    <TextBlock Text="{Binding Index, StringFormat='条件 {0}'}" Style="{StaticResource FieldLabelStyle}" Margin="0"/>
+                                                    <TextBlock Text="并且 " FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" Visibility="{Binding ShowAndSeparator, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                    <TextBlock Text="{Binding Index, StringFormat='规则 {0}'}" Style="{StaticResource FieldLabelStyle}" Margin="0"/>
                                                 </StackPanel>
-                                                <Button DockPanel.Dock="Right" Command="{Binding DeleteCommand}" IsEnabled="{Binding CanDelete}" Style="{StaticResource SecondaryButtonStyle}" Padding="8,4" ToolTip="删除此条件" AutomationProperties.Name="删除匹配条件">
+                                                <Button DockPanel.Dock="Right" Command="{Binding DeleteCommand}" IsEnabled="{Binding CanDelete}" Style="{StaticResource SecondaryButtonStyle}" Padding="8,4" ToolTip="删除此规则" AutomationProperties.Name="删除匹配规则">
                                                     <StackPanel Orientation="Horizontal">
                                                         <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconTrash}" Width="12" Height="12"/>
                                                         <TextBlock Text="删除" VerticalAlignment="Center" Margin="4,0,0,0" FontSize="12"/>
@@ -170,43 +174,44 @@
                                                 </Button>
                                             </DockPanel>
                                             <DockPanel Margin="0,0,0,6" LastChildFill="True">
-                                                <TextBlock Text="主表" Style="{StaticResource FieldLabelStyle}" Width="36" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                                <ComboBox ItemsSource="{Binding MasterColumns}" SelectedItem="{Binding SelectedMasterColumn}" DisplayMemberPath="DisplayName" ToolTip="主表字段"/>
+                                                <TextBlock Text="主表列" Style="{StaticResource FieldLabelStyle}" Width="48" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                <ComboBox ItemsSource="{Binding MasterColumns}" SelectedItem="{Binding SelectedMasterColumn}" DisplayMemberPath="DisplayName" ToolTip="选择主表中用于查找的列"/>
                                             </DockPanel>
                                             <DockPanel LastChildFill="True">
-                                                <TextBlock Text="等于" Style="{StaticResource FieldLabelStyle}" Width="36" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                                <ComboBox ItemsSource="{Binding ReferenceColumns}" SelectedItem="{Binding SelectedReferenceColumn}" DisplayMemberPath="DisplayName" ToolTip="对照表字段"/>
+                                                <TextBlock Text="对照表" Style="{StaticResource FieldLabelStyle}" Width="48" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                <ComboBox ItemsSource="{Binding ReferenceColumns}" SelectedItem="{Binding SelectedReferenceColumn}" DisplayMemberPath="DisplayName" ToolTip="选择对照表中用于对应的列"/>
                                             </DockPanel>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <Button HorizontalAlignment="Left" Command="{Binding AddConditionCommand}" IsEnabled="{Binding CanConfigure}" Margin="0,0,0,6" AutomationProperties.Name="添加匹配条件">
+                        <Button HorizontalAlignment="Left" Command="{Binding AddConditionCommand}" IsEnabled="{Binding CanConfigure}" Margin="0,0,0,6" AutomationProperties.Name="添加匹配规则">
                             <StackPanel Orientation="Horizontal">
                                 <Path Style="{StaticResource ButtonGlyphStyle}" Data="{StaticResource IconPlus}"/>
-                                <TextBlock Text="添加匹配条件" VerticalAlignment="Center"/>
+                                <TextBlock Text="添加匹配规则" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
-                        <TextBlock Text="支持 1～N 条条件。所有条件必须同时满足；空表头列不参与匹配。" Style="{StaticResource CaptionStyle}" Margin="0,0,0,12"/>
+                        <TextBlock Text="示例：主表“编号” = 对照表“编号”，程序会按编号查找对应记录。需要多个条件时，每条规则都必须满足。没有列名的列不会参与匹配。" Style="{StaticResource CaptionStyle}" Margin="0,0,0,12" TextWrapping="Wrap"/>
 
                         <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,0,0,12"/>
 
-                        <!-- 带回字段 -->
+                        <!-- 选择需要添加的对照表列 -->
                         <DockPanel LastChildFill="False">
-                            <TextBlock Text="带回字段" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding SelectedReturnFieldsCount, StringFormat='已选 {0} 项'}" FontSize="12" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="选择需要添加的对照表列" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding SelectedReturnFieldsCount, StringFormat='已选 {0} 列'}" FontSize="12" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </DockPanel>
                         <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,4,0,8"/>
+                        <TextBlock Text="匹配成功后，勾选的列会添加到主表结果的右侧。" Style="{StaticResource CaptionStyle}" Margin="0,0,0,8" TextWrapping="Wrap"/>
                         <Grid Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox Text="{Binding SearchReturnFieldText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
-                            <Button Grid.Column="1" Content="全选" Command="{Binding SelectAllReturnFieldsCommand}" Margin="0,0,6,0" Padding="10,4"/>
-                            <Button Grid.Column="2" Content="反选" Command="{Binding InvertReturnFieldsCommand}" Padding="10,4"/>
+                            <TextBox Text="{Binding SearchReturnFieldText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0" ToolTip="输入列名，快速查找要添加的列" AutomationProperties.Name="查找要添加的对照表列"/>
+                            <Button Grid.Column="1" Content="全选" Command="{Binding SelectAllReturnFieldsCommand}" Margin="0,0,6,0" Padding="10,4" ToolTip="选择当前显示的所有列"/>
+                            <Button Grid.Column="2" Content="反向选择" Command="{Binding InvertReturnFieldsCommand}" Padding="10,4" ToolTip="把已选和未选的列互相切换"/>
                         </Grid>
                         <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="140" MinHeight="48" Margin="0,0,0,12">
                             <ItemsControl ItemsSource="{Binding ReturnFields}">
@@ -225,24 +230,25 @@
 
                         <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,0,0,8"/>
 
-                        <!-- 主表筛选 (可折叠) -->
+                        <!-- 限定要匹配的主表行 (可折叠) -->
                         <Expander Style="{StaticResource WorkbenchExpanderStyle}" IsExpanded="{Binding IsFilterExpanded, Mode=TwoWay}" Margin="0,0,0,8">
                             <Expander.Header>
                                 <DockPanel LastChildFill="True">
-                                    <TextBlock Text="主表筛选" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="限定要匹配的主表行" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
                                     <TextBlock Text="{Binding FilterSummary}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis"/>
                                 </DockPanel>
                             </Expander.Header>
                             <StackPanel Margin="0,8,0,4">
-                                <CheckBox Content="仅匹配满足条件的主表行" IsChecked="{Binding IsMasterFilterEnabled}" Margin="0,0,0,8"/>
+                                <TextBlock Text="示例：只匹配“是否参与”列为“是”的主表行；其他主表行仍会保留，但不会参与匹配。" Style="{StaticResource CaptionStyle}" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                                <CheckBox Content="只匹配符合下面条件的主表行" IsChecked="{Binding IsMasterFilterEnabled}" Margin="0,0,0,8"/>
                                 <StackPanel IsEnabled="{Binding IsMasterFilterEnabled}">
                                     <DockPanel Margin="0,0,0,6" LastChildFill="True">
                                         <TextBlock Text="主表列" Style="{StaticResource FieldLabelStyle}" Width="48" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                        <ComboBox ItemsSource="{Binding MasterAvailableColumns}" SelectedItem="{Binding SelectedMasterFilterColumn}" DisplayMemberPath="DisplayName" ToolTip="选择用于筛选主表行的列"/>
+                                        <ComboBox ItemsSource="{Binding MasterAvailableColumns}" SelectedItem="{Binding SelectedMasterFilterColumn}" DisplayMemberPath="DisplayName" ToolTip="例：选择“是否参与”这一列"/>
                                     </DockPanel>
                                     <DockPanel Margin="0,0,0,6" LastChildFill="True">
-                                        <TextBlock Text="等于值" Style="{StaticResource FieldLabelStyle}" Width="48" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                        <ComboBox x:Name="MasterFilterValueSelector" ItemsSource="{Binding MasterFilterValues}" SelectedItem="{Binding SelectedMasterFilterValue}" DisplayMemberPath="DisplayText" IsEditable="False" IsEnabled="{Binding CanSelectMasterFilterValue}" MaxDropDownHeight="240" ToolTip="从所选主表列的完整数据中选择实际值"/>
+                                        <TextBlock Text="筛选值" Style="{StaticResource FieldLabelStyle}" Width="48" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <ComboBox x:Name="MasterFilterValueSelector" ItemsSource="{Binding MasterFilterValues}" SelectedItem="{Binding SelectedMasterFilterValue}" DisplayMemberPath="DisplayText" IsEditable="False" IsEnabled="{Binding CanSelectMasterFilterValue}" MaxDropDownHeight="240" ToolTip="例：选择“是”，只匹配该列值为“是”的主表行"/>
                                     </DockPanel>
                                     <TextBox Text="{Binding MasterFilterValuesMessage, Mode=OneWay}" Style="{StaticResource BareTextBoxStyle}" IsReadOnly="True" TextWrapping="Wrap" MaxHeight="56" FontSize="12" VerticalScrollBarVisibility="Auto" Visibility="{Binding IsMasterFilterEnabled, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                 </StackPanel>
@@ -251,20 +257,23 @@
 
                         <Border Style="{StaticResource HorizontalHairlineStyle}" Margin="0,0,0,8"/>
 
-                        <!-- 比较与状态列 (可折叠) -->
+                        <!-- 匹配时的两个可选设置 (可折叠) -->
                         <Expander Style="{StaticResource WorkbenchExpanderStyle}" IsExpanded="{Binding IsOptionsExpanded, Mode=TwoWay}" Margin="0,0,0,8">
                             <Expander.Header>
                                 <DockPanel LastChildFill="True">
-                                    <TextBlock Text="比较与状态列" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="匹配时的两个可选设置" Style="{StaticResource SectionHeaderStyle}" Margin="0" VerticalAlignment="Center"/>
                                     <TextBlock Text="{Binding OptionsSummary}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis"/>
                                 </DockPanel>
                             </Expander.Header>
                             <StackPanel Margin="0,8,0,4">
-                                <CheckBox Content="自动修复常见匹配差异（仅用于比较）" IsChecked="{Binding NormalizeComparisonKeys}" Margin="0,0,0,8" ToolTip="自动修复常见匹配差异 (空格/全半角/文本数字/日期统一，仅用于比较，不改源数据)"/>
-                                <CheckBox Content="生成匹配状态列" IsChecked="{Binding IsStatusColumnEnabled}" Margin="0,0,6,0"/>
+                                <TextBlock Text="不确定时可以保持默认；这两项不会修改原表内容。" Style="{StaticResource CaptionStyle}" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                                <CheckBox Content="匹配时自动处理常见差异（只影响匹配，不改原表）" IsChecked="{Binding NormalizeComparisonKeys}" Margin="0,0,0,4" ToolTip="例如：一张表中是数字 123，另一张表中是文本“123”，也可以判定为相同；只影响匹配判断，不会修改原表数据"/>
+                                <TextBlock Text="例如：一张表中是数字 123，另一张表中是文本“123”，也可以判定为相同。" Style="{StaticResource CaptionStyle}" Margin="20,0,0,8" TextWrapping="Wrap"/>
+                                <CheckBox Content="在结果中添加匹配状态列" IsChecked="{Binding IsStatusColumnEnabled}" Margin="0,0,6,4" ToolTip="在结果表中增加一列，标记每行是匹配成功、未匹配、重复等状态"/>
+                                <TextBlock Text="结果中会多一列，标记每行是匹配成功、未匹配、重复等状态。" Style="{StaticResource CaptionStyle}" Margin="20,0,0,8" TextWrapping="Wrap"/>
                                 <DockPanel IsEnabled="{Binding IsStatusColumnEnabled}" LastChildFill="True" Margin="20,0,0,0">
-                                    <TextBlock Text="列名" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBox Text="{Binding StatusColumnName, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Text="状态列名称" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding StatusColumnName, UpdateSourceTrigger=PropertyChanged}" ToolTip="例如填写“处理结果”，结果表会使用这个名称"/>
                                 </DockPanel>
                             </StackPanel>
                         </Expander>

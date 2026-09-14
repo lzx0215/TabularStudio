@@ -152,10 +152,10 @@ public sealed partial class DataMatchingViewModel : ObservableObject
 
     public ObservableCollection<AvailableColumnItem> ReferenceAvailableColumns { get; } = [];
 
-    // 匹配条件配置 (1～N 条)
+    // 匹配规则配置 (1～N 条)
     public ObservableCollection<MatchingConditionRowViewModel> Conditions { get; } = [];
 
-    // 带回字段列表 (从对照表)
+    // 需要添加的对照表列列表
     public ObservableCollection<ReturnFieldItemViewModel> ReturnFields { get; } = [];
 
     [ObservableProperty]
@@ -179,12 +179,12 @@ public sealed partial class DataMatchingViewModel : ObservableObject
     {
         get
         {
-            if (!IsMasterFilterEnabled) return "未启用";
+            if (!IsMasterFilterEnabled) return "不限制主表行";
             if (SelectedMasterFilterColumn != null && SelectedMasterFilterValue != null)
-                return $"{SelectedMasterFilterColumn.DisplayName} = {SelectedMasterFilterValue.DisplayText}";
+                return $"仅匹配：{SelectedMasterFilterColumn.DisplayName} = {SelectedMasterFilterValue.DisplayText}";
             if (SelectedMasterFilterColumn != null)
-                return $"{SelectedMasterFilterColumn.DisplayName} = 待选择";
-            return "待选择";
+                return $"仅匹配：{SelectedMasterFilterColumn.DisplayName}（请选择值）";
+            return "仅匹配：请选择主表列";
         }
     }
 
@@ -240,13 +240,13 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         get
         {
             var parts = new List<string>();
-            if (NormalizeComparisonKeys) parts.Add("自动修复差异");
+            if (NormalizeComparisonKeys) parts.Add("已处理常见差异");
             if (IsStatusColumnEnabled)
             {
                 var name = string.IsNullOrWhiteSpace(StatusColumnName) ? "匹配状态" : StatusColumnName.Trim();
-                parts.Add($"状态列: {name}");
+                parts.Add($"结果含状态列：{name}");
             }
-            return parts.Count > 0 ? string.Join(" · ", parts) : "默认设置";
+            return parts.Count > 0 ? string.Join(" · ", parts) : "保持原始匹配设置";
         }
     }
 
@@ -478,7 +478,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
         _confirmOverwrite = confirmOverwrite;
         _confirmDelete = confirmDelete;
 
-        // 默认初始化 1 条匹配条件
+        // 默认初始化 1 条匹配规则
         AddInitialCondition();
 
         if (_profileStore != null)
@@ -1054,7 +1054,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
                 var col = table.Columns.Add(columnName, typeof(string));
                 col.Caption = displayHeader;
 
-                // 匹配条件和带回字段：只允许 HeaderText 非空的字段
+                // 匹配规则和需要添加的列：只允许 HeaderText 非空的字段
                 if (!string.IsNullOrWhiteSpace(colRef.HeaderText))
                 {
                     ReferenceAvailableColumns.Add(new AvailableColumnItem(colRef));
@@ -1885,7 +1885,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             OperationErrorCode.WorksheetNotFound => "指定的工作表在文件中未找到，请重新选择工作表。",
             OperationErrorCode.InvalidHeaderRow => "表头所在行必须大于或等于 1，且所在行及其下方必须包含有效数据。",
             OperationErrorCode.ColumnNotFound => "所选字段在对应工作表中不存在，请刷新预览并重新选择。",
-            OperationErrorCode.InvalidConfiguration => "匹配条件、返回字段或其它配置项未完整填写。",
+            OperationErrorCode.InvalidConfiguration => "匹配规则、需要添加的列或其他设置未完整填写。",
             OperationErrorCode.OutputConflictsWithInput => "禁止覆盖主表或对照表，请选择其他输出路径。",
             OperationErrorCode.OutputAlreadyExists => "指定输出路径已存在同名文件。",
             OperationErrorCode.OutputDirectoryNotWritable => "输出目录不存在或无写入权限，请选择其他输出目录。",
@@ -1994,7 +1994,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             }
             else if (Conditions.Count == 0 || Conditions.Any(c => c.SelectedMasterColumn == null || c.SelectedReferenceColumn == null))
             {
-                ProfileStatusMessage = "请先配置完整的匹配条件后再保存配置。";
+                ProfileStatusMessage = "请先完成匹配规则设置后再保存配置。";
             }
             else if (!ReturnFields.Any(f => f.IsSelected))
             {
@@ -2002,7 +2002,7 @@ public sealed partial class DataMatchingViewModel : ObservableObject
             }
             else if (IsMasterFilterEnabled && !HasValidMasterFilter)
             {
-                ProfileStatusMessage = "主表筛选已启用，但未选择有效的筛选列或候选值。";
+                ProfileStatusMessage = "主表行筛选已开启，但还没有选好筛选列和值。";
             }
             else
             {
